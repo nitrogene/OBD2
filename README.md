@@ -180,7 +180,7 @@ Bien que le régulateur Buck soit très efficace, son découpage haute fréquenc
 
 ---
 
-#### Bloc 4 : 4. USB-C & PROTECTIONS ESD (Debug) (`J2`, `U6`, `U7`, `R3`, `R4`, `VBUS_5V`)
+#### Bloc 4 : 4. USB-C, ALIMENTATION BANC & PROTECTIONS ESD (Debug) (`J2`, `D4`, `U6`, `U7`, `R3`, `R4`, `VBUS_5V`)
 
 Le connecteur USB-C permet de flasher le firmware dans l'ESP32, d'afficher les logs série de débogage et de tester la carte sur un banc de test sans être branché sur la voiture.
 
@@ -195,9 +195,18 @@ Le connecteur USB-C permet de flasher le firmware dans l'ESP32, d'afficher les l
   │ Broches B5 (CC2) ──[R4]─┼─┤  │     │          GND
   │              (5.1 kΩ)   │ │  │     │
   │                         │ ▼  ▼     ▼
-  └─────────────────────────┴─┴──┴─────┴───────────────────────────────────────────────
+  │ Broches VBUS (5V) ──────┼──────────────────┬──► TP1 (VBUS_5V)
+  └─────────────────────────┘                  │
+                                         [ D4 (BAT54CW) ] (Double Schottky Anodes 1 & 2 en //)
+                                               │ (Cathode commune Pin 3)
+                                               ▼
+                                         Rail interne +5V (Vers LDO U5, CAN U2, etc.)
 ```
 
+* **Diode Schottky Double Cathode Commune `D4` (`BAT54CW` - boîtier SOT-323 / `C962771`) :**
+  * *Alimentation autonome sur table :* Permet d'alimenter l'ensemble de la logique (LDO 3.3V `U5`, ESP32-S3 `U1`, transceiver CAN `U2`) directement via la prise USB-C lors de la programmation et des tests sur banc, sans nécessiter de source 12V OBD externe.
+  * *Protection anti-retour absolue :* Dès que la carte est connectée au véhicule (12V OBD présent), le convertisseur Buck TPS54331 régule le rail `+5V`. La cathode de `D4` est portée à 5V, polarisant la diode en inverse et interdisant formellement tout refoulement de courant ou de perturbation vers le port USB de l'ordinateur de développement.
+  * *Mise en parallèle des 2 diodes internes :* Les broches 1 (Anode 1) et 2 (Anode 2) sont pontées sur `VBUS_5V`. Cela double la tenue en courant admissible (400 mA continu, 600 mA crête) et minimise la chute de tension directe (Vf typique ~ 0.25V à 0.35V).
 * **Résistances de Configuration `R3` et `R4` (5.1 kΩ pull-down - `R0805`) :**
   * *Pourquoi sont-elles obligatoires en USB-C ?* Dans la norme USB-C, les broches `CC1` et `CC2` déterminent qui alimente qui. Les alimentations et chargeurs modernes USB-C (Power Delivery / chargeurs intelligents) ne délivrent **aucun courant** tant qu'ils ne détectent pas une résistance de 5.1 kΩ reliée à la masse sur la broche CC. Sans `R3` et `R4`, la carte ne recevrait jamais de courant 5V sur un chargeur USB-C !
 * **Diodes de Protection Antistatique ESD `U6` et `U7` (`SD05C` - boîtier SOD-323) :**
@@ -352,10 +361,11 @@ Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véh
 | **Signaux 12V de la ligne K-Line Daewoo Kalos** | Destruction des broches du microcontrôleur limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line [`U3`](file:///D:/Dev/ODB/README.md#L80) + Résistances série [`R1`, `R2`](file:///D:/Dev/ODB/README.md#L67-L68) |
 | **Décharges électrostatiques (ESD) lors du branchement USB** | Claquage des broches USB internes du silicium ESP32 | Dérivation des étincelles (jusqu'à 30 kV) en < 1 ns | Diodes ESD bidirectionnelles [`U6`, `U7`](file:///D:/Dev/ODB/README.md#L83-L84) |
 | **Négociation de charge USB Type-C** | Pas de tension 5V délivrée par les chargeurs récents | Détection automatique d'appareil consommateur (Sink) | Résistances pull-down 5.1 kΩ [`R3`, `R4`](file:///D:/Dev/ODB/README.md#L69-L70) |
+| **Alimentation sur banc & protection anti-retour USB** | Destruction du port USB hôte par retour 5V Buck ou impossibilité de programmer sans 12V | Diode Schottky double cathode commune reliant VBUS_5V au rail +5V | Diode Schottky [`D4`](file:///D:/Dev/ODB/README.md) (`BAT54CW`) |
 
 ---
 
-#### 2.4 Nomenclature Complète du Schéma (51 composants)
+#### 2.4 Nomenclature Complète du Schéma (52 composants)
 
 Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma complet DRC OK) :
 
@@ -374,6 +384,7 @@ Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma co
 | **D1** | *—* | SMBJ18A_C5860928 | `SMB_L4.6-W3.6-LS5.3-RD` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | *—* | SS34_C52023881 | `SMA_L4.3-W2.6-LS5.1-RD` | Diode Schottky 40V 3A de roue libre (Cathode sur PH, Anode sur GND) pour convertisseur Buck `U4` |
 | **D3** | *—* | BZX84C12 | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 |
+| **D4** | BAT54CW | BAT54CW (C962771) | `sot-323-3_l2.0-w1.3-p1.30-ls2.1-br` | Diode Schottky double 30V 2x200mA cathode commune (alimentation autonome USB et protection anti-retour) |
 | **F1** | *—* | MF-MSMF050-2 | `F1812` | Fusible réarmable PPTC 0.5A protection ligne 12V |
 | **FB1** | *—* | BLM18PG121SN1D_C14709 | `L0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
 | **J1** | *—* | OBD2-M-90D | `CONN-TH_OBD2` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
@@ -431,7 +442,7 @@ Pour garantir une lisibilité absolue lors de la conception, du débogage et du 
 | **`VSENSE_BUCK`** | `U4(5)` (`VSENSE`), `R9(1)`, `R10(1)` | Point milieu du diviseur de tension de contre-réaction asservissant la sortie 5.0V sur la référence interne 0.800V. | Alimentation / Buck |
 | **`COMP_BUCK`** | `U4(6)` (`COMP`), `R11(1)` | Sortie de l'amplificateur d'erreur transconductance reliée au filtre de compensation de boucle de régulation. | Alimentation / Buck |
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud intermédiaire série du réseau RC de compensation de phase (stabilité dynamique). | Alimentation / Buck |
-| **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)` (`VIN`), `R9(2)`, `U2(3)` (`VCC`) | Rail d'alimentation 5.0V régulé issu de l'étage Buck, distribuant la puissance au régulateur LDO et au transceiver CAN. | Alimentation / Rail 5V |
+| **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)` (`VIN`), `R9(2)`, `U2(3)` (`VCC`), `TP5`, `D4(3)` | Rail d'alimentation 5.0V régulé issu de l'étage Buck (ou injecté via D4 en USB), distribuant la puissance au régulateur LDO et au transceiver CAN. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)` (`VOUT` / Tab), `FB1(1)` | Sortie 3.3V brute du régulateur linéaire LDO avant élimination des harmoniques radiofréquences. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1(1)`, `C2(1)`, `C3(1)`, `C4(1)`, `U1(2)`, `U2(5)` (`VIO`), `U3(3)` (`VCC`) | Rail d'alimentation logique 3.3V purifié et filtré, alimentant le microcontrôleur ESP32 et les étages logiques. | Alimentation / Rail 3.3V |
 | **`GND`** | Plan de masse, pads thermiques, blindages, condensateurs, transceivers | Potentiel de référence zéro volt (0V) commun assurant le retour des courants et le blindage électromagnétique. | Référence / Masse |
@@ -440,7 +451,7 @@ Pour garantir une lisibilité absolue lors de la conception, du débogage et du 
 | **`GATE_NMOS`** | `Q2(1)` (Grille), `R5(2)` | Polarisation de grille du N-MOSFET de commande depuis le 12V à travers la résistance `R5`. | Commutation / Contrôle |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Sortie numérique du microcontrôleur pilotant l'allumage du témoin visuel de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` (Anode) | Liaison à courant limité (0.67 mA) entre la résistance de limitation `R6` et la LED d'état verte. | Interface / Statut |
-| **`VBUS_USB`** | `J2` (`A4, B9, A9, B4`), `VBUS_5V` (Point de test) | Tension d'alimentation 5V issue du câble USB-C hôte, accessible sur pad de test pour les mesures sur banc. | Interface / USB-C |
+| **`VBUS_5V`** | `J2` (`A4, B9, A9, B4`), `TP1`, `D4(1, 2)` | Tension d'alimentation 5V issue du port USB-C hôte, reliée au pad de test TP1 et aux anodes de la diode Schottky D4. | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)` (`CC1`), `R3(1)` (5.1 kΩ) | Ligne de configuration USB Type-C canal 1 permettant la détection d'un appareil récepteur (*Sink*). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)` (`CC2`), `R4(1)` (5.1 kΩ) | Ligne de configuration USB Type-C canal 2 permettant la détection d'un appareil récepteur (*Sink*). | Interface / USB-C |
 | **`USB_D+`** | `J2` (`A6, B6`), `U6(1)` (TVS ESD), `U1(14)` (`IO20`) | Ligne de données différentielle USB positive haute vitesse avec protection antistatique 30 kV. | Interface / USB-C |
@@ -531,7 +542,7 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
 >    - [x] Arbitrer la tenue du régulateur Buck U4 (TPS54331, VIN max absolu 30V) : résolu par l'adoption de la TVS SMBJ18A (VCL max 29.2V < 30V, protection intégrale).
 > 2. **Intégration des points d'architecture & robustesse :**
 >    - [x] Passer la terminaison CAN R8 (120 ohms) en déconnectable : résolu par l'ajout du cavalier JP1 (PZ2.54-1*2) avec shunt pour banc de test (ouvert par défaut en voiture).
->    - Raccorder VBUS_5V au rail +5V via une diode anti-retour pour l'alimentation autonome sur port USB-C.
+>    - [x] Raccorder VBUS_5V au rail +5V via une diode anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) pour l'alimentation autonome USB et la protection anti-retour.
 >    - Ajouter un condensateur réservoir (bulk 10-22 µF) sur le 3.3V et sécuriser la broche EN de l'ESP32 (pull-up 10 k ohms + 100 nF).
 
 ---
@@ -554,7 +565,7 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
     - [x] Arbitrer la tenue du régulateur Buck U4 (TPS54331, VIN max absolu 30V) face aux transitoires : résolu par l'adoption de la TVS SMBJ18A (écrêtage crête VCL = 29.2V < 30V).
   - [ ] **Points Importants (Architecture & Robustesse) :**
     - [x] Rendre la terminaison CAN R8 (120 ohms) déconnectable : résolu par l'ajout du cavalier sélecteur JP1 (PZ2.54-1*2). Shunt requis sur banc de test / simulateur d'ECU ; laissé ouvert par défaut pour utilisation directe et conforme dans une voiture.
-    - [ ] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour (ex. BAT54CW ou SS14) pour assurer l'alimentation autonome de la carte via le port USB Type-C J2 lors des tests sur banc.
+    - [x] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) avec anodes 1 et 2 reliées à VBUS_5V et cathode commune reliée à +5V pour l'alimentation autonome USB et la protection anti-retour.
     - [ ] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA).
     - [ ] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 100 nF vers GND contre les resets intempestifs en environnement bruité.
     - [ ] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1.
