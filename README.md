@@ -302,12 +302,18 @@ La Daewoo Kalos (2003) utilise principalement la ligne **K-Line** pour son calcu
 
 ---
 
-#### Bloc 9 : 9. DECOUPLAGE (C1-C4 : 100nF) (`C1`, `C2`, `C3`, `C4`)
+#### Bloc 9 : 9. DÉCOUPLAGE & RÉSERVOIR D'ÉNERGIE LOCAL (C1-C4, C11) (`C1`, `C2`, `C3`, `C4`, `C11`)
 
-* **Pourquoi a-t-on besoin de condensateurs de 100 nF au plus près de chaque puce ?**
+* **Condensateurs de Découplage HF `C1` à `C4` (100 nF céramique - `C0603`) :**
   * Une piste de cuivre sur un circuit imprimé possède une inductance parasite naturelle d'environ 1 nanohenry par millimètre (L ~ 1 nH/mm).
-  * Quand l'ESP32 bascule l'état de ses transistors internes en moins d'une nanoseconde (dt < 1 ns), l'appel de courant brusque di/dt provoque une chute de tension fugitive (V = L * di/dt) qui peut faire chuter le 3.3V local et provoquer un plantage ou un redémarrage intempestif du microcontrôleur (*brownout reset*).
-  * **La solution :** Les condensateurs `C1` et `C2` (pour l'ESP32 `U1`), `C3` (pour la puce CAN `U2`) et `C4` (pour la puce K-Line `U3`) sont des condensateurs céramiques multi-couches (MLCC) placés à **moins de 2 mm des broches d'alimentation**. Ils agissent comme des micro-réservoirs d'énergie locale qui fournissent instantanément ces charges haute fréquence.
+  * Quand les circuits intégrés basculent l'état de leurs transistors internes en moins d'une nanoseconde (dt < 1 ns), l'appel de courant brusque di/dt provoque une chute de tension fugitive (V = L * di/dt).
+  * Les condensateurs `C1` et `C2` (pour l'ESP32 `U1`), `C3` (pour la puce CAN `U2`) et `C4` (pour la puce K-Line `U3`) sont des condensateurs céramiques multi-couches (MLCC) placés à **moins de 2 mm des broches d'alimentation**. Ils fournissent instantanément ces charges haute fréquence (> 10 MHz).
+* **Condensateur Réservoir d'Énergie Local Bulk `C11` (10 µF céramique 25V X5R - `CL21A106KAYNNNE` / `C0805`) :**
+  * *Distinction fonctionnelle critique (Bulk vs Découplage HF) :* Alors que les condensateurs de 100 nF (`C1`, `C2`) filtrent les bruits de commutation numérique rapides (bande > 10 MHz) sur des échelles de la nanoseconde, ils ne stockent que très peu d'énergie (Q = C × V = 100 nF × 3.3V = 0.33 µC).
+  * *Absorption des salves d'émission Wi-Fi (pointes à 500 mA) :* Lors de l'émission d'une trame Wi-Fi ou BLE, les amplificateurs de puissance RF internes de l'ESP32-S3 appellent un échelon de courant massif de **450 à 500 mA** pendant plusieurs centaines de microsecondes. Sans réservoir d'énergie local, l'inductance de ligne fait chuter le rail 3.3V sous **2.8 V**, seuil où le circuit de surveillance interne de l'ESP32 déclenche un redémarrage forcé (*Brownout Reset*).
+  * *Rôle de C11 :* Avec une charge stockée 100 fois supérieure (Q ≈ 33 µC), `C11` agit comme une micro-batterie tampon qui maintient le 3.3V rigoureusement plat pendant tout le burst radio.
+  * *Consigne impérative de placement PCB :* **`C11` doit être implanté au plus près immédiat des broches 1 (`GND`) et 2 (`3V3`) de l'ESP32-S3 (distance < 2 à 3 mm)** avec des pistes courtes et larges (ou raccordement direct au plan de masse via un via de fort diamètre), minimisant la boucle de courant d'alimentation de l'étage radio.
+  * *Tenue en tension 25V (Anti DC-bias) :* Contrairement à un condensateur 6.3V qui perdrait plus de la moitié de sa capacité réelle sous 3.3V par saturation diélectrique, ce modèle 25V conserve plus de 85% de sa valeur nominale (~8.5-9 µF effectifs), tout en bénéficiant du statut de composant de base (*Basic Part* JLCPCB, référence LCSC `C15850`).
 
 ---
 
@@ -355,7 +361,7 @@ Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véh
 | **Court-circuit accidentel sur le faisceau** | Échauffement critique, fonte des pistes, risque d'incendie | Coupure thermique réarmable sans intervention | Fusible PPTC réarmable [`F1`](file:///D:/Dev/ODB/README.md#L60) |
 | **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique (3.5W dissipés) | Conversion à découpage haute fréquence (570 kHz, rdt > 85%) | Étage Buck [`U4`](file:///D:/Dev/ODB/README.md#L81) + Inductance [`L1`](file:///D:/Dev/ODB/README.md#L63) + Diode [`D2`](file:///D:/Dev/ODB/README.md#L59) |
 | **Bruit de hachage électromagnétique sur la radio** | Portée Wi-Fi/Bluetooth dégradée, instabilité analogique | Double filtrage : Régulateur linéaire LDO + Perle de ferrite | LDO 3.3V [`U5`](file:///D:/Dev/ODB/README.md#L82) + Ferrite [`FB1`](file:///D:/Dev/ODB/README.md#L61) + [`C6`](file:///D:/Dev/ODB/README.md#L54) |
-| **Micro-coupures lors des commutations de l'ESP32** | Chute fugitive de tension locale, redémarrage (*brownout*) | Réservoirs d'énergie locale placés à < 2 mm des broches | Condensateurs céramiques [`C1`, `C2`, `C3`, `C4`](file:///D:/Dev/ODB/README.md#L49-L52) |
+| **Micro-coupures & pics RF Wi-Fi de l'ESP32** | Chute fugitive du 3.3V sous 2.8V, redémarrage intempestif (*brownout*) | Découplage HF à < 2 mm + Réservoir local Bulk 10 µF | Condensateurs [`C1`-`C4`](file:///D:/Dev/ODB/README.md#L49-L52) + Réservoir Bulk [`C11`](file:///D:/Dev/ODB/README.md) (10 µF 25V 0805) |
 | **Surveillance de santé batterie & détection contact** | Impossibilité de diagnostiquer l'alternateur ou la batterie | Pont diviseur 1/6 protégé + filtrage anti-bruit HF | Résistances [`R12`, `R13`](file:///D:/Dev/ODB/README.md) + Condensateur [`C10`](file:///D:/Dev/ODB/README.md) vers ADC1 |
 | **Parasites d'allumage moteur sur le bus CAN** | Trames de diagnostic corrompues ou illisibles | Transmission différentielle symétrique + adaptation d'impédance | Transceiver CAN [`U2`](file:///D:/Dev/ODB/README.md#L79) + Terminaison 120 Ω [`R8`](file:///D:/Dev/ODB/README.md#L74) |
 | **Signaux 12V de la ligne K-Line Daewoo Kalos** | Destruction des broches du microcontrôleur limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line [`U3`](file:///D:/Dev/ODB/README.md#L80) + Résistances série [`R1`, `R2`](file:///D:/Dev/ODB/README.md#L67-L68) |
@@ -365,7 +371,7 @@ Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véh
 
 ---
 
-#### 2.4 Nomenclature Complète du Schéma (52 composants)
+#### 2.4 Nomenclature Complète du Schéma (53 composants)
 
 Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma complet DRC OK) :
 
@@ -381,6 +387,7 @@ Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma co
 | **C8** | 22uF | TCC1206X5R226K250HT | `C1206` | Condensateur filtrage sortie Buck `U4` (dérivation rail 5V vers GND) |
 | **C9** | 3.3nF | CL10B332KB8NNNC | `C0603` | Condensateur de compensation de boucle Buck `U4` (broche COMP vers GND) |
 | **C10** | 100nF | CL10B104KB8NNNC | `C0603` | Filtrage HF et réservoir de charge ADC pont diviseur batterie `VBAT_SENSE` |
+| **C11** | 10uF | CL21A106KAYNNNE (C15850) | `C0805` | Condensateur réservoir local Bulk 10 µF 25V X5R (absorption des pics Wi-Fi 500 mA et prévention du brownout ESP32 - Basic Part) |
 | **D1** | *—* | SMBJ18A_C5860928 | `SMB_L4.6-W3.6-LS5.3-RD` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | *—* | SS34_C52023881 | `SMA_L4.3-W2.6-LS5.1-RD` | Diode Schottky 40V 3A de roue libre (Cathode sur PH, Anode sur GND) pour convertisseur Buck `U4` |
 | **D3** | *—* | BZX84C12 | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 |
@@ -444,7 +451,7 @@ Pour garantir une lisibilité absolue lors de la conception, du débogage et du 
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud intermédiaire série du réseau RC de compensation de phase (stabilité dynamique). | Alimentation / Buck |
 | **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)` (`VIN`), `R9(2)`, `U2(3)` (`VCC`), `TP5`, `D4(3)` | Rail d'alimentation 5.0V régulé issu de l'étage Buck (ou injecté via D4 en USB), distribuant la puissance au régulateur LDO et au transceiver CAN. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)` (`VOUT` / Tab), `FB1(1)` | Sortie 3.3V brute du régulateur linéaire LDO avant élimination des harmoniques radiofréquences. | Alimentation / LDO |
-| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1(1)`, `C2(1)`, `C3(1)`, `C4(1)`, `U1(2)`, `U2(5)` (`VIO`), `U3(3)` (`VCC`) | Rail d'alimentation logique 3.3V purifié et filtré, alimentant le microcontrôleur ESP32 et les étages logiques. | Alimentation / Rail 3.3V |
+| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1(1)`, `C2(1)`, `C3(1)`, `C4(1)`, `C11(1)`, `U1(2)`, `U2(5)` (`VIO`), `U3(3)` (`VCC`), `TP6` | Rail d'alimentation logique 3.3V purifié et filtré, alimentant le microcontrôleur ESP32 et les étages logiques. | Alimentation / Rail 3.3V |
 | **`GND`** | Plan de masse, pads thermiques, blindages, condensateurs, transceivers | Potentiel de référence zéro volt (0V) commun assurant le retour des courants et le blindage électromagnétique. | Référence / Masse |
 | **`GATE_PMOS`** | `Q1(1)` (Grille), `D3(1)` (Anode), `R7(2)`, `R14(1)` | Commande de grille du P-MOSFET bornée à 12V par la Zener D3 et tirée vers la masse via R14 par le N-MOSFET Q2. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)` (Drain), `R14(2)` | Liaison de commutation entre le drain du N-MOSFET Q2 et la résistance limiteuse R14. | Commutation / Contrôle |
@@ -543,7 +550,8 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
 > 2. **Intégration des points d'architecture & robustesse :**
 >    - [x] Passer la terminaison CAN R8 (120 ohms) en déconnectable : résolu par l'ajout du cavalier JP1 (PZ2.54-1*2) avec shunt pour banc de test (ouvert par défaut en voiture).
 >    - [x] Raccorder VBUS_5V au rail +5V via une diode anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) pour l'alimentation autonome USB et la protection anti-retour.
->    - Ajouter un condensateur réservoir (bulk 10-22 µF) sur le 3.3V et sécuriser la broche EN de l'ESP32 (pull-up 10 k ohms + 100 nF).
+>    - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le 3.3V : résolu par l'ajout de C11 (10 µF 25V X5R 0805, Samsung CL21A106KAYNNNE / C15850, Basic Part).
+>    - Sécuriser la broche EN de l'ESP32 (pull-up 10 k ohms + 100 nF).
 
 ---
 
@@ -566,7 +574,7 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
   - [ ] **Points Importants (Architecture & Robustesse) :**
     - [x] Rendre la terminaison CAN R8 (120 ohms) déconnectable : résolu par l'ajout du cavalier sélecteur JP1 (PZ2.54-1*2). Shunt requis sur banc de test / simulateur d'ECU ; laissé ouvert par défaut pour utilisation directe et conforme dans une voiture.
     - [x] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) avec anodes 1 et 2 reliées à VBUS_5V et cathode commune reliée à +5V pour l'alimentation autonome USB et la protection anti-retour.
-    - [ ] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA).
+    - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA) : résolu par l'ajout de C11 (10 µF 25V X5R 0805 Samsung CL21A106KAYNNNE / C15850, Basic Part).
     - [ ] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 100 nF vers GND contre les resets intempestifs en environnement bruité.
     - [ ] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1.
   - [ ] **Points Mineurs & Pratique :**
@@ -594,11 +602,12 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
 - [ ] **4.3.2 Optimisation du cluster USB Sud :**
   - Aligner les diodes ESD U6 et U7 côte à côte au plus près des broches d'entrée de J2 pour un clamp immédiat des décharges électrostatiques.
   - Aligner les résistances pull-down 5.1 k ohms R3 (CC1) et R4 (CC2) de manière symétrique face aux broches A5 et B5.
-- [ ] **4.3.3 Optimisation du découplage HF :**
-  - Positionner C1 et C2 à moins de 2 mm des broches d'alimentation de l'ESP32.
-  - Positionner C3 au plus près de la broche 5 (VIO) de U2.
-  - Positionner C4 au plus près de la broche 3 (VCC) de U3.
-  - Positionner C6 au plus près de la sortie de U5/FB1.
+- [ ] **4.3.3 Optimisation du découplage HF & Réservoir d'énergie Bulk :**
+  - Positionner les condensateurs de découplage HF `C1` et `C2` (100 nF) à moins de 2 mm des broches d'alimentation de l'ESP32.
+  - **Implanter impérativement le condensateur réservoir Bulk `C11` (10 µF 25V 0805) au plus près immédiat des broches 1 (`GND`) et 2 (`3V3`) de l'ESP32 `U1` (distance < 2 à 3 mm)** avec des pistes directes larges et un via de masse franc vers le plan interne GND, pour étouffer les appels de courant transitoires de 500 mA lors des transmissions radio Wi-Fi.
+  - Positionner `C3` au plus près de la broche 5 (`VIO`) de `U2`.
+  - Positionner `C4` au plus près de la broche 3 (`VCC`) de `U3`.
+  - Positionner `C6` au plus près de la sortie de `U5`/`FB1`.
 - [ ] **4.3.4 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
 
 ### 4.4 Routage des Signaux Critiques & Paires Différentielles
