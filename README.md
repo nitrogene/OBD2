@@ -322,7 +322,7 @@ La Daewoo Kalos (2003) utilise principalement la ligne **K-Line** pour son calcu
 Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véhicule pour diagnostiquer l'état de charge (au repos ~12.6V, décharge < 11.8V, alternateur en fonctionnement 13.8V - 14.7V) et détecter les coupures de contact.
 
 ```
-   +12V_PROT ──► [ R12: 100 kΩ ] ──┬──► VBAT_SENSE ──► ESP32-S3 Pin 3 (IO1 / ADC1_CH0)
+   +12V_PROT ──► [ R12: 100 kΩ ] ──┬──► VBAT_SENSE ──► ESP32-S3 Pin 39 (IO1 / ADC1_CH0)
                                     │
                                  [ R13: 20 kΩ ]
                                     │
@@ -347,8 +347,48 @@ Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véh
   * Forme un filtre passe-bas avec l'impédance équivalente Thévenin (R_eq = 100 kΩ // 20 kΩ ~ 16.7 kΩ) ayant une fréquence de coupure **fc = 1 / (2 * pi * R_eq * C10) ~ 95 Hz**.
   * Rôle : Supprime l'ondulation résiduelle triphasée de l'alternateur (~1 kHz à régime moteur moyen) ainsi que les parasites d'allumage haute fréquence, tout en fournissant une réserve locale de charges pour le convertisseur analogique-numérique (SAR ADC).
 * **Choix de la Broche ESP32-S3 (IO1 / ADC1_CH0) :**
-  * Située sur la broche 3 du module ESP32-S3-WROOM-1, rattachée au contrôleur matériel **ADC1**.
+  * Située sur la broche 39 du module ESP32-S3-WROOM-1, rattachée au contrôleur matériel **ADC1**.
   * Avantage critique : Le contrôleur ADC1 reste **pleinement opérationnel et non perturbé pendant l'émission Wi-Fi et Bluetooth**, contrairement aux canaux ADC2 qui sont neutralisés par le driver RF d'Espressif.
+
+---
+
+#### Bloc 11 : 11. CIRCUIT DE RESET SÉCURISÉ & BOOTLOADER (SW1, R15, C12, TP10, TP11) (`SW1`, `R15`, `C12`, `TP10`, `TP11`)
+
+Pour garantir un comportement infaillible en environnement automobile et offrir une ergonomie optimale lors des sessions de développement et de diagnostic :
+
+```
+                 +3.3V (Rail logique)
+                   │
+                   [ R15 : 10 kΩ ]  (Pull-up externe franc)
+                   │
+                   ├─────────────────────────► Broche EN (Pin 3 ESP32-S3)
+                   │
+                   ├─────────────────┬────────────────┐
+                   │                 │                │
+                 [ C12 ]             │             [ TP11 ]
+                 (1 µF)            ┌─┴─┐          (Pad test EN)
+                   │               │ O │  Bouton RESET (SW1)
+                   │               └─┬─┘
+                   │                 │
+                   └────────┬────────┘
+                            │
+                           GND
+```
+
+* **Temporisation RC de Power-On-Reset `R15` (10 kΩ) & `C12` (1 µF) :**
+  * *Contrainte stricte Espressif :* Le rail 3.3V doit impérativement avoir atteint son niveau nominal ($> 2.8\text{ V}$) avant que la broche `EN` (`CHIP_PU`, broche 3 de `U1`) ne franchisse son seuil logique haut ($0.75 \times V_{DD} \approx 2.48\text{ V}$).
+  * La constante de temps $\tau = R15 \times C12 = 10\text{ k}\Omega \times 1\text{ µF} = 10\text{ ms}$ garantit une montée retardée et ultra-propre, éliminant tout échec de lecture de la mémoire Flash SPI interne au démarrage ainsi que les reboots causés par les micro-coupures de tension lors de l'action du démarreur.
+* **Bouton Poussoir de Reset Matériel `SW1` (`TS-1187A-C-A-B` - CMS 3×4 mm / LCSC `C318884`) :**
+  * Placé en parallèle direct de `C12` vers la masse (`GND`).
+  * Permet de forcer manuellement un redémarrage complet du microcontrôleur d'une simple pression (accessible via un trou d'épingle dans le boîtier) sans devoir forcer mécaniquement sur la prise OBD-II du véhicule (effort d'insertion/extraction de 40 à 60 N). Le condensateur `C12` amortit les rebonds mécaniques et procure un anti-rebond matériel naturel.
+* **Point de Test de Secours Bootloader `TP10` (`IO0`) :**
+  * Pad cuivre raccordé à la broche 27 (`IO0` / strapping pin).
+  * Permet, en cas de plantage sévère du firmware en boucle (*bootloop* bloquant l'énumération USB), de forcer le mode de programmation ROM de secours en maintenant ce pad à la masse au relâchement du bouton Reset `SW1`.
+* **Point de Test Signal Reset `TP11` (`EN`) :**
+  * Pad cuivre de mesure directe du signal de reset sur la broche 3 pour le contrôle à l'oscilloscope de la rampe de charge RC.
+* **Consigne impérative d'implantation PCB :**
+  * **`C12` et `R15` doivent impérativement être implantés au plus près immédiat de la broche 3 (`EN`) de l'ESP32 `U1` (distance < 2 mm)** avec des pistes courtes et directes, et un via de masse franc vers le plan interne `GND`.
+  * *Raison physique :* La ligne `EN` étant à haute impédance (10 kΩ), une piste longue ferait office d'antenne réceptrice pour les rayonnements RF 2.4 GHz émis par l'antenne toute proche de l'ESP32 et pour les transitoires automobiles, risquant de court-circuiter l'effet protecteur du filtre RC. Le bouton `SW1` peut quant à lui être déporté légèrement pour l'accès mécanique si `C12` reste collé à la broche.
 
 ---
 
@@ -371,7 +411,7 @@ Permet à l'ESP32-S3 de mesurer en temps réel la tension de la batterie du véh
 
 ---
 
-#### 2.4 Nomenclature Complète du Schéma (53 composants)
+#### 2.4 Nomenclature Complète du Schéma (58 composants)
 
 Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma complet DRC OK) :
 
@@ -388,6 +428,7 @@ Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma co
 | **C9** | 3.3nF | CL10B332KB8NNNC | `C0603` | Condensateur de compensation de boucle Buck `U4` (broche COMP vers GND) |
 | **C10** | 100nF | CL10B104KB8NNNC | `C0603` | Filtrage HF et réservoir de charge ADC pont diviseur batterie `VBAT_SENSE` |
 | **C11** | 10uF | CL21A106KAYNNNE (C15850) | `C0805` | Condensateur réservoir local Bulk 10 µF 25V X5R (absorption des pics Wi-Fi 500 mA et prévention du brownout ESP32 - Basic Part) |
+| **C12** | 1uF | CL10A105KB8NNNC (C15849) | `C0603` | Condensateur de temporisation RC Power-On-Reset (10 ms) et filtre anti-rebond matériel broche `EN` (Basic Part) |
 | **D1** | *—* | SMBJ18A_C5860928 | `SMB_L4.6-W3.6-LS5.3-RD` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | *—* | SS34_C52023881 | `SMA_L4.3-W2.6-LS5.1-RD` | Diode Schottky 40V 3A de roue libre (Cathode sur PH, Anode sur GND) pour convertisseur Buck `U4` |
 | **D3** | *—* | BZX84C12 | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 |
@@ -415,6 +456,8 @@ Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma co
 | **R12** | 100kΩ | 0805W8F1003T5E | `R0805` | Résistance haute pont diviseur monitoring tension batterie (+12V_PROT vers VBAT_SENSE) |
 | **R13** | 20kΩ | 0805W8F2002T5E | `R0805` | Résistance basse pont diviseur monitoring tension batterie (VBAT_SENSE vers GND) |
 | **R14** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance série limitation courant Zener D3 commande grille Q1 |
+| **R15** | 10kΩ | 0805W8F1002T5E (C17414) | `R0805` | Résistance de pull-up externe broche `EN` vers le rail `3.3V` (Basic Part) |
+| **SW1** | *—* | TS-1187A-C-A-B (C318884) | `SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5` | Bouton poussoir tactile CMS de reset matériel (accessible via trou d'épingle boîtier) |
 | **TP1** | *—* | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour le rail 5V USB (`VBUS_5V`) |
 | **TP2** | K_LINE | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (`K_LINE`) |
 | **TP3** | GND | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour la masse commune de référence (`GND`) |
@@ -424,6 +467,8 @@ Inventaire extrait directement du projet actif via l'API EasyEDA Pro (schéma co
 | **TP7** | CANH | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour la ligne différentielle CAN High (`CANH`) |
 | **TP8** | CANL | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour la ligne différentielle CAN Low (`CANL`) |
 | **TP9** | VBAT_SENSE | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour la mesure analogique tension batterie (`VBAT_SENSE`) |
+| **TP10** | IO0 | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour forcer le mode bootloader de secours (`IO0` / Pin 27) |
+| **TP11** | EN | Test-Point | `Test-Point-0.5mm` | Point de test pad cuivre pour le signal de reset matériel (`ESP_EN` / Pin 3) |
 | **U1** | 2.4GHz | ESP32-S3-WROOM-1-N16R8 | `WIRELM-SMD_ESP32-S3-WROOM-1` | SoC ESP32-S3 Wi-Fi 2.4 GHz + BLE 5.0 (16MB Flash / 8MB PSRAM) |
 | **U2** | *—* | TJA1051T/3/1J | `SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL` | Transceiver CAN haute vitesse avec broche VIO (3.3V) |
 | **U3** | *—* | E-L9637D013TR | `SOIC-8_L4.9-W3.9-P1.27-LS6.0-BL` | Transceiver K-Line ISO 9141 / KWP2000 |
@@ -473,6 +518,8 @@ Pour garantir une lisibilité absolue lors de la conception, du débogage et du 
 | **`UART_RX_MCU`** | `R1(2)` (10 Ω), `U1(4)` (`IO4`) | Signal de réception UART amorti arrivant sur la broche du microcontrôleur ESP32. | Communication / K-Line |
 | **`K_TX_IC`** | `U3(4)` (`TX`), `R2(1)` (10 Ω) | Entrée d'émission du transceiver K-Line après amortissement de ligne. | Communication / K-Line |
 | **`UART_TX_MCU`** | `R2(2)` (10 Ω), `U1(5)` (`IO5`) | Signal d'émission UART issu du microcontrôleur ESP32 vers la résistance d'amortissement. | Communication / K-Line |
+| **`ESP_EN`** | `U1(3)` (`EN`), `R15(2)`, `C12(1)`, `SW1(1,2)`, `TP11` | Ligne de reset matériel et d'activation de l'ESP32 avec temporisation RC 10 ms, bouton poussoir physique et pad de test. | Contrôle / Reset |
+| **`IO0`** | `U1(27)` (`IO0`), `TP10` | Ligne de strapping bootloader permettant de forcer le téléchargement ROM de secours en maintenant le pad à la masse au reset. | Interface / Bootloader |
 
 ---
 
@@ -480,7 +527,7 @@ Pour garantir une lisibilité absolue lors de la conception, du débogage et du 
 
 Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé DRC / ERC = 0) pour permettre la qualification sur banc, la mesure précise au multimètre et le diagnostic oscilloscope / analyseur logique sans aucune intervention intrusive sur les composants ou les pistes.
 
-#### Tableau Récapitulatif des 9 Points de Test
+#### Tableau Récapitulatif des 11 Points de Test
 
 | Désignateur | Net Associé | Domaine Fonctionnel | Coordonnées Schéma | Tension / Signal Attendu | Rôle & Condition de Test |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -492,7 +539,9 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
 | **`TP6`** | **`3.3V`** | Alimentation Logique | (X=520, Y=650) | +3.30 V DC (± 1.5%) | Rail d'alimentation logique 3.3V purifié en sortie du régulateur LDO `U5` (LDL1117) et de la perle `FB1`. Alimente l'ESP32. |
 | **`TP7`** | **`CANH`** | Bus CAN Différentiel | (X=700, Y=555) | 2.5 V récessif / 3.5 V dominant | Ligne différentielle haute du bus CAN (broche 6 OBD-II). Mesure d'amplitude, intégrité de signal et terminaison 120 Ω. |
 | **`TP8`** | **`CANL`** | Bus CAN Différentiel | (X=700, Y=515) | 2.5 V récessif / 1.5 V dominant | Ligne différentielle basse du bus CAN (broche 14 OBD-II). Signal différentiel $V_{diff} = CANH - CANL$ (2.0 V dominant / 0 V récessif). |
-| **`TP9`** | **`VBAT_SENSE`** | Mesure Analogique ADC | (X=400, Y=755) | ~ 2.0 V (pour 12V bat, ratio 1/6) | Tension batterie atténuée vers la broche 3 (`IO1` / ADC1_CH0) de l'ESP32. Calibrage ADC et contrôle du filtrage HF (`C10`). |
+| **`TP9`** | **`VBAT_SENSE`** | Mesure Analogique ADC | (X=400, Y=755) | ~ 2.0 V (pour 12V bat, ratio 1/6) | Tension batterie atténuée vers la broche 39 (`IO1` / ADC1_CH0) de l'ESP32. Calibrage ADC et contrôle du filtrage HF (`C10`). |
+| **`TP10`** | **`IO0`** | Bootloader Secours | (X=1060, Y=570) | 3.3 V repos / 0 V pour forcer ROM | Pad de test pour forcer manuellement le mode de téléchargement ROM si l'USB ou le firmware est bloqué. |
+| **`TP11`** | **`ESP_EN`** | Contrôle Reset | (X=650, Y=295) | 3.3 V repos / 0 V appui reset | Pad de mesure directe du signal de reset et de contrôle de la constante de temps RC de mise sous tension. |
 
 #### Analyse d'Exhaustivité & Complétude Technique
 
@@ -504,10 +553,11 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
    - La ligne K-Line automobile 12V (`TP2` / `K_LINE`) permet le contrôle précis des niveaux logiques et des temps de transition de l'interface ISO 9141-2.
 3. **Couverture de la Métrologie Batterie (100% couverte) :**
    - Le point `TP9` (`VBAT_SENSE`) fournit un accès direct au nœud analogique pour étalonner la fonction de transfert de l'ADC de l'ESP32 et vérifier l'efficacité du filtre passe-bas anti-parasites alternateur ($f_c \approx 95\text{ Hz}$ formé avec `C10`).
-4. **Arbitrage sur d'éventuels points additionnels (TP10 / TP11) :**
-   - *Nœud de commutation Buck (`PH_BUCK`) :* Volontairement exclu des points de test permanents car raccorder une pastille/piste à un nœud commuté à 570 kHz avec des fronts raides ($dV/dt$ élevé) créerait une antenne rayonnante indésirable (dégradation de la CEM).
-   - *Liaisons numériques internes (UART/TWAI) :* Non nécessaires en pads de test dédiés car déjà sondables sur les broches des résistances séries `R1`/`R2` ou via le port de débogage USB série natif de l'ESP32-S3.
-   - **Conclusion :** Les **9 points de test (`TP1` à `TP9`)** modélisés dans le schéma (DRC/ERC = 0) constituent un ensemble rigoureux, complet et parfaitement optimisé pour l'encombrement de la carte.
+4. **Contrôle Matériel Reset & Récupération Bootloader (100% couverte) :**
+   - Le point `TP11` (`ESP_EN`) permet de vérifier à l'oscilloscope le temps de montée et le comportement au démarrage.
+   - Le point `TP10` (`IO0`) offre une récupération matérielle infaillible du processeur en cas de code défaillant.
+5. **Conclusion :**
+   - Les **11 points de test (`TP1` à `TP11`)** modélisés dans le schéma (DRC/ERC = 0) constituent un ensemble rigoureux, complet et parfaitement optimisé pour l'encombrement de la carte.
 
 ---
 
@@ -551,7 +601,8 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
 >    - [x] Passer la terminaison CAN R8 (120 ohms) en déconnectable : résolu par l'ajout du cavalier JP1 (PZ2.54-1*2) avec shunt pour banc de test (ouvert par défaut en voiture).
 >    - [x] Raccorder VBUS_5V au rail +5V via une diode anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) pour l'alimentation autonome USB et la protection anti-retour.
 >    - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le 3.3V : résolu par l'ajout de C11 (10 µF 25V X5R 0805, Samsung CL21A106KAYNNNE / C15850, Basic Part).
->    - Sécuriser la broche EN de l'ESP32 (pull-up 10 k ohms + 100 nF).
+>    - [x] Sécuriser la broche EN de l'ESP32 : résolu par l'ajout de la temporisation RC (R15 10 kΩ / C12 1 µF), du bouton poussoir de reset matériel SW1 (TS-1187A) et du pad de test TP11.
+>    - [x] Filet de sécurité Bootloader : point de test matériel TP10 sur GPIO0 (IO0).
 
 ---
 
@@ -575,11 +626,11 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
     - [x] Rendre la terminaison CAN R8 (120 ohms) déconnectable : résolu par l'ajout du cavalier sélecteur JP1 (PZ2.54-1*2). Shunt requis sur banc de test / simulateur d'ECU ; laissé ouvert par défaut pour utilisation directe et conforme dans une voiture.
     - [x] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) avec anodes 1 et 2 reliées à VBUS_5V et cathode commune reliée à +5V pour l'alimentation autonome USB et la protection anti-retour.
     - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA) : résolu par l'ajout de C11 (10 µF 25V X5R 0805 Samsung CL21A106KAYNNNE / C15850, Basic Part).
-    - [ ] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 100 nF vers GND contre les resets intempestifs en environnement bruité.
+    - [x] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 1 µF vers GND contre les resets intempestifs en environnement bruité (R15, C12, SW1, TP11).
     - [ ] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1.
   - [ ] **Points Mineurs & Pratique :**
     - [ ] Ajuster la résistance série R6 de LED1 (verte) pour augmenter la luminosité visible en plein jour dans l'habitacle.
-    - [ ] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours.
+    - [x] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours (TP10 / IO0).
 - [ ] **4.1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **4.1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
 
@@ -608,7 +659,11 @@ Les points de test (`test-point-0.5mm`) sont intégrés sur le schéma (validé 
   - Positionner `C3` au plus près de la broche 5 (`VIO`) de `U2`.
   - Positionner `C4` au plus près de la broche 3 (`VCC`) de `U3`.
   - Positionner `C6` au plus près de la sortie de `U5`/`FB1`.
-- [ ] **4.3.4 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
+- [ ] **4.3.4 Optimisation de l'étage Reset & Bootloader :**
+  - **Implanter impérativement le condensateur RC `C12` (1 µF) et la résistance pull-up `R15` (10 kΩ) au plus près immédiat de la broche 3 (`EN`) de l'ESP32 `U1` (distance < 2 mm)** pour minimiser la surface de boucle haute impédance et immuniser la ligne contre les bruits RF 2.4 GHz et transitoires automobiles.
+  - Positionner le bouton poussoir `SW1` avec orientation et dégagement adaptés pour un alignement propre avec l'orifice trou d'épingle (*pinhole*) prévu sur la coque du boîtier.
+  - Positionner le point de test `TP10` (`IO0`) à proximité de la broche 27 de `U1` et proche d'une zone GND pour faciliter la mise à la masse en cas de récupération bootloader.
+- [ ] **4.3.5 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
 
 ### 4.4 Routage des Signaux Critiques & Paires Différentielles
 - [ ] **4.4.1 Paire différentielle USB (USB_D+ / USB_D-) :** Routage d'impédance contrôlée depuis J2 à travers les pastilles de U6/U7 jusqu'aux broches IO20 et IO19 de l'ESP32.
