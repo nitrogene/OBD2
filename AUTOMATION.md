@@ -8,17 +8,35 @@ Ce document détaille l'infrastructure logicielle permettant à un assistant IA 
 
 L'API d'EasyEDA Pro n'existe que dans le contexte JavaScript du navigateur web. Pour permettre à une IA locale d'exécuter des commandes, un pont bidirectionnel est mis en place :
 
-```
-IA (Claude Code / Copilot CLI / Antigravity / Codex)
-        │  Agent Skill (SKILL.md) + API HTTP/WebSocket
-        ▼
-Serveur Node.js (pont local)  ─────  tourne sur le PC, port auto 49620-49629
-        │  WebSocket (localhost)
-        ▼
-Extension .eext (run-api-gateway) ──  JavaScript, injectée dans l'onglet
-        │  appel direct                     navigateur EasyEDA Pro
-        ▼
-API interne EasyEDA (eda.pcb_..., eda.sch_..., eda.dmt_...)
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 30,
+    'rankSpacing': 40
+  }
+}}%%
+flowchart LR
+    subgraph CLI["CLIENT IA"]
+        IA["Assistant IA\n(Claude Code, Antigravity, OpenCode)"]
+    end
+
+    subgraph HOST["SYSTÈME LOCAL (PC)"]
+        BRIDGE["Serveur Pont Node.js\nPort auto : 49620-49629\n(easyeda-api-skill)"]
+    end
+
+    subgraph BROWSER["NAVIGATEUR / EASYEDA PRO"]
+        EXT["Extension .eext\n(run-api-gateway)"]
+        API["API Interne JavaScript\n(eda.pcb_*, eda.sch_*, eda.dmt_*)"]
+    end
+
+    IA <-->|"Requêtes HTTP & WebSocket\n(Skill SKILL.md)"| BRIDGE
+    BRIDGE <-->|"WebSocket Local\n(Handshake auto)"| EXT
+    EXT <-->|"Appel direct JS\n(Contexte DOM / WebGL)"| API
 ```
 
 Deux briques distinctes composent ce pont :

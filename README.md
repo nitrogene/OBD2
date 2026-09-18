@@ -21,49 +21,63 @@ Projet de conception matérielle (schématique et PCB) et logicielle d'un scanne
 
 ## 2. Architecture Fonctionnelle Globale
 
-```
-               PRISE DIAGNOSTIC OBD-II (16 BROCHES)
-                │                  │               │
-  Broche 16 (+12V Batterie)   Broches 6 & 14    Broche 7 (K-Line)
-                │              (Bus CAN Diff)          │
-                ▼                  │                   ▼
-    ┌─────────────────────────┐    │       ┌───────────────────────┐
-    │  1. PROTECTION 12V      │    │       │  6. TRANSCEIVER       │
-    │  • Fusible PPTC F1      │    │       │     K-LINE (U3)       │
-    │  • Diode TVS D1 (18V)   │    │       │  Traduction 12V ↔ 3.3V│
-    │  • Anti-inversion Q1/Q2 │    │       └───────────┬───────────┘
-    └───────────┬─────────────┘    │                   │ UART_RX / TX
-                │ +12V_PROT        │                   │ (amortisseurs R1/R2)
-                ▼                  ▼                   │
-    ┌─────────────────────────┐  ┌────────────────┐    │
-    │  2. BUCK 12V -> 5V      │  │ 5. TRANSCEIVER │    │
-    │     (TPS54331 - 570kHz) │  │ CAN (TJA1051T) │    │
-    │  • Inductance L1 (10µH) │  │ • Term. R8/JP1 │    │
-    │  • Diode Schottky D2    │  │ • Adapt. VIO   │    │
-    └───────────┬─────────────┘  └────────┬───────┘    │
-                │ +5V                     │ TWAI_RX/TX │
-                ├─────────────────────────┼────────────┤
-                │                         │ (CAN)      │
-                ▼                         │            │
-    ┌─────────────────────────┐           │            │
-    │  3. LDO 3.3V & FILTRE HF│           │            │
-    │     (LDL1117S33R)       │           │            │
-    │  • Filtrage HF (FB1)    │           │            │
-    └───────────┬─────────────┘           │            │
-                │ +3.3V Logique           │            │
-                ▼                         ▼            ▼
-    ┌──────────────────────────────────────────────────────────────┐
-    │  8. ESP32-S3-WROOM-1 (Wi-Fi/BLE) (U1)                        │
-    │  • SoC double cœur 32 bits Xtensa LX7 (16 Mo Flash, 8 Mo PSRAM)│
-    │  • LED d'état (LED1 / IO2), Découplage HF + Réservoir Bulk (C11)│
-    │  • Monitoring tension batterie (R12/R13, C10 vers ADC1)      │
-    │  • Circuit de reset sécurisé & bootloader (SW1, R15, C12)     │
-    └──────────────────────────────┬───────────────────────────────┘
-                                   │ USB_D+ / USB_D-
-                                   ▼
-    ┌──────────────────────────────────────────────────────────────┐
-    │  4. USB-C, ALIMENTATION BANC & ESD (J2, D4, U6, U7, R3, R4)  │
-    └──────────────────────────────────────────────────────────────┘
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 30,
+    'rankSpacing': 40
+  }
+}}%%
+flowchart TD
+    subgraph OBD["PRISE VÉHICULE OBD-II (16 BROCHES)"]
+        PIN16["Broche 16 (+12V Batterie)"]
+        PIN6_14["Broches 6 & 14 (Bus CAN Différentiel)"]
+        PIN7["Broche 7 (Ligne K-Line 12V)"]
+    end
+
+    subgraph POWER["ÉTAGE D'ALIMENTATION & PROTECTIONS"]
+        direction TB
+        F1["1. Protection 12V\n• Fusible PPTC F1 (0.5A)\n• TVS D1 (18V / Clamp 29.2V)\n• Anti-inversion Q1/Q2 + Zener D3"]
+        BUCK["2. Régulateur Buck 570 kHz (U4)\n• TPS54331 + Inductance L1 (10µH)\n• Diode Schottky D2"]
+        LDO["3. LDO 3.3V Faible Bruit (U5)\n• LDL1117S33R + Perle Ferrite FB1"]
+        F1 -->|"+12V_PROT"| BUCK
+        BUCK -->|"+5V"| LDO
+    end
+
+    subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
+        CAN_IC["5. Transceiver CAN (U2 - TJA1051T)\n• Terminaison 120Ω déconnectable (JP1)\n• Broche d'adaptation VIO 3.3V"]
+        KLINE_IC["6. Transceiver K-Line (U3 - L9637D)\n• Translation 12V ↔ 3.3V\n• Amortisseurs de ligne R1/R2"]
+    end
+
+    subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
+        ESP["8. ESP32-S3-WROOM-1 (U1)\n• Xtensa LX7 Dual-Core 240 MHz\n• Wi-Fi 2.4 GHz & BLE 5.0 (Antenne PCB)"]
+        PERIPH["Périphériques associés :\n• 7. LED d'état (LED1 / IO2)\n• 9. Découplage HF & Réservoir Bulk (C11)\n• 10. Monitoring Batterie ADC1 (R12/R13, C10)\n• 11. Circuit Reset & Boot (SW1, R15, C12)"]
+    end
+
+    subgraph USB_DEBUG["INTERFACE USB-C & BANC DE TEST"]
+        USBC["4. Port USB-C (J2) + ESD U6/U7"]
+        D4["Alimentation autonome banc :\nDouble diode Schottky anti-retour (D4)"]
+        USBC -->|"+5V VBUS"| D4
+        D4 -.->|Alimentation banc| BUCK
+        USBC <-->|"USB D+ / D-"| ESP
+    end
+
+    PIN16 --> F1
+    PIN6_14 <==>|"Lignes CANH / CANL"| CAN_IC
+    PIN7 <==>|"Ligne K-Line (12V)"| KLINE_IC
+
+    LDO -->|"+3.3V Logique"| ESP
+    LDO -->|"+3.3V Logique"| CAN_IC
+    LDO -->|"+3.3V Logique"| KLINE_IC
+    BUCK -->|"+5V VCC"| CAN_IC
+
+    CAN_IC <==>|"Bus TWAI"| ESP
+    KLINE_IC <==>|"Liaison UART"| ESP
 ```
 
 ---

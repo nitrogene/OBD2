@@ -19,58 +19,63 @@ Le circuit imprimé est découpé en **11 blocs fonctionnels interconnectés**, 
 
 ## 2. Schéma Fonctionnel Global & Arbre d'Énergie
 
-```
-               PRISE DIAGNOSTIC OBD-II (16 BROCHES)
-                │                  │               │
-  Broche 16 (+12V Batterie)   Broches 6 & 14    Broche 7 (K-Line)
-                │              (Bus CAN Diff)          │
-                ▼                  │                   ▼
-    ┌─────────────────────────┐    │       ┌───────────────────────┐
-    │  1. PROTECTION 12V      │    │       │  6. TRANSCEIVER       │
-    │  • Fusible PPTC F1      │    │       │     K-LINE (U3)       │
-    │  • Diode TVS D1         │    │       │  Traduction 12V ↔ 3.3V│
-    │  • Anti-inversion Q1/Q2 │    │       └───────────┬───────────┘
-    └───────────┬─────────────┘    │                   │ UART_RX / TX
-                │ +12V_PROT        │                   │ (avec amortisseurs R1/R2)
-                ▼                  ▼                   │
-    ┌─────────────────────────┐  ┌────────────────┐    │
-    │  2. BUCK 12V -> 5V      │  │ 5. TRANSCEIVER │    │
-    │     (TPS54331 - 570kHz) │  │ CAN (TJA1051T) │    │
-    │  • Inductance L1 (10µH) │  │ • Term. R8/JP1 │    │
-    │  • Diode Schottky D2    │  │ • Adapt. VIO   │    │
-    │  • Bootstrap C5         │  └────────┬───────┘    │
-    │  • Feedback R9/R10      │           │ TWAI_RX/TX │
-    └───────────┬─────────────┘           │ (CAN)      │
-                │ +5V                     │            │
-                ├─────────────────────────┼────────────┤
-                │                         │            │
-                ▼                         │            │
-    ┌─────────────────────────┐           │            │
-    │  3. LDO 3.3V & FILTRE HF│           │            │
-    │     (LDL1117)           │           │            │
-    │  • Filtrage HF (FB1)    │           │            │
-    │  • Condensateur C6      │           │            │
-    └───────────┬─────────────┘           │            │
-                │ +3.3V Logique           │            │
-                ▼                         ▼            ▼
-    ┌──────────────────────────────────────────────────────────────┐
-    │  8. ESP32-S3-WROOM-1 (Wi-Fi/BLE) (U1)                        │
-    │  • Microcontrôleur 32-bit dual-core Xtensa LX7               │
-    │  • Radio Wi-Fi 2.4 GHz & Bluetooth 5.0 (Antenne PCB intégrée)│
-    │                                                              │
-    │  7. LED D'ETAT (LED1 / IO2) (pilotée par IO2 via R6)         │
-    │  9. DECOUPLAGE (C1-C4 : 100nF) + BULK (C11 : 10µF 25V)       │
-    │ 10. MONITORING BATTERIE (R12/R13 pont diviseur + C10 filtrage│
-    │ 11. CIRCUIT RESET & BOOT (SW1, R15, C12, TP10, TP11)         │
-    └──────────────────────────────┬───────────────────────────────┘
-                                   │ USB_D+ / USB_D-
-                                   ▼
-    ┌──────────────────────────────────────────────────────────────┐
-    │  4. USB-C & PROTECTIONS ESD (Debug) (J2, D4, U6, U7, R3, R4) │
-    │  • Résistances de configuration CC1/CC2 (R3, R4 : 5.1 kΩ)    │
-    │  • Diodes de protection antistatique ESD (U6, U7 : SD05C)    │
-    │  • Diode Schottky anti-retour alimentation banc (D4)         │
-    └──────────────────────────────────────────────────────────────┘
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 30,
+    'rankSpacing': 40
+  }
+}}%%
+flowchart TD
+    subgraph OBD["PRISE VÉHICULE OBD-II (16 BROCHES)"]
+        PIN16["Broche 16 (+12V Batterie)"]
+        PIN6_14["Broches 6 & 14 (Bus CAN Différentiel)"]
+        PIN7["Broche 7 (Ligne K-Line 12V)"]
+    end
+
+    subgraph POWER["ÉTAGE D'ALIMENTATION & PROTECTIONS"]
+        direction TB
+        F1["1. Protection 12V\n• Fusible PPTC F1 (0.5A)\n• TVS D1 (18V / Clamp 29.2V)\n• Anti-inversion Q1/Q2 + Zener D3"]
+        BUCK["2. Régulateur Buck 570 kHz (U4)\n• TPS54331 + Inductance L1 (10µH)\n• Diode Schottky D2"]
+        LDO["3. LDO 3.3V Faible Bruit (U5)\n• LDL1117S33R + Perle Ferrite FB1"]
+        F1 -->|"+12V_PROT"| BUCK
+        BUCK -->|"+5V"| LDO
+    end
+
+    subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
+        CAN_IC["5. Transceiver CAN (U2 - TJA1051T)\n• Terminaison 120Ω déconnectable (JP1)\n• Broche d'adaptation VIO 3.3V"]
+        KLINE_IC["6. Transceiver K-Line (U3 - L9637D)\n• Translation 12V ↔ 3.3V\n• Amortisseurs de ligne R1/R2"]
+    end
+
+    subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
+        ESP["8. ESP32-S3-WROOM-1 (U1)\n• Xtensa LX7 Dual-Core 240 MHz\n• Wi-Fi 2.4 GHz & BLE 5.0 (Antenne PCB)"]
+        PERIPH["Périphériques associés :\n• 7. LED d'état (LED1 / IO2)\n• 9. Découplage HF & Réservoir Bulk (C11)\n• 10. Monitoring Batterie ADC1 (R12/R13, C10)\n• 11. Circuit Reset & Boot (SW1, R15, C12)"]
+    end
+
+    subgraph USB_DEBUG["INTERFACE USB-C & BANC DE TEST"]
+        USBC["4. Port USB-C (J2) + ESD U6/U7"]
+        D4["Alimentation autonome banc :\nDouble diode Schottky anti-retour (D4)"]
+        USBC -->|"+5V VBUS"| D4
+        D4 -.->|Alimentation banc| BUCK
+        USBC <-->|"USB D+ / D-"| ESP
+    end
+
+    PIN16 --> F1
+    PIN6_14 <==>|"Lignes CANH / CANL"| CAN_IC
+    PIN7 <==>|"Ligne K-Line (12V)"| KLINE_IC
+
+    LDO -->|"+3.3V Logique"| ESP
+    LDO -->|"+3.3V Logique"| CAN_IC
+    LDO -->|"+3.3V Logique"| KLINE_IC
+    BUCK -->|"+5V VCC"| CAN_IC
+
+    CAN_IC <==>|"Bus TWAI"| ESP
+    KLINE_IC <==>|"Liaison UART"| ESP
 ```
 
 ---
@@ -79,15 +84,27 @@ Le circuit imprimé est découpé en **11 blocs fonctionnels interconnectés**, 
 
 ### Bloc 1 : Protection 12V & Polarité (`F1`, `D1`, `Q1`, `Q2`, `R5`, `R7`, `D3`, `R14`)
 
-```
-   +12V OBD (Pin 16) ────► [ Fusible F1 ] ──┬──► [ P-MOSFET Q1 (Source) ] ──► +12V_PROT (Drain)
-                             (0.5A PPTC)    │          ▲
-                                            │          │ [ D3 (Zener 12V) // R7 (10k) ]
-                                            │          ▼
-                                        [ D1 ]    [ R14 (10k) ] (limiteur courant)
-                                        (TVS 18V)      │
-                                            │          ▼
-                                           GND    [ N-MOSFET Q2 ] ◄── Polarisation R5
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 25,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    IN["+12V OBD (Pin 16)"] --> F1["Fusible PPTC F1\n(0.5A)"]
+    F1 --> Q1_S["P-MOSFET Q1\nSource (+12V_FUSED)"]
+    Q1_S --> Q1_D["P-MOSFET Q1\nDrain (+12V_PROT)"]
+    F1 --> D1["TVS D1 (18V)"] --> GND1["GND"]
+    Q1_S --- D3_R7["D3 (Zener 12V) // R7 (10k)"] --- Q1_G["Grille Q1 (GATE_PMOS)"]
+    Q1_G --> R14["R14 (10k)"] --> Q2_D["Drain Q2"]
+    Q2_S["Source Q2"] --> GND2["GND"]
+    IN -.->|Polarisation R5| Q2_G["Grille Q2"]
 ```
 
 * **Fusible Réarmable PPTC `F1` (0.5A - `MF-MSMF050-2`) :**
@@ -113,17 +130,23 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
   > **P_dissipée = (Vin - Vout) × I = (12V - 5V) × 0.5A = 3.5 Watts !**
 * Le **convertisseur Buck (`U4` - TPS54331DR)** découpe la tension à haute fréquence (**570 kHz**) avec un rendement supérieur à **85%**.
 
-```
-                        Inductance L1 (10µH)
-                     ┌───── 3000000 ─────┐
-                     │                   │
-  VIN (12V) ──► [ Interrupteur ] ──┬─────┴───────────────► Sortie +5V
-                Interne U4 (PH)    │                         │
-                                   ▼                         ▼
-                                [ D2 ] (Schottky)       [ C8 ] (22µF)
-                                 Roue libre              Filtrage
-                                   │                         │
-                                  GND                       GND
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    VIN["VIN (+12V_PROT)"] --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
+    U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
+    U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
+    VOUT --> C8["Condensateur C8\n(22 µF Filtrage)"] --> GND2["GND"]
 ```
 
 * **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée.
@@ -141,12 +164,23 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
 
 Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S3 et son transceiver RF 2.4 GHz exigent une tension exempte de perturbations.
 
-```
-  +5V (Buck) ──► [ Régulateur LDO U5 ] ──► [ Perle Ferrite FB1 ] ──┬──► Rail Logique +3.3V
-                 (LDL1117S33R : 1.2A)       (Filtre bruit HF)     │
-                                                               [ C6 ] (1µF)
-                                                                  │
-                                                                 GND
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    V5["+5V (Buck)"] --> U5["Régulateur LDO U5\n(LDL1117S33R 1.2A)"]
+    U5 -->|3.3V_PRE| FB1["Perle Ferrite FB1\n(120Ω @ 100MHz)"]
+    FB1 --> V33["Rail Logique +3.3V"]
+    V33 --> C6["Condensateur C6\n(1 µF Filtrage)"] --> GND["GND"]
 ```
 
 * **Régulateur Linéaire LDO `U5` (`LDL1117S33R` - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB.
@@ -157,23 +191,46 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
 
 ### Bloc 4 : USB-C, Alimentation Banc & Protections ESD (`J2`, `D4`, `U6`, `U7`, `R3`, `R4`)
 
-```
-       Prise USB-C (J2)                     Protections ESD             ESP32-S3 (U1)
-  ┌─────────────────────────┐             ┌─────────────────┐         ┌───────────────┐
-  │ Broche A6/B6 (D+) ──────┼──────────┬──┤ U6 (SD05C TVS)  │────────►│ IO20 (USB D+) │
-  │                         │          │  └────────┬────────┘         │               │
-  │ Broche A7/B7 (D-) ──────┼────┬─────┼──┤ U7 (SD05C TVS)  │────────►│ IO19 (USB D-) │
-  │                         │    │     │  └────────┬────────┘         └───────────────┘
-  │ Broches A5 (CC1) ──[R3]─┼─┐  │     │           │
-  │ Broches B5 (CC2) ──[R4]─┼─┤  │     │          GND
-  │              (5.1 kΩ)   │ │  │     │
-  │                         │ ▼  ▼     ▼
-  │ Broches VBUS (5V) ──────┼──────────────────┬──► TP1 (VBUS_5V)
-  └─────────────────────────┘                  │
-                                         [ D4 (BAT54CW) ] (Double Schottky Anodes 1 & 2 en //)
-                                               │ (Cathode commune Pin 3)
-                                               ▼
-                                         Rail interne +5V (Vers LDO U5, CAN U2, etc.)
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    subgraph USBC["PRISE USB-C (J2)"]
+        DP["A6/B6 (D+)"]
+        DM["A7/B7 (D-)"]
+        CC1["A5 (CC1)"]
+        CC2["B5 (CC2)"]
+        VBUS["VBUS (5V)"]
+    end
+
+    subgraph PROT["PROTECTIONS ESD & CONFIG"]
+        U6["TVS U6 (SD05C)"]
+        U7["TVS U7 (SD05C)"]
+        R3["R3 (5.1 kΩ)"]
+        R4["R4 (5.1 kΩ)"]
+        D4["Diode Schottky D4 (BAT54CW)\nDouble Cathode Commune"]
+    end
+
+    subgraph MCU["ESP32-S3 (U1)"]
+        IO20["IO20 (USB D+)"]
+        IO19["IO19 (USB D-)"]
+    end
+
+    DP --> U6 --> IO20
+    DM --> U7 --> IO19
+    CC1 --> R3 --> GND1["GND"]
+    CC2 --> R4 --> GND2["GND"]
+    VBUS --> D4 --> V5["Rail Interne +5V"]
+    VBUS --> TP1["Pad Test TP1 (VBUS_5V)"]
 ```
 
 * **Diode Schottky Double Cathode Commune `D4` (`BAT54CW` - SOT-323 / LCSC `C962771`) :**
@@ -187,21 +244,50 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
 
 ### Bloc 5 : Transceiver CAN (TJA1051T - 120R & Cavalier) (`U2`, `R8`, `JP1`)
 
-```
-   ESP32 (TWAI Controller)              Transceiver CAN U2                  Prise OBD-II
-  ┌───────────────────────┐            ┌──────────────────┐               ┌──────────────┐
-  │ IO37 (TXD) ───────────┼───────────►│ Pin 1 (TXD)      │               │              │
-  │                       │            │       Pin 7 (CANH) ───┬─────────►│ Broche 6     │
-  │ IO36 (RXD) ◄──────────┼────────────┤ Pin 4 (RXD)      │   [ R8 ]      │              │
-  │                       │            │                  │  (120 Ω)      │              │
-  │                       │            │                  │    │          │              │
-  │                       │            │                  │  [ JP1 ]      │              │
-  │                       │            │                  │ (Cavalier)    │              │
-  │                       │            │       Pin 6 (CANL) ───┴─────────►│ Broche 14    │
-  └───────────────────────┘            │                  │               └──────────────┘
-                                       │ Pin 5 (VIO=3.3V) │  Terminaison
-                                       │ Pin 3 (VCC=5.0V) │  déconnectable
-                                       └──────────────────┘
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    subgraph MCU["ESP32-S3 (TWAI)"]
+        TXD["IO37 (TXD)"]
+        RXD["IO36 (RXD)"]
+    end
+
+    subgraph CAN_IC["TRANSCEIVER CAN U2 (TJA1051T)"]
+        PIN_TX["Pin 1 (TXD)"]
+        PIN_RX["Pin 4 (RXD)"]
+        PIN_CANH["Pin 7 (CANH)"]
+        PIN_CANL["Pin 6 (CANL)"]
+    end
+
+    subgraph TERM["TERMINAISON DÉCONNECTABLE"]
+        R8["Résistance R8 (120 Ω)"]
+        JP1{"Cavalier JP1\n• Ouvert : Voiture\n• Fermé : Banc"}
+    end
+
+    subgraph OBD_CONN["PRISE OBD-II (J1)"]
+        PIN6["Broche 6 (CAN High)"]
+        PIN14["Broche 14 (CAN Low)"]
+    end
+
+    TXD --> PIN_TX
+    PIN_RX --> RXD
+
+    PIN_CANH --- R8
+    R8 --- JP1
+    JP1 --- PIN_CANL
+
+    PIN_CANH <==> PIN6
+    PIN_CANL <==> PIN14
 ```
 
 * **Principe Différentiel (`CANH` et `CANL`) :**
@@ -217,18 +303,42 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
 
 ### Bloc 6 : Transceiver K-Line (L9637D) (`U3`, `R1`, `R2`)
 
-```
-   ESP32 (UART)                        Transceiver K-Line U3               Prise OBD-II
-  ┌─────────────────────┐            ┌──────────────────────┐             ┌──────────────┐
-  │ IO5 (TX) ──► [ R2 ] ─┼───────────►│ Pin 4 (TX)           │             │              │
-  │              (10 Ω) │            │                      │             │              │
-  │ IO4 (RX) ◄── [ R1 ] ─┼────────────┤ Pin 1 (RX)           │             │              │
-  │              (10 Ω) │            │                      │             │              │
-  └─────────────────────┘            │ Pin 6 (K) ───────────┼────────────►│ Broche 7     │
-                                     │                      │             │ (Ligne K 12V)│
-                                     │ Pin 7 (VS = 12V)     │             └──────────────┘
-                                     │ Pin 3 (VCC = 3.3V)   │
-                                     └──────────────────────┘
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    subgraph MCU["ESP32-S3 (UART)"]
+        MCU_TX["IO5 (TX)"]
+        MCU_RX["IO4 (RX)"]
+    end
+
+    subgraph DAMPING["AMORTISSEMENT SÉRIE"]
+        R2["R2 (10 Ω)"]
+        R1["R1 (10 Ω)"]
+    end
+
+    subgraph K_IC["TRANSCEIVER K-LINE U3 (L9637D)"]
+        K_TX["Pin 4 (TX)"]
+        K_RX["Pin 1 (RX)"]
+        K_PIN["Pin 6 (K-Line 12V)"]
+    end
+
+    subgraph OBD_CONN["PRISE OBD-II (J1)"]
+        PIN7["Broche 7 (Ligne K 12V)"]
+    end
+
+    MCU_TX --> R2 --> K_TX
+    K_RX --> R1 --> MCU_RX
+    K_PIN <==> PIN7
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas, 12V = haut).
@@ -266,14 +376,24 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
 
 ### Bloc 10 : Monitoring Tension Batterie (`R12`, `R13`, `C10`)
 
-```
-   +12V_PROT ──► [ R12: 100 kΩ ] ──┬──► VBAT_SENSE ──► ESP32-S3 Pin 39 (IO1 / ADC1_CH0)
-                                    │
-                                 [ R13: 20 kΩ ]
-                                    │
-                                 [ C10: 100 nF ] (Filtrage HF & réservoir ADC)
-                                    │
-                                   GND
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart LR
+    VBAT["+12V_PROT\n(Protégé F1/Q1)"] --> R12["R12 (100 kΩ)"]
+    R12 --> SENSE(("VBAT_SENSE\n(Ratio 1/6 : 0-3.0V)"))
+    SENSE --> R13["R13 (20 kΩ)"] --> GND1["GND"]
+    SENSE --> C10["C10 (100 nF)\nFiltre Passe-Bas 95 Hz"] --> GND2["GND"]
+    SENSE ==> ADC["ESP32-S3 Pin 39\nIO1 (Canal ADC1_CH0)"]
 ```
 
 * **Pont Diviseur (Ratio 1/6) :**
@@ -289,23 +409,28 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
 
 ### Bloc 11 : Circuit de Reset Sécurisé & Bootloader (`SW1`, `R15`, `C12`, `TP10`, `TP11`)
 
-```
-                 +3.3V (Rail logique)
-                   │
-                   [ R15 : 10 kΩ ]  (Pull-up externe franc)
-                   │
-                   ├─────────────────────────► Broche EN (Pin 3 ESP32-S3)
-                   │
-                   ├─────────────────┬────────────────┐
-                   │                 │                │
-                 [ C12 ]             │             [ TP11 ]
-                 (1 µF)            ┌─┴─┐          (Pad test EN)
-                   │               │ O │  Bouton RESET (SW1)
-                   │               └─┬─┘
-                   │                 │
-                   └────────┬────────┘
-                            │
-                           GND
+```mermaid
+%%{init: {
+  'themeVariables': {
+    'fontFamily': 'Consolas, "Courier New", monospace',
+    'fontSize': '12px'
+  },
+  'flowchart': {
+    'curve': 'stepBefore',
+    'nodeSpacing': 20,
+    'rankSpacing': 30
+  }
+}}%%
+flowchart TD
+    VCC["+3.3V"] --> R15["R15 (10 kΩ)"]
+    R15 --> EN_NODE(("Ligne EN / CHIP_PU"))
+    EN_NODE --> C12["C12 (1 µF)\nTemporisation RC 10ms"] --> GND1["GND"]
+    EN_NODE --> SW1["Bouton Tactile Reset SW1\n(Trou d'épingle)"] --> GND2["GND"]
+    EN_NODE --> TP11["Point de Test EN (TP11)"]
+    EN_NODE ==> MCU_EN["ESP32-S3 Pin 3 (EN)"]
+
+    IO0_NODE(("Ligne IO0 / Strapping")) --> TP10["Point de Test IO0 (TP10)\n(Relier à GND au reset pour Boot ROM)"]
+    IO0_NODE ==> MCU_IO0["ESP32-S3 Pin 27 (IO0)"]
 ```
 
 * **Temporisation Power-On-Reset `R15` (10 kΩ) & `C12` (1 µF) :** Constante de temps `τ = 10 ms` garantissant que le rail 3.3V est parfaitement établi avant le réveil de l'ESP32.
