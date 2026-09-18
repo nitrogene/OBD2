@@ -26,3 +26,10 @@
 5. Exporter `ProPrj_ODB2-Scanner.epro2` via les skills easyeda-api.
 6. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
 7. Commit et push **uniquement** après accord explicite sur le message de commit.
+
+## 5. Dépouillement des Revues Techniques (`review.md`)
+- **Détection active :** Si le fichier `review.md` contient du texte non vide (revue de schéma, PCB, routage ou code firmware) :
+  1. **Analyse & Synthèse :** L'agent doit analyser le contenu, trier les remarques par ordre de criticité (Bloquant / Important / Mineur) et identifier les impacts concrets sur le projet.
+  2. **Arbitrage interactif :** Présenter une synthèse à l'utilisateur et échanger avec lui pour valider, amender ou écarter chaque point (faisabilité, encombrement, catalogue LCSC, choix d'architecture).
+  3. **Intégration au TODO :** Après accord explicite de l'utilisateur, convertir les points retenus en cases à cocher actionnables (`- [ ] ...`) dans la section appropriée de la checklist de `TODO.md`.
+  4. **Purge du sas :** Vider intégralement `review.md` une fois l'intégration actée afin de laisser le fichier prêt pour la revue suivante.
