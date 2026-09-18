@@ -84,8 +84,19 @@ flowchart TD
 
 ## 3. Visuels du Projet
 
-### Schéma Électronique
-![Schéma ODB2 Scanner](./images/Schematic.png)
+### Schéma Électronique Modulaire (4 Blocs Fonctionnels)
+
+#### 1. Étage d'Alimentation & Protections 12V
+![Schéma Alimentation](./images/SCH_Alimentation.png)
+
+#### 2. Transceiver CAN (TJA1051T & Terminaison 120Ω)
+![Schéma Transceiver CAN](./images/SCH_Transceiver%20CAN.png)
+
+#### 3. Transceiver K-Line (L9637D Daewoo Kalos)
+![Schéma Transceiver K-Line](./images/SCH_Transceiver%20K-Line.png)
+
+#### 4. Microcontrôleur ESP32-S3 & Périphériques
+![Schéma ESP32](./images/SCH_ESP32.png)
 
 ### Circuit Imprimé (PCB)
 ![PCB ODB2 Scanner](./images/PCB.png)
@@ -97,9 +108,9 @@ flowchart TD
 
 ## 4. État Actuel (work in progress) & Prochaine Étape
 
-* **Schématique :** Validé à 100% sous EasyEDA Pro (feuille `P1`, 58 composants, ERC strict = 0).
-* **Placement PCB :** Placement 2D validé pour l'ensemble des composants avec connecteur OBD-II `J1` coudé à 90°, prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm).
-* **Prochaine étape immédiate :** Traiter les derniers points de revue (arbitrage des valeurs du pont diviseur batterie `R12`/`R13`, protections ESD sur les lignes OBD) puis synchroniser la netlist Schéma → PCB pour engager le routage des pistes.
+* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), ERC strict = 0 sous EasyEDA Pro.
+* **Placement PCB :** Placement 2D validé pour l'ensemble des composants avec connecteur OBD-II `J1` coudé à 90°, prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm), DRC = 0.
+* **Prochaine étape immédiate :** Traiter les derniers points de revue (arbitrage pont diviseur batterie `R12`/`R13`, ajout protections ESD `U8`/`D5`) puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
 
 ---
 
