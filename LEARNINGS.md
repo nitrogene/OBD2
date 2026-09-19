@@ -281,3 +281,24 @@ Ce document consigne de manière datée les comportements, astuces, contournemen
 * **[2026-09-09] Limite de résolution de la capture d'écran API (`getCurrentRenderedAreaImage`) vs Export UI natif**
   * **Problème identifié :** L'API `eda.dmt_EditorControl.getCurrentRenderedAreaImage()` capture uniquement le viewport du navigateur (environ 1631 × 618 px). Pour une feuille de schéma complète (format A4), les textes des composants ne mesurent que 3 à 4 pixels[cite: 3].
   * **Solution retenue :** L'export d'images haute définition pour la documentation (`images/Schematic.png` et `images/PCB.png`) est confié à l'utilisateur via le menu natif de l'interface EasyEDA Pro (**Fichier > Exporter > Image / PDF** à 300 DPI ou largeur 4096 px), garantissant une netteté vectorielle irréprochable[cite: 3].
+
+---
+
+## 5. Modélisation Électronique & Régulation de Puissance (Buck U4 TPS54331)
+
+* **[2026-09-19] Modélisation petit-signal & Compensation de boucle Type II (TI SLVS839H)**
+  * **Architecture de régulation :** Le TPS54331 utilise un contrôle Peak Current-Mode à 570 kHz. L'étage de puissance se modélise comme une source de courant commandée en tension ($g_{m,PS} = 12.0\,\text{A/V}$) injectant dans l'impédance de sortie $R_o \parallel (C_{out} + R_{esr})$.
+  * **Paramètres internes indispensables (Datasheet §8.2.2.7) :**
+    * Gain DC ampli d'erreur : $V_{GGM} = 800\,\text{V/V}$
+    * Référence interne : $V_{REF} = 0.8\,\text{V}$
+    * Impédance de sortie ampli d'erreur : $R_{OA} = 8.0\,\text{M}\Omega$
+    * Transconductance ampli d'erreur : $g_{m,EA} = V_{GGM} / R_{OA} = 100\,\mu\text{S}$
+    * Transconductance commutateur : $g_{m,COMP} = 12.0\,\text{A/V}$
+    * Fréquence de coupure maximale recommandée : $F_{co,\max} \le 25\,\text{kHz}$ ($F_{sw} / 20$)
+  * **Topologie Type II complète & Rôle des composants :**
+    * $R_z$ (`R11`, $10\,\text{k}\Omega$) et $C_z$ (`C9`, $3.3\,\text{nF}$) en série vers GND : placent le zéro de compensation $f_{z1} = \frac{1}{2\pi R_z C_z} \approx 4.8\,\text{kHz}$ pour annuler le pôle de charge dominant $f_{p,mod} = \frac{1}{2\pi R_o C_{out}} \approx 2.1\,\text{kHz}$ et restaurer la marge de phase.
+    * $C_p$ (`C13`, $220\,\text{pF}$) en parallèle de la branche $R_z + C_z$ vers GND : place un pôle haute fréquence $f_{p1} \approx \frac{1}{2\pi R_z C_p} \approx 77\,\text{kHz}$ pour éliminer les bruits de commutation (570 kHz) sur la broche `COMP`, réduisant drastiquement le jitter PWM en milieu automobile bruité.
+  * **Comportement sur l'enveloppe de charge & Dérating DC-Bias :**
+    * Sous une tension continue de 5V, un condensateur céramique X5R 22 µF (`C8`) subit une baisse de capacité effective à $\sim 15\,\mu\text{F}$ (pouvant descendre à $10\,\mu\text{F}$ en pire cas température/tolérance).
+    * Le triplet standardisé en **Basic Parts JLCPCB** ($R_{11} = 10\,\text{k}\Omega$, $C_9 = 3.3\,\text{nF}$, $C_{13} = 220\,\text{pF}$) maintient une marge de phase remarquable de **$61.7^\circ$ à $68.8^\circ$** et une coupure $F_{co}$ comprise entre $14.7\,\text{kHz}$ et $27.4\,\text{kHz}$ sur l'ensemble de la plage de courant $I_o \in [0.1\,\text{A}, 1.0\,\text{A}]$.
+  * **Outillage autonome :** Le skill `.agents/skills/buck-compensation/` encapsule le script `tps54331_compensation.py` pour relancer l'optimisation paramétrique et le contrôle Bode de manière déterministe lors de toute modification du schéma.

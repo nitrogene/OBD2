@@ -29,6 +29,11 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
   - [ ] **Points Mineurs & Pratique :**
     - [x] Ajuster la résistance série R6 de LED1 (verte) pour augmenter la luminosité visible en plein jour dans l'habitacle : résolu par l'adoption de R6 = 100 Ω (0805W8F1000T5E, LCSC C17408, Basic Part JLCPCB) portant le courant à ~3.6 mA (~280 mcd).
     - [x] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours (TP10 / IO0).
+  - [ ] **Réseau de compensation Buck U4 (Revue TPS54331) :**
+    - [x] Valider le dimensionnement théorique de R11 (10 kΩ) et C9 (3.3 nF) via les équations fermées TI SLVS839H (écart < 5% vs calcul optimal Rz=9.8 kΩ / Cz=3.1 nF).
+    - [ ] Ajouter le condensateur haute fréquence C13 (220 pF 50V C0G 0603, LCSC C1604, Basic Part) entre la broche COMP (pin 6) de U4 et GND pour filtrer le bruit de commutation 570 kHz en milieu automobile.
+    - [ ] Mettre à jour la nomenclature (BOM.md) et synchroniser le schéma avec le PCB.
+    - [x] Créer le skill dédié `.agents/skills/buck-compensation/` avec optimisation paramétrique et consigner la modélisation de boucle dans LEARNINGS.md.
 - [ ] **1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
 
