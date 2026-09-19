@@ -25,9 +25,9 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [x] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) avec anodes 1 et 2 reliées à VBUS_5V et cathode commune reliée à +5V pour l'alimentation autonome USB et la protection anti-retour.
     - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA) : résolu par l'ajout de C11 (10 µF 25V X5R 0805 Samsung CL21A106KAYNNNE / C15850, Basic Part).
     - [x] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 1 µF vers GND contre les resets intempestifs en environnement bruité (R15, C12, SW1, TP11).
-    - [ ] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1.
+    - [x] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1 : résolu par l'ajout de U8 (double TVS 24V NUP2105LT1G en SOT-23 sur CANH/CANL) et D5 (TVS 24V SMF24CA en SOD-123FL sur K_LINE).
   - [ ] **Points Mineurs & Pratique :**
-    - [ ] Ajuster la résistance série R6 de LED1 (verte) pour augmenter la luminosité visible en plein jour dans l'habitacle.
+    - [x] Ajuster la résistance série R6 de LED1 (verte) pour augmenter la luminosité visible en plein jour dans l'habitacle : résolu par l'adoption de R6 = 100 Ω (0805W8F1000T5E, LCSC C17408, Basic Part JLCPCB) portant le courant à ~3.6 mA (~280 mcd).
     - [x] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours (TP10 / IO0).
 - [ ] **1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
@@ -51,7 +51,7 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 
 - [ ] **3.1 Organisation des 4 blocs fonctionnels :**
   - *Bloc Puissance & Protection (Ouest) :* F1, D1, Q1, Q2, étage Buck (U4, L1, D2, C7, C8, R9, R10, R11, C9) et LDO (U5, FB1, C6).
-  - *Bloc Transceivers & Interfaces (Centre) :* CAN (U2, R8) et K-Line (U3, R1, R2).
+  - *Bloc Transceivers & Interfaces (Centre) :* CAN (U2, R8, JP1, TVS U8) et K-Line (U3, R1, R2, TVS D5).
   - *Bloc USB-C & ESD (Sud-Centre) :* Connecteur horizontal J2, pull-downs R3/R4, diodes ESD U6/U7, point de test TP1.
   - *Bloc Cœur de Calcul & Radio (Est) :* ESP32-S3 (U1) avec son antenne orientée vers le bord extérieur libre.
 - [ ] **3.2 Optimisation du cluster USB Sud :**
@@ -67,7 +67,10 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
   - **Implanter impérativement le condensateur RC `C12` (1 µF) et la résistance pull-up `R15` (10 kΩ) au plus près immédiat de la broche 3 (`EN`) de l'ESP32 `U1` (distance < 2 mm)** pour minimiser la surface de boucle haute impédance et immuniser la ligne contre les bruits RF 2.4 GHz et transitoires automobiles.
   - Positionner le bouton poussoir `SW1` avec orientation et dégagement adaptés pour un alignement propre avec l'orifice trou d'épingle (*pinhole*) prévu sur la coque du boîtier.
   - Positionner le point de test `TP10` (`IO0`) à proximité de la broche 27 de `U1` et proche d'une zone GND pour faciliter la mise à la masse en cas de récupération bootloader.
-- [ ] **3.5 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
+- [ ] **3.5 Optimisation des protections transitoires OBD (U8, D5) :**
+  - Positionner la double diode TVS `U8` au plus près des broches `CANH` (Pin 6) et `CANL` (Pin 14) du connecteur OBD `J1` pour un clamp immédiat avant la terminaison `R8`/`JP1` et le transceiver `U2`.
+  - Positionner la diode TVS `D5` au plus près de la broche `K_LINE` (Pin 7) de `J1` pour dériver les transitoires avant le transceiver `U3` et le point de test `TP2`.
+- [ ] **3.6 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
 
 ---
 

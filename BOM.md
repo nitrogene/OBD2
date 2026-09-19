@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire complet des **58 composants** du projet **Scanner OBD-II ESP32**, extrait directement du projet actif sous EasyEDA Pro (Schéma complet validé DRC / ERC = 0).
+Inventaire complet des **60 composants** du projet **Scanner OBD-II ESP32**, extrait directement du projet actif sous EasyEDA Pro (Schéma complet validé DRC / ERC = 0).
 
 ---
 
@@ -24,6 +24,7 @@ Inventaire complet des **58 composants** du projet **Scanner OBD-II ESP32**, ext
 | **D2** | *—* | SS34_C52023881 | `SMA_L4.3-W2.6-LS5.1-RD` | Diode Schottky 40V 3A de roue libre (Cathode sur PH, Anode sur GND) pour convertisseur Buck `U4` |
 | **D3** | *—* | BZX84C12 | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 |
 | **D4** | BAT54CW | BAT54CW (C962771) | `sot-323-3_l2.0-w1.3-p1.30-ls2.1-br` | Diode Schottky double 30V 2x200mA cathode commune (alimentation autonome USB et protection anti-retour) |
+| **D5** | 24V | SMF24CA (C3117728) | `SOD-123FL_L2.8-W1.8-LS3.7-BI` | Diode TVS 24V bidirectionnelle protection transitoire ligne K-Line (`K_LINE`) |
 | **F1** | *—* | MF-MSMF050-2 | `F1812` | Fusible réarmable PPTC 0.5A protection ligne 12V |
 | **FB1** | *—* | BLM18PG121SN1D_C14709 | `L0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
 | **J1** | *—* | OBD2-M-90D | `CONN-TH_OBD2` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
@@ -38,7 +39,7 @@ Inventaire complet des **58 composants** du projet **Scanner OBD-II ESP32**, ext
 | **R3** | 5.1kΩ | 0805W8F5101T5E | `R0805` | Résistance pull-down USB-C configuration CC1 |
 | **R4** | 5.1kΩ | 0805W8F5101T5E | `R0805` | Résistance pull-down USB-C configuration CC2 |
 | **R5** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance de polarisation grille N-MOSFET Q2 |
-| **R6** | 1.8kΩ | FRC0805J182 TS | `R0805` | Résistance de limitation de courant LED1 (0.67 mA) |
+| **R6** | 100Ω | 0805W8F1000T5E (C17408) | `R0805` | Résistance de limitation de courant LED1 (3.6 mA, visibilité plein jour) |
 | **R7** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance de maintien pull-up grille P-MOSFET Q1 |
 | **R8** | 120Ω | 0805W8F1200T5E | `R0805` | Résistance de terminaison de ligne différentielle CAN |
 | **R9** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance haute pont diviseur feedback Buck `U4` (rail 5V vers VSENSE) |
@@ -67,6 +68,7 @@ Inventaire complet des **58 composants** du projet **Scanner OBD-II ESP32**, ext
 | **U5** | *—* | LDL1117S33R | `SOT-223-4_L6.5-W3.5-P2.30-LS7.0-BR` | Régulateur linéaire LDO 5V → 3.3V faible bruit, 1.2A |
 | **U6** | *—* | SD05C_C53238084 | `SOD-323_L1.7-W1.3-LS2.5-BI` | Diode ESD bidirectionnelle protection ligne USB D+ |
 | **U7** | *—* | SD05C_C53238084 | `SOD-323_L1.7-W1.3-LS2.5-BI` | Diode ESD bidirectionnelle protection ligne USB D- |
+| **U8** | 24V | NUP2105LT1G (C5983786) | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode double TVS 24V bidirectionnelle protection transitoire/ESD bus CAN (`CANH`/`CANL`) |
 
 ---
 
@@ -77,4 +79,5 @@ Afin de réduire les coûts d'assemblage CMS automatisé chez JLCPCB (suppressio
 * **`C7` (10 µF 50V 1206) :** `CL31A106KBHNNNE` (LCSC `C14236`) — Basic Part
 * **`C11` (10 µF 25V 0805) :** `CL21A106KAYNNNE` (LCSC `C15850`) — Basic Part
 * **`C12` (1 µF 50V 0603) :** `CL10A105KB8NNNC` (LCSC `C15849`) — Basic Part
+* **`R6` (100 Ω 0805) :** `0805W8F1000T5E` (LCSC `C17408`) — Basic Part
 * **`R15` (10 kΩ 0805) :** `0805W8F1002T5E` (LCSC `C17414`) — Basic Part

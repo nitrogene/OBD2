@@ -48,8 +48,8 @@ flowchart TD
     end
 
     subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
-        CAN_IC["5. Transceiver CAN (U2 - TJA1051T)\n• Terminaison 120Ω déconnectable (JP1)\n• Broche d'adaptation VIO 3.3V"]
-        KLINE_IC["6. Transceiver K-Line (U3 - L9637D)\n• Translation 12V ↔ 3.3V\n• Amortisseurs de ligne R1/R2"]
+        CAN_IC["5. Transceiver CAN (U2 - TJA1051T) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8 (NUP2105L)\n• Broche d'adaptation VIO 3.3V"]
+        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Protection transitoire/ESD D5 (SMF24CA)\n• Amortisseurs de ligne R1/R2"]
     end
 
     subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
@@ -242,7 +242,7 @@ flowchart LR
 
 ---
 
-### Bloc 5 : Transceiver CAN (TJA1051T - 120R & Cavalier) (`U2`, `R8`, `JP1`)
+### Bloc 5 : Transceiver CAN (TJA1051T) & Protection ESD (`U2`, `U8`, `R8`, `JP1`)
 
 ```mermaid
 %%{init: {
@@ -274,6 +274,10 @@ flowchart LR
         JP1{"Cavalier JP1\n• Ouvert : Voiture\n• Fermé : Banc"}
     end
 
+    subgraph PROT_CAN["PROTECTION TRANSITOIRE / ESD"]
+        U8["Double TVS U8 (NUP2105LT1G)\n• Broche 1 : CANH\n• Broche 2 : CANL\n• Broche 3 : GND"]
+    end
+
     subgraph OBD_CONN["PRISE OBD-II (J1)"]
         PIN6["Broche 6 (CAN High)"]
         PIN14["Broche 14 (CAN Low)"]
@@ -286,14 +290,22 @@ flowchart LR
     R8 --- JP1
     JP1 --- PIN_CANL
 
-    PIN_CANH <==> PIN6
-    PIN_CANL <==> PIN14
+    PIN_CANH <==> U8
+    PIN_CANL <==> U8
+    U8 --> GND_CAN["GND"]
+
+    U8 <==> PIN6
+    U8 <==> PIN14
 ```
 
 * **Principe Différentiel (`CANH` et `CANL`) :**
   * Bit récessif (1) : CANH = 2.5V, CANL = 2.5V (différence = 0V).
   * Bit dominant (0) : CANH = 3.5V, CANL = 1.5V (différence = +2.0V).
   * Tout parasite affecte identiquement les deux lignes et s'annule par soustraction différentielle.
+* **Double Diode TVS Bidirectionnelle `U8` (`NUP2105LT1G` - SOT-23 / LCSC `C5983786` / `C14486`) :**
+  * *Rôle frontière :* Implantée au plus près des broches 6 et 14 du connecteur `J1`, elle dérive immédiatement vers la masse `GND` les décharges électrostatiques (jusqu'à ±30 kV contact/air selon IEC 61000-4-2) et les surtensions transitoires du faisceau véhicule avant qu'elles n'atteignent le transceiver `U2`.
+  * *Tension de maintien $V_{RWM} = 24\text{ V}$ :* Tolère sans conduction les excursions de mode commun automobile (-12V à +12V) et les anomalies 24V.
+  * *Capacité parasite ultra-faible ($< 10\text{ pF}$ à $30\text{ pF}$) :* Préserve l'intégrité des fronts rapides du bus CAN haute vitesse jusqu'à 1 Mbps.
 * **Résistance de Terminaison `R8` (120 Ω) & Cavalier Sélecteur `JP1` :**
   * *En voiture (prise OBD-II) :* Le réseau automobile possède déjà ses deux terminaisons de 120 Ω (60 Ω équivalents). **Le cavalier JP1 reste ouvert (SANS shunt)**.
   * *Sur banc de test / simulateur :* Aucun terminateur sur table. **On place un cavalier standard 2.54 mm sur JP1** pour activer R8.
@@ -301,7 +313,7 @@ flowchart LR
 
 ---
 
-### Bloc 6 : Transceiver K-Line (L9637D) (`U3`, `R1`, `R2`)
+### Bloc 6 : Transceiver K-Line (L9637D) & Protection ESD (`U3`, `D5`, `R1`, `R2`)
 
 ```mermaid
 %%{init: {
@@ -332,16 +344,26 @@ flowchart LR
         K_PIN["Pin 6 (K-Line 12V)"]
     end
 
+    subgraph PROT_K["PROTECTION TRANSITOIRE"]
+        D5["TVS D5 (SMF24CA)\n24V Bidirectionnelle"]
+    end
+
     subgraph OBD_CONN["PRISE OBD-II (J1)"]
         PIN7["Broche 7 (Ligne K 12V)"]
     end
 
     MCU_TX --> R2 --> K_TX
     K_RX --> R1 --> MCU_RX
-    K_PIN <==> PIN7
+    K_PIN <==> D5
+    D5 --> GND_K["GND"]
+    D5 <==> PIN7
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas, 12V = haut).
+* **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C3117728` / `C2843513`) :**
+  * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
+  * *Tension de maintien $V_{RWM} = 24\text{ V}$ :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
+  * *Tension d'avalanche $V_{BR} = 26.7\text{ V}$ et serrage crête $V_{CL} = 38.9\text{ V}$ (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
 * **Transceiver Dédié `U3` (`L9637D013TR`) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique.
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 
@@ -349,9 +371,9 @@ flowchart LR
 
 ### Bloc 7 : LED d'État (`LED1`, `R6`)
 
-* **LED Verte `LED1` (0603) & Résistance `R6` (1.8 kΩ) :** Pilotée par la broche `IO2` du microcontrôleur.
-* **Courant de Fonctionnement :**
-  > **I_LED = (3.3V - 2.1V) / 1 800 Ω ≈ 0.67 mA** (visibilité nette, échauffement nul).
+* **LED Verte `LED1` (0603) & Résistance `R6` (100 Ω) :** Pilotée par la broche `IO2` du microcontrôleur (compatible modulation PWM matérielle via périphérique LEDC).
+* **Courant de Fonctionnement & Visibilité Diurne :**
+  > **I_LED = (3.30V - 2.85V) / (100 Ω + 25 Ω) ≈ 3.6 mA** (luminosité de ~280 mcd pour une visibilité franche en plein jour dans l'habitacle ; dissipation thermique de R6 négligeable à ~1.3 mW pour un boîtier 0805 de 125 mW).
 
 ---
 
@@ -454,6 +476,8 @@ flowchart TD
 | **Parasites d'allumage moteur sur bus CAN** | Trames de diagnostic corrompues ou illisibles | Transmission différentielle symétrique + terminaison | Transceiver CAN `U2` + Terminaison `R8`/`JP1` |
 | **Signaux 12V de la ligne K-Line Daewoo** | Destruction des broches MCU limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line `U3` + `R1`, `R2` |
 | **Décharges électrostatiques (ESD) USB** | Claquage des broches USB internes du silicium | Dérivation des pointes 30 kV en < 1 ns | Diodes ESD bidirectionnelles `U6`, `U7` |
+| **Décharges statiques & transitoires bus CAN** | Claquage différentiel des entrées transceiver U2 | Écrêtage bidirectionnel 24V ultra-rapide (< 10 pF) | Double TVS 24V `U8` (`NUP2105LT1G`) |
+| **Décharges statiques & transitoires K-Line** | Claquage de l'étage de sortie haute tension U3 | Dérivation des pointes transitoires 24V à la masse | Diode TVS 24V `D5` (`SMF24CA`) |
 | **Négociation de charge USB Type-C** | Absence de tension 5V délivrée par le chargeur | Détection automatique d'appareil consommateur (Sink) | Résistances pull-down 5.1 kΩ `R3`, `R4` |
 | **Alimentation sur banc & anti-retour USB** | Refoulement 5V Buck vers le PC ou banc impossible | Diode Schottky double à cathode commune | Diode Schottky `D4` (`BAT54CW`) |
 
@@ -478,20 +502,20 @@ flowchart TD
 | **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3)`, `R15(1)`, `TP6` | Rail logique 3.3V purifié pour l'ESP32 et les transceivers. | Alimentation / Rail 3.3V |
-| **`GND`** | Plans de masse, blindages, condensateurs, transceivers | Potentiel de référence zéro volt (0V) commun. | Référence / Masse |
+| **`GND`** | Plans de masse, blindages, condensateurs, transceivers, `U8(3)`, `D5(2)` | Potentiel de référence zéro volt (0V) commun. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
-| **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (0.67 mA) vers l'anode de la LED verte. | Interface / Statut |
+| **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)`, `R3(1)` | Ligne de configuration USB-C canal 1 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)`, `R4(1)` | Ligne de configuration USB-C canal 2 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_D+`** | `J2(A6,B6)`, `U6(1)`, `U1(14)` (`IO20`) | Ligne de données différentielle USB positive. | Interface / USB-C |
 | **`USB_D-`** | `J2(A7,B7)`, `U7(1)`, `U1(13)` (`IO19`) | Ligne de données différentielle USB négative. | Interface / USB-C |
-| **`CANH`** | `U2(7)`, `R8(1)`, OBD-II (Pin 6), `TP7` | Ligne de bus CAN différentielle niveau haut. | Communication / CAN |
+| **`CANH`** | `U2(7)`, `R8(1)`, `U8(1)`, OBD-II (Pin 6), `TP7` | Ligne de bus CAN différentielle niveau haut protégée ESD. | Communication / CAN |
 | **`CAN_TERM_MID`** | `R8(2)`, `JP1(1)` | Nœud série entre la terminaison 120 Ω et le cavalier de sélection. | Communication / CAN |
-| **`CANL`** | `U2(6)`, `JP1(2)`, OBD-II (Pin 14), `TP8` | Ligne de bus CAN différentielle niveau bas. | Communication / CAN |
+| **`CANL`** | `U2(6)`, `JP1(2)`, `U8(2)`, OBD-II (Pin 14), `TP8` | Ligne de bus CAN différentielle niveau bas protégée ESD. | Communication / CAN |
 | **`TXD`** | `U1(37)`, `U2(1)` | Émission TWAI 3.3V depuis le SoC vers le transceiver CAN. | Communication / CAN |
 | **`RXD`** | `U1(36)`, `U2(4)` | Réception TWAI 3.3V depuis le transceiver CAN vers le SoC. | Communication / CAN |
-| **`K_LINE`** | `U3(6)`, OBD-II (Pin 7), `TP2` | Ligne de communication bidirectionnelle automobile 12V. | Communication / K-Line |
+| **`K_LINE`** | `U3(6)`, `D5(1)`, OBD-II (Pin 7), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS. | Communication / K-Line |
 | **`K_RX_IC`** | `U3(1)`, `R1(1)` | Réception 3.3V du transceiver K-Line avant résistance d'amortissement. | Communication / K-Line |
 | **`UART_RX_MCU`** | `R1(2)`, `U1(4)` (`IO4`) | Signal de réception UART amorti arrivant sur l'ESP32. | Communication / K-Line |
 | **`K_TX_IC`** | `U3(4)`, `R2(1)` | Émission vers le transceiver K-Line après résistance d'amortissement. | Communication / K-Line |

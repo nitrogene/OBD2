@@ -50,8 +50,8 @@ flowchart TD
     end
 
     subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
-        CAN_IC["5. Transceiver CAN (U2 - TJA1051T)\n• Terminaison 120Ω déconnectable (JP1)\n• Broche d'adaptation VIO 3.3V"]
-        KLINE_IC["6. Transceiver K-Line (U3 - L9637D)\n• Translation 12V ↔ 3.3V\n• Amortisseurs de ligne R1/R2"]
+        CAN_IC["5. Transceiver CAN (U2 - TJA1051T) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8 (NUP2105L)\n• Broche d'adaptation VIO 3.3V"]
+        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Protection transitoire/ESD D5 (SMF24CA)\n• Amortisseurs de ligne R1/R2"]
     end
 
     subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
@@ -108,9 +108,9 @@ flowchart TD
 
 ## 4. État Actuel (work in progress) & Prochaine Étape
 
-* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), ERC strict = 0 sous EasyEDA Pro.
+* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 60 composants au total avec intégration des protections transitoires/ESD `U8` (CAN) et `D5` (K-Line), résistance `R6` ajustée à 100 Ω pour visibilité LED plein jour, ERC strict = 0 sous EasyEDA Pro.
 * **Placement PCB :** Placement 2D validé pour l'ensemble des composants avec connecteur OBD-II `J1` coudé à 90°, prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm), DRC = 0.
-* **Prochaine étape immédiate :** Traiter les derniers points de revue (arbitrage pont diviseur batterie `R12`/`R13`, ajout protections ESD `U8`/`D5`) puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
+* **Prochaine étape immédiate :** Synchroniser le layout PCB depuis le schéma (`Design > Update PCB`) pour instancier les empreintes de `U8` (SOT-23) et `D5` (SOD-123FL), finaliser le placement au plus près de `J1`, puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
 
 ---
 
@@ -121,7 +121,7 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | Document | Description |
 | :--- | :--- |
 | 📋 **[TODO.md](TODO.md)** | **Feuille de route active & checklist complète** : suivi détaillé des 8 phases de conception (mécanique, schéma, floorplanning, routage, plans de masse, contrôles, fabrication). |
-| 📦 **[BOM.md](BOM.md)** | **Nomenclature complète des 58 composants** : références fabricants, codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
+| 📦 **[BOM.md](BOM.md)** | **Nomenclature complète des 60 composants** : références fabricants, codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
 | 🔬 **[HARDWARE.md](HARDWARE.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets et répertoire des 11 points de test (`TP1` à `TP11`). |
 | 🤖 **[AUTOMATION.md](AUTOMATION.md)** | **Automatisation IA via EasyEDA Pro** : architecture du pont Node.js, extension `.eext`, configuration des hooks de cycle de vie Antigravity et règles de routage IA. |
 | 💡 **[LEARNINGS.md](LEARNINGS.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
