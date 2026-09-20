@@ -22,7 +22,7 @@
 1. Sauvegarder (`eda.pcb_Document.save()`).
 2. Nettoyer les fichiers `.js` / `.mjs` temporaires.
 3. Vérifier DRC = 0 et ERC = 0.
-4. Mettre à jour `LEARNINGS.md` si découverte technique.
+4. Mettre à jour `LEARNINGS.md` si découverte technique. Si la découverte constitue un calcul, un audit ou un automatisme réutilisable, proposer ou acter sa transformation en Skill autonome sous `.agents/skills/<nom>/`.
 5. Exporter `ProPrj_ODB2-Scanner.epro2` via les skills easyeda-api.
 6. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
 7. Commit et push **uniquement** après accord explicite sur le message de commit.
@@ -33,3 +33,7 @@
   2. **Arbitrage interactif :** Présenter une synthèse à l'utilisateur et échanger avec lui pour valider, amender ou écarter chaque point (faisabilité, encombrement, catalogue LCSC, choix d'architecture).
   3. **Intégration au TODO :** Après accord explicite de l'utilisateur, convertir les points retenus en cases à cocher actionnables (`- [ ] ...`) dans la section appropriée de la checklist de `TODO.md`.
   4. **Purge du sas :** Vider intégralement `review.md` une fois l'intégration actée afin de laisser le fichier prêt pour la revue suivante.
+- **Regard critique & vérification obligatoire :** Une revue ne doit jamais être prise pour argent comptant. L'agent doit impérativement confronter les remarques du reviewer à la réalité matérielle et documentaire du projet (schéma physique, fichiers sources, datasheets constructeurs).
+  - *États obsolètes :* La revue peut se baser sur un commit antérieur, un document non synchronisé ou une image non à jour (composants déjà implantés, pistes déjà routées, erratum déjà corrigés).
+  - *Collisions & doublons :* Vérifier systématiquement si une remarque entre en collision ou redéfinit des choix déjà arbitrés ou en cours de traitement dans `TODO.md`.
+  - *Erreurs de référence :* Détecter les confusions de composants ou de variantes matérielles (ex. brochage et périphériques spécifiques à l'ESP32-S3 vs ESP32 classique).

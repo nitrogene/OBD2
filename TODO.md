@@ -3,6 +3,38 @@
 Ce document constitue le plan d'action opérationnel du projet **Scanner OBD-II ESP32**.
 Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle (firmware ESP32, application mobile).
 
+## 0. Outillage d'Automatisation & Audit Géométrique (Pipeline Python / EasyEDA Pro)
+
+- [x] **0.1 Documentation des Skills du projet :** Faire apparaître dans la documentation ([README.md](README.md) et [AUTOMATION.md](AUTOMATION.md)) la liste et le rôle des 3 skills spécialisés intégrés au projet :
+  - `buck-compensation` : Outil de calcul, modélisation petit-signal et optimisation paramétrique du réseau de compensation Type II pour le régulateur Buck TPS54331.
+  - `easyeda-api` : Pont bidirectionnel WebSocket/HTTP permettant d'interagir programmatiquement avec EasyEDA Pro en temps réel.
+  - `pcb-placer` : Moteur d'auto-placement par contraintes, audit géométrique pad-à-pad et injection en une passe sous EasyEDA Pro.
+- [x] **0.2 Client d'interface Python robuste (`.agents/skills/pcb-placer/easyeda_client.py`) :**
+  - Implémenter le connecteur universel HTTP ciblant `http://localhost:49620/execute` (détection automatique des ports 49620–49629, timeout, exécution sécurisée et typée de snippets JS).
+  - Fournir les fonctions de base : `health()`, `get_current_project()`, `get_board_info()`, `get_all_components()`, `get_all_pads()`, `get_nets()`, `get_board_outline()`.
+- [x] **0.3 Formalisation du dictionnaire de contraintes (`.agents/skills/pcb-placer/placement_constraints.py`) :**
+  - **Ancres fixes :** `J1` (OBD-II 16 broches) au bord Ouest (centré, $X=1400\text{ mil}, Y=-600\text{ mil}$, rot 270°), `J2` (USB-C) affleurant au bord Sud, `U1` (ESP32-S3) au bord Est (antenne RF libre vers l'extérieur), 4 perçages vis M2 aux angles.
+  - **Clusters fonctionnels & règles de proximité stricte :**
+    - *Protection Entrée :* `F1`, `D1`, `Q1`, `Q2`, `D3`, `R5`, `R7`, `R14` (au plus près de la pin 16 de `J1`).
+    - *Transceivers & ESD :* `U8` au plus près des pins 6/14 de `J1` ; `D5` et `R16` (pull-up) au plus près de la pin 7 de `J1` ; `U2`, `R8`, `JP1` et `U3`, `R1`, `R2` regroupés.
+    - *Énergie & Boucle HF Buck :* Boucle ultra-courte `U4` (PH), `D2`, `L1`, `C8` ; entrée `C7`, `C15` au plus près de VIN ; compensation `R11`, `C9`, `C13` isolée de PH.
+    - *LDO Faible Bruit :* `U5`, `FB1`, `C6` à proximité immédiate.
+    - *Cœur MCU & Découplage :* `C1`, `C2`, `C11` (bulk) à **< 2 mm** des pins 1/2 de `U1` ; circuit Reset `C12`, `R15` à **< 2 mm** de la pin 3 (`EN`) ; `SW1`, `TP10`, `TP11`.
+    - *Mesure Batterie :* `R12`, `R13`, `C10`, `TP9` à proximité de l'étage d'entrée.
+  - **Règles d'orientation & Lisibilité :** Sérigraphie horizontale stricte, alignement sur grille de 25 ou 50 mil.
+- [x] **0.4 Moteur d'Auto-Placement en une passe (`.agents/skills/pcb-placer/auto_place.py`) :**
+  - Algorithme déterministe résolvant les coordonnées $(X, Y, \text{rotation})$ de tous les composants à partir du contour de carte et des contraintes.
+  - Gestion des boîtes englobantes (*bounding boxes*) pour garantir zéro chevauchement.
+  - Optimisation de l'orientation des broches pour raccourcir les chevelus (*ratsnest*) des paires différentielles (USB, CAN) et des rails de puissance.
+- [x] **0.5 Module d'Audit Géométrique hors-ligne (`.agents/skills/pcb-placer/audit_placement.py`) :**
+  - Vérification mathématique avant injection : calcul des distances euclidiennes réelles (découplage < 2 mm, TVS < 5 mm, Keepout antenne 100% vierge).
+  - Génération d'un rapport de conformité avant toute modification dans EasyEDA.
+- [x] **0.6 Actionneur d'injection par lot & Contrôle DRC (`.agents/skills/pcb-placer/apply_placement.py`) :**
+  - Translation et orientation de tous les composants en une seule passe via le pattern asynchrone `toAsync().done()`.
+  - Lancement automatique du DRC EasyEDA Pro via script (`eda.pcb_Drc.run()`) et contrôle de l'absence d'erreurs.
+- [x] **0.7 Packaging en Skill autonome Antigravity (`.agents/skills/pcb-placer/SKILL.md`) :**
+  - Documentation `SKILL.md` permettant à n'importe quel agent ou invite d'exécuter l'audit ou le placement par contraintes en une commande.
+
 ---
 
 ## 1. Intégration Mécanique & Enveloppe (Boîtier, Fixations, Connecteurs)
@@ -11,7 +43,8 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 - [x] **1.2 Connecteur physique OBD-II (J1) :** Modèle mâle 16 broches (SAE J1962) coudé à 90° traversant (pas 4.00 mm), implanté sur le bord Ouest à (X = 1400 mil, Y = -600 mil, rotation 270°), parfaitement centré sur l'axe vertical.
 - [ ] **1.3 Pont diviseur pour monitoring tension batterie (ESP32 ADC) :**
   - [x] Implantation physique initiale à droite de `J1` (`R12`, `R13`, `C10` et point de test `TP9` / `VBAT_SENSE`).
-  - [x] **[TOP PRIORITÉ]** Revoir et arbitrer les valeurs de `R12` et `R13` (actuellement 100 kΩ / 20 kΩ) : ratio de division, plage de linéarité ADC ESP32, impédance d'entrée, courant de repos et sélection en catalogue de base JLCPCB.
+  - [x] Arbitrer les valeurs de `R12` et `R13` : adoption d'un ratio ~1/9.3 ($R_{12} = 100\text{ k}\Omega$, $R_{13} = 12\text{ k}\Omega$, Basic Part LCSC C17413) pour centrer les 14.4V alternateur à 1.54V au cœur de la zone linéaire de l'ADC ESP32-S3 (atténuation 11 dB).
+  - [ ] Mettre à jour $R_{13}$ à $12\text{ k}\Omega$ sur le schéma et ajouter une diode de protection/clamp rapide vers le rail 3.3V (diode Schottky BAT54) pour sécuriser l'entrée ADC face aux transitoires.
 - [x] **1.4 Revue du schéma par l'utilisateur :** Contrôle, vérification et validation visuelle/technique du schéma complet par l'utilisateur (raccordement de J1, pont diviseur batterie, NetPorts miroirs +12V, CANH, CANL, K_LINE, points de test et ERC = 0) avant de figer les fixations mécaniques et d'engager la synchronisation PCB.
 - [x] **1.5 Fixations mécaniques :** Déterminer et placer les trous de perçage pour vis M2 (diamètre 2.2 mm avec zone d'exclusion de 4.5 mm pour tête de vis et inserts de colonnettes).
 - [ ] **1.6 Traiter les retours du reviewer :**
@@ -34,6 +67,16 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [ ] Ajouter le condensateur haute fréquence C13 (220 pF 50V C0G 0603, LCSC C1604, Basic Part) entre la broche COMP (pin 6) de U4 et GND pour filtrer le bruit de commutation 570 kHz en milieu automobile.
     - [ ] Mettre à jour la nomenclature (BOM.md) et synchroniser le schéma avec le PCB.
     - [x] Créer le skill dédié `.agents/skills/buck-compensation/` avec optimisation paramétrique et consigner la modélisation de boucle dans LEARNINGS.md.
+  - [ ] **Dépouillement Revue Critique Schéma (19/09) — Arbitrage & Actions retenues :**
+    - [x] **Clarification du périmètre :** Véhicules légers 12V exclusivement (inscrit dans README.md). Rejet de la sur-spécification Buck 60V / TVS industrielle : le TPS54331 et la SMBJ18A sont validés et maintenus.
+    - [x] **Vérification critique des points reviewer :** Écarté fausses alertes et points déjà résolus (Pin 39/IO1 = ADC1_CH0 100% conforme Wi-Fi sur ESP32-S3 ; Q1/Q2 déjà au BOM ; STB Pin 8 déjà à GND ; C11 Bulk déjà implanté ; Vgs max CJ2309A = ±20V protégé par D3 12V ; marge LDO sur banc USB largement suffisante à > 1.0V).
+    - [ ] Mettre à jour le diviseur batterie $R_{12}/R_{13}$ (100 kΩ / 12 kΩ) et ajouter la diode clamp 3.3V sur le schéma.
+    - [ ] Implanter le condensateur C13 (220 pF COMP) sur le schéma (couplé au point Buck ci-dessus).
+    - [ ] Préciser la sérigraphie du cavalier JP1 sur le PCB (« Shunt = Bench only / Open = Car »).
+  - [ ] **Revue Schéma & Recommandations PCB (19/09 17h) — Arbitrage & Actions retenues :**
+    - [x] **Vérification critique des points reviewer :** Confirmé que la broche S de U2 est déjà à GND, C6 est déjà après FB1, et la stratégie 2 couches (plans de masse massifs Top/Bottom + vias de couture) est validée pour l'optimisation des coûts JLCPCB.
+    - [ ] **Pull-up K-Line (`R16` - $1\text{ k}\Omega$ 1206 / LCSC C17902) :** Implanter la résistance de tirage vers `+12V_PROT` sur la ligne `K_LINE` pour garantir l'initialisation et la conformité ISO 9141-2 avec le calculateur Daewoo Kalos.
+    - [ ] **Découplages HF complémentaires (`C14`, `C15`) :** Ajouter `C14` (100 nF 50V 0603) sur le rail `+5V` au plus près de la broche 3 (VCC) de `U2`, et `C15` (100 nF 50V 0603) sur le rail `+12V_PROT` au plus près de la broche 2 (VIN) de `U4`.
 - [ ] **1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
 

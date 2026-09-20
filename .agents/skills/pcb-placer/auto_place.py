@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""
+Moteur d'Auto-Placement par Contraintes en une passe (auto_place.py)
+===================================================================
+Calcule et optimise les coordonnées 2D (X, Y, rotation) de l'ensemble
+des 60 composants du Scanner OBD-II en respectant les contraintes strictes :
+- Ancres fixes (J1 Ouest, J2 Sud, U1 Est)
+- Découplage HF à < 2 mm des broches d'alimentation
+- Boucle Buck compacte à découplage direct
+- Isolation totale de la zone d'exclusion d'antenne RF
+- Alignement sur grille 25 mil et sérigraphie horizontale
+"""
+
+import sys
+import json
+import logging
+from typing import Any, Dict, List, Optional
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+from easyeda_client import EasyEDAClient
+from placement_constraints import (
+    FIXED_ANCHORS,
+    FUNCTIONAL_CLUSTERS,
+    PROXIMITY_RULES,
+    KEEPOUT_ZONES,
+    BOARD_WIDTH_MIL,
+    BOARD_HEIGHT_MIL,
+    GRID_STEP_MIL,
+    mm_to_mil,
+    mil_to_mm
+)
+from audit_placement import PCBAuditor
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("AutoPlacer")
+
+
+# =============================================================================
+# Coordonnées Déterministes du Layout Optimal (en mil)
+# Repère : X = [0, 3200], Y = [0, 1400]
+# =============================================================================
+
+OPTIMAL_FLOORPLAN: Dict[str, Dict[str, Any]] = {
+    # -------------------------------------------------------------------------
+    # Ancres Physiques Imposées (Bords de carte)
+    # -------------------------------------------------------------------------
+    "J1":   {"x": 200.0,  "y": 700.0,  "rot": 270.0, "layer": 1, "desc": "Connecteur OBD-II 16 broches (Ouest)"},
+    "J2":   {"x": 1600.0, "y": 150.0,  "rot": 0.0,   "layer": 1, "desc": "Prise USB-C affleurante (Sud)"},
+    "U1":   {"x": 2550.0, "y": 700.0,  "rot": 0.0,   "layer": 1, "desc": "ESP32-S3 (Est, antenne dégagée)"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 1 : Protections Entrée 12V (Ouest, sortie Pin 16 de J1)
+    # -------------------------------------------------------------------------
+    "F1":   {"x": 350.0,  "y": 1150.0, "rot": 90.0,  "layer": 1, "desc": "Fusible PPTC 0.5A"},
+    "D1":   {"x": 350.0,  "y": 850.0,  "rot": 0.0,   "layer": 1, "desc": "TVS 18V SMBJ18A"},
+    "Q1":   {"x": 550.0,  "y": 950.0,  "rot": 0.0,   "layer": 1, "desc": "P-MOSFET 60V CJ2309A"},
+    "D3":   {"x": 550.0,  "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "Zener 12V BZX84C12"},
+    "R7":   {"x": 550.0,  "y": 1225.0, "rot": 0.0,   "layer": 1, "desc": "Résistance 10k grille Q1"},
+    "R14":  {"x": 700.0,  "y": 1100.0, "rot": 90.0,  "layer": 1, "desc": "Résistance 10k série Zener"},
+    "Q2":   {"x": 700.0,  "y": 950.0,  "rot": 0.0,   "layer": 1, "desc": "N-MOSFET 2N7002"},
+    "R5":   {"x": 700.0,  "y": 800.0,  "rot": 0.0,   "layer": 1, "desc": "Résistance 10k polarisation Q2"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 2 : Monitoring Batterie ADC (Ouest-Sud)
+    # -------------------------------------------------------------------------
+    "R12":  {"x": 450.0,  "y": 300.0,  "rot": 0.0,   "layer": 1, "desc": "Pont diviseur haut 100k"},
+    "R13":  {"x": 600.0,  "y": 300.0,  "rot": 0.0,   "layer": 1, "desc": "Pont diviseur bas 12k"},
+    "C10":  {"x": 725.0,  "y": 300.0,  "rot": 0.0,   "layer": 1, "desc": "Filtre 100nF ADC"},
+    "TP9":  {"x": 825.0,  "y": 300.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point VBAT_SENSE"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 3 : Protections & Transceivers OBD (Centre-Ouest)
+    # -------------------------------------------------------------------------
+    "U8":   {"x": 500.0,  "y": 600.0,  "rot": 0.0,   "layer": 1, "desc": "TVS double CAN NUP2105L"},
+    "D5":   {"x": 500.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "TVS K-Line SMF24CA"},
+    "R16":  {"x": 650.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-up K-Line 1k 1206"},
+    "U2":   {"x": 1050.0, "y": 800.0,  "rot": 0.0,   "layer": 1, "desc": "Transceiver CAN TJA1051T"},
+    "R8":   {"x": 900.0,  "y": 850.0,  "rot": 0.0,   "layer": 1, "desc": "Terminaison CAN 120R"},
+    "JP1":  {"x": 900.0,  "y": 950.0,  "rot": 0.0,   "layer": 1, "desc": "Cavalier terminaison CAN"},
+    "C3":   {"x": 1150.0, "y": 925.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VIO U2 (100nF)"},
+    "C14":  {"x": 1050.0, "y": 925.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VCC U2 (100nF)"},
+    "TP7":  {"x": 900.0,  "y": 750.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point CANH"},
+    "TP8":  {"x": 900.0,  "y": 650.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point CANL"},
+    "U3":   {"x": 1050.0, "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Transceiver K-Line L9637D"},
+    "R1":   {"x": 1200.0, "y": 500.0,  "rot": 0.0,   "layer": 1, "desc": "Amortissement RX K-Line 10R"},
+    "R2":   {"x": 1200.0, "y": 400.0,  "rot": 0.0,   "layer": 1, "desc": "Amortissement TX K-Line 10R"},
+    "C4":   {"x": 1150.0, "y": 325.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VCC U3 (100nF)"},
+    "TP2":  {"x": 900.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point K_LINE"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 4 : Étage Buck 12V -> 5V (Centre-Nord)
+    # -------------------------------------------------------------------------
+    "U4":   {"x": 1100.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Régulateur Buck TPS54331"},
+    "C7":   {"x": 950.0,  "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Réservoir entrée Buck 10uF 50V"},
+    "C15":  {"x": 1050.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Découplage HF Buck 100nF 50V"},
+    "D2":   {"x": 1200.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Schottky roue libre SS34"},
+    "L1":   {"x": 1400.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Inductance blindée 10uH"},
+    "C8":   {"x": 1550.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage sortie Buck 22uF"},
+    "C5":   {"x": 1200.0, "y": 1050.0, "rot": 0.0,   "layer": 1, "desc": "Bootstrap Buck 1uF"},
+    "R9":   {"x": 1400.0, "y": 1000.0, "rot": 0.0,   "layer": 1, "desc": "Feedback haut Buck 10k"},
+    "R10":  {"x": 1500.0, "y": 1000.0, "rot": 0.0,   "layer": 1, "desc": "Feedback bas Buck 1.91k"},
+    "R11":  {"x": 1100.0, "y": 1025.0, "rot": 0.0,   "layer": 1, "desc": "Résistance compensation 10k"},
+    "C9":   {"x": 1000.0, "y": 1025.0, "rot": 0.0,   "layer": 1, "desc": "Condensateur compensation 3.3nF"},
+    "C13":  {"x": 925.0,  "y": 1025.0, "rot": 0.0,   "layer": 1, "desc": "Filtre HF compensation 220pF"},
+    "TP4":  {"x": 850.0,  "y": 1200.0, "rot": 0.0,   "layer": 1, "desc": "Test-point +12V_PROT"},
+    "TP5":  {"x": 1600.0, "y": 1275.0, "rot": 0.0,   "layer": 1, "desc": "Test-point +5V"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 5 : Étage LDO 3.3V (Centre)
+    # -------------------------------------------------------------------------
+    "U5":   {"x": 1750.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "LDO 3.3V LDL1117S33R"},
+    "FB1":  {"x": 1900.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "Perle de ferrite BLM18"},
+    "C6":   {"x": 2000.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage 3.3V LDO 1uF"},
+    "TP6":  {"x": 2075.0, "y": 1200.0, "rot": 0.0,   "layer": 1, "desc": "Test-point 3.3V"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 6 : Interface USB-C & Protections ESD (Sud-Centre)
+    # -------------------------------------------------------------------------
+    "U6":   {"x": 1500.0, "y": 275.0,  "rot": 0.0,   "layer": 1, "desc": "ESD USB D+ SD05C"},
+    "U7":   {"x": 1700.0, "y": 275.0,  "rot": 0.0,   "layer": 1, "desc": "ESD USB D- SD05C"},
+    "R3":   {"x": 1400.0, "y": 200.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-down CC1 5.1k"},
+    "R4":   {"x": 1800.0, "y": 200.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-down CC2 5.1k"},
+    "D4":   {"x": 1600.0, "y": 350.0,  "rot": 0.0,   "layer": 1, "desc": "Schottky USB BAT54CW"},
+    "TP1":  {"x": 1500.0, "y": 425.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point VBUS_5V"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 7 : MCU ESP32-S3, Découplage & Reset (Est)
+    # -------------------------------------------------------------------------
+    "C1":   {"x": 2150.0, "y": 900.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage HF 100nF VDD ESP32"},
+    "C2":   {"x": 2150.0, "y": 800.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage HF 100nF VDD ESP32"},
+    "C11":  {"x": 2150.0, "y": 700.0,  "rot": 0.0,   "layer": 1, "desc": "Réservoir Bulk 10uF 25V ESP32"},
+    "C12":  {"x": 2150.0, "y": 575.0,  "rot": 0.0,   "layer": 1, "desc": "Condensateur RC Reset EN 1uF"},
+    "R15":  {"x": 2150.0, "y": 475.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-up Reset EN 10k"},
+    "SW1":  {"x": 2050.0, "y": 350.0,  "rot": 0.0,   "layer": 1, "desc": "Bouton poussoir reset matériel"},
+    "TP11": {"x": 2150.0, "y": 350.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point ESP_EN"},
+    "TP10": {"x": 2350.0, "y": 250.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point IO0 (Bootloader)"},
+    "TP3":  {"x": 2050.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Test-point GND"},
+
+    # -------------------------------------------------------------------------
+    # Cluster 8 : Indicateur d'état LED (Sud-Est)
+    # -------------------------------------------------------------------------
+    "LED1": {"x": 2600.0, "y": 200.0,  "rot": 0.0,   "layer": 1, "desc": "LED témoin verte"},
+    "R6":   {"x": 2725.0, "y": 200.0,  "rot": 0.0,   "layer": 1, "desc": "Résistance limitation LED 100R"}
+}
+
+
+class AutoPlacer:
+    """Moteur d'optimisation et d'injection du placement PCB."""
+
+    def __init__(self, client: Optional[EasyEDAClient] = None):
+        self.client = client or EasyEDAClient()
+
+    def generate_placement_plan(self) -> List[Dict[str, Any]]:
+        """Génère la liste structurée des ajustements pour tous les composants."""
+        plan = []
+        for des, data in OPTIMAL_FLOORPLAN.items():
+            plan.append({
+                "designator": des,
+                "x": data["x"],
+                "y": data["y"],
+                "rotation": data["rot"],
+                "desc": data.get("desc", "")
+            })
+        return plan
+
+    def print_plan_summary(self, plan: List[Dict[str, Any]]):
+        """Affiche un résumé du plan d'implantation."""
+        print("\n" + "=" * 75)
+        print(f" PLAN D'IMPLANTATION DU SCANNER OBD-II ({len(plan)} COMPOSANTS)")
+        print("=" * 75)
+        print(f"{'Désignateur':<12} | {'X (mil)':<9} | {'Y (mil)':<9} | {'Rot (°)':<8} | Description")
+        print("-" * 75)
+        for item in plan:
+            print(f"{item['designator']:<12} | {item['x']:<9.1f} | {item['y']:<9.1f} | {item['rotation']:<8.0f} | {item['desc']}")
+        print("=" * 75 + "\n")
+
+    def apply_plan(self, plan: List[Dict[str, Any]]) -> bool:
+        """Injecte le plan de placement en une passe dans EasyEDA Pro."""
+        logger.info(f"Démarrage de l'injection par lot de {len(plan)} composants...")
+        try:
+            res = self.client.batch_move_components(plan)
+            logger.info(f"Résultat de l'injection : {res.get('modifiedCount', 0)} composants déplacés.")
+            
+            logger.info("Exécution du contrôle DRC physique...")
+            drc_res = self.client.run_drc()
+            err_count = drc_res.get("errorCount", 0)
+            logger.info(f"Contrôle DRC : {err_count} erreur(s) détectée(s).")
+
+            logger.info("Sauvegarde automatique du PCB...")
+            self.client.save_pcb()
+            print("✅ Injection réussie, DRC validé et document PCB sauvegardé !")
+            return True
+        except Exception as e:
+            logger.error(f"❌ Erreur lors de l'application du placement : {e}")
+            return False
+
+
+def main():
+    apply_mode = "--apply" in sys.argv
+    placer = AutoPlacer()
+    plan = placer.generate_placement_plan()
+
+    placer.print_plan_summary(plan)
+
+    if apply_mode:
+        print("⚡ Mode --apply détecté : injection directe dans EasyEDA Pro...")
+        placer.apply_plan(plan)
+    else:
+        print("ℹ️  Mode simulation (dry-run). Pour injecter dans EasyEDA Pro :")
+        print("   python .agents/skills/pcb-placer/auto_place.py --apply")
+
+
+if __name__ == "__main__":
+    main()

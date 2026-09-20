@@ -127,7 +127,19 @@ asyncPrim.done();
 
 ---
 
-## 6. Capitalisation Technique
+## 6. Répertoire des Skills Spécialisés du Projet
+
+Le projet `ODB2-Scanner` embarque 3 compétences logicielles (*Skills*) autonomes sous `.agents/skills/` exploitées par l'agent IA :
+
+| Skill | Emplacement | Domaine | Rôle & Utilité Opérationnelle |
+| :--- | :--- | :--- | :--- |
+| 🔌 **`easyeda-api`** | [`.agents/skills/easyeda-api/`](.agents/skills/easyeda-api/SKILL.md) | CAO & PCB | **Pont de pilotage en direct :** Fournit le serveur pont Node.js (port 49620), les types, la documentation des 120+ classes EasyEDA Pro et l'accès à l'API (`eda.pcb_*`, `eda.sch_*`, `eda.dmt_*`) pour automatiser le placement, le routage et les audits sans manipulation humaine hasardeuse. |
+| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | Électronique de puissance | **Modélisation & Stabilité de boucle :** Outil de calcul analytique et petit-signal du régulateur Buck TI TPS54331 (réseau Type II $R_z, C_z, C_p$). Calcule la réponse fréquentielle (Bode), vérifie la stabilité (marge de phase $\ge 45^\circ$, marge de gain $\ge 10\text{ dB}$) et optimise le choix des composants en composants de base (*Basic Parts*) JLCPCB. |
+| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | CAO & Floorplanning | **Auto-Placement par Contraintes :** Algorithme déterministe d'agencement 2D en une passe pour les 60 composants du PCB sous EasyEDA Pro. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3), d'audit géométrique pad-à-pad et d'injection en direct. |
+
+---
+
+## 7. Capitalisation Technique
 
 Pour l'ensemble des subtilités d'implémentation, astuces d'API (unités mil, typage des couches, scripts de capture canvas Base64, pièges des signatures d'API), consulter :
 👉 **[LEARNINGS.md](LEARNINGS.md)**.

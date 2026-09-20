@@ -6,6 +6,10 @@ Projet de conception matérielle (schématique et PCB) et logicielle d'un scanne
 
 ## 1. Objectifs du Projet
 
+> [!IMPORTANT]
+> **Périmètre d'application exclusif : Voitures particulières (Réseau 12V)**
+> Ce scanner est conçu et dimensionné exclusivement pour les véhicules légers équipés d'un **réseau de bord 12V** (batterie 12V nominale, prise standard SAE J1962 Type A). Il **ne doit en aucun cas** être branché sur des poids lourds, camions, bus ou engins fonctionnant en **24V** (prises Type B ou adaptateurs Deutsch J1939), ni utilisé lors d'un dépannage avec booster 24V, sous peine de destruction irréversible de l'étage de régulation et des entrées de mesure.
+
 * **Diagnostic embarqué :** Lecture en temps réel des données moteur et des codes défauts (DTC) via la prise standard automobile OBD-II (16 broches).
 * **Connectivité sans fil :** Module **ESP32-S3** assurant la liaison sans fil (Wi-Fi 2.4 GHz / BLE 5.0) vers une application mobile.
 * **Support multi-protocoles :**
@@ -131,7 +135,19 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 
 ---
 
-## 6. Démarrage Rapide
+## 6. Outils & Skills Spécialisés d'Automatisation
+
+Le projet intègre et exploite 3 compétences logicielles dédiées (*Skills*) pour assister l'agent IA et fiabiliser les étapes critiques de modélisation théorique, de CAO et d'agencement physique :
+
+| Skill | Emplacement | Rôle & Fonctionnalités |
+| :--- | :--- | :--- |
+| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | **Modélisation petit-signal & Stabilité Buck :** Outil de calcul mathématique et d'optimisation paramétrique du réseau de compensation Type II pour le régulateur TI TPS54331 (évaluation Bode, fréquence de coupure $f_{co}$, marge de phase $\ge 45^\circ$, marge de gain $\ge 10\text{ dB}$, et sélection optimale du triplet $R_z, C_z, C_p$ sur le catalogue Basic Parts JLCPCB). |
+| 🔌 **`easyeda-api`** | [`.agents/skills/easyeda-api/`](.agents/skills/easyeda-api/SKILL.md) | **Contrôle programmatique EasyEDA Pro :** Pont bidirectionnel local (WebSocket/HTTP sur port 49620) permettant d'interroger, d'auditer et d'automatiser le schéma et le PCB en temps réel sans manipulation manuelle à risque, avec accès aux 120+ classes de l'API officielle. |
+| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | **Moteur d'Auto-Placement par Contraintes :** Algorithme déterministe d'agencement 2D en une passe pour les 60 composants du PCB sous EasyEDA Pro. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3), d'audit géométrique pad-à-pad et d'injection en direct. |
+
+---
+
+## 7. Démarrage Rapide
 
 1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `ODB2-Scanner.eprj2`.
 2. **Contrôle d'intégrité :**
