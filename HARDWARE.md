@@ -304,8 +304,8 @@ flowchart LR
   * Tout parasite affecte identiquement les deux lignes et s'annule par soustraction différentielle.
 * **Double Diode TVS Bidirectionnelle `U8` (`NUP2105LT1G` - SOT-23 / LCSC `C5983786` / `C14486`) :**
   * *Rôle frontière :* Implantée au plus près des broches 6 et 14 du connecteur `J1`, elle dérive immédiatement vers la masse `GND` les décharges électrostatiques (jusqu'à ±30 kV contact/air selon IEC 61000-4-2) et les surtensions transitoires du faisceau véhicule avant qu'elles n'atteignent le transceiver `U2`.
-  * *Tension de maintien $V_{RWM} = 24\text{ V}$ :* Tolère sans conduction les excursions de mode commun automobile (-12V à +12V) et les anomalies 24V.
-  * *Capacité parasite ultra-faible ($< 10\text{ pF}$ à $30\text{ pF}$) :* Préserve l'intégrité des fronts rapides du bus CAN haute vitesse jusqu'à 1 Mbps.
+  * *Tension de maintien VRWM = 24 V :* Tolère sans conduction les excursions de mode commun automobile (-12V à +12V) et les anomalies 24V.
+  * *Capacité parasite ultra-faible (< 10 pF à 30 pF) :* Préserve l'intégrité des fronts rapides du bus CAN haute vitesse jusqu'à 1 Mbps.
 * **Résistance de Terminaison `R8` (120 Ω) & Cavalier Sélecteur `JP1` :**
   * *En voiture (prise OBD-II) :* Le réseau automobile possède déjà ses deux terminaisons de 120 Ω (60 Ω équivalents). **Le cavalier JP1 reste ouvert (SANS shunt)**.
   * *Sur banc de test / simulateur :* Aucun terminateur sur table. **On place un cavalier standard 2.54 mm sur JP1** pour activer R8.
@@ -362,8 +362,8 @@ flowchart LR
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas, 12V = haut).
 * **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C3117728` / `C2843513`) :**
   * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
-  * *Tension de maintien $V_{RWM} = 24\text{ V}$ :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
-  * *Tension d'avalanche $V_{BR} = 26.7\text{ V}$ et serrage crête $V_{CL} = 38.9\text{ V}$ (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
+  * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
+  * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
 * **Transceiver Dédié `U3` (`L9637D013TR`) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique.
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 

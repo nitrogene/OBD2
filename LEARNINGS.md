@@ -55,7 +55,7 @@ Pour maintenir un projet propre, modulaire et directement exploitable par les ag
 | **Unités runtime** | Les coordonnées de l'API PCB sont exprimées en **mils** (1 mil = 0.0254 mm, 1 mm = 39.3701 mil). | Toujours convertir explicitement avec `mm_to_mil()` et `mil_to_mm()`. |
 | **Identifiants de couches (Layers)** | Les couches sont référencées par des entiers : `1` = Top Layer, `2` = Bottom Layer, `11` = Board Outline, `12` = Multi-layer. | Utiliser les constantes numériques entières ou l'énumération `EPCB_LayerId`. |
 | **Déplacement / Relocalisation d'un via** | Modifier in-place les coordonnées d'un via existant ne recalcule pas le masque d'isolement du cuivre lors du remplissage. | **Supprimer l'ancien via** (`delete([oldId])`), **créer le nouveau via**, puis exécuter `rebuildCopperRegion()`. |
-| **Chanfreinage paires différentielles** | Les angles à 90° créent des ruptures d'impédance et du rayonnement EMI (critique pour USB 480 Mbps et CAN 500 kbps). | **Systématiser les angles à 45°** ($\Delta x = \Delta y = 25\text{ mil}$ pour une piste de 10 mil). |
+| **Chanfreinage paires différentielles** | Les angles à 90° créent des ruptures d'impédance et du rayonnement EMI (critique pour USB 480 Mbps et CAN 500 kbps). | **Systématiser les angles à 45°** (Δx = Δy = 25 mil pour une piste de 10 mil). |
 
 ### C. Plans de Cuivre, DRC & Cache WebGL
 
@@ -73,8 +73,8 @@ Pour maintenir un projet propre, modulaire et directement exploitable par les ag
 Les connaissances théoriques et algorithmiques issues de ce document ont été structurées en compétences autonomes sous `.agents/skills/` :
 
 1. **⚡ [Skill `buck-compensation`](.agents/skills/buck-compensation/SKILL.md) :**
-   - *Origine :* Modélisation petit-signal de l'étage Buck TI TPS54331 (gain ampli d'erreur, compensation Type II $R_z, C_z, C_p$, dérating DC-bias des céramiques X5R).
-   - *Capacité :* Calcul instantané de la marge de phase, fréquence de coupure $F_{co}$, marge de gain et sélection des Basic Parts JLCPCB.
+   - *Origine :* Modélisation petit-signal de l'étage Buck TI TPS54331 (gain ampli d'erreur, compensation Type II Rz, Cz, Cp, dérating DC-bias des céramiques X5R).
+   - *Capacité :* Calcul instantané de la marge de phase, fréquence de coupure Fco, marge de gain et sélection des Basic Parts JLCPCB.
 2. **🔌 [Skill `easyeda-api`](.agents/skills/easyeda-api/SKILL.md) :**
    - *Origine :* Spécifications officielles et architecture du pont Node.js (port 49620).
    - *Capacité :* Communication WebSocket/HTTP bidirectionnelle avec l'API interne EasyEDA Pro.
@@ -94,8 +94,8 @@ Les connaissances théoriques et algorithmiques issues de ce document ont été 
   - Échappement des broches USB-C à pas fin (0.8 mm) et routage différentiel 45°.
   - Matrice thermique de dissipation sous le pad central 41 de l'ESP32-S3.
 * **[2026-09-19] Modélisation de régulation & Stabilité :**
-  - Validation du triplet de compensation TPS54331 ($R_{11} = 10\text{ k}\Omega, C_9 = 3.3\text{ nF}, C_{13} = 220\text{ pF}$) garantissant une marge de phase de $61.7^\circ$ à $68.8^\circ$.
+  - Validation du triplet de compensation TPS54331 (R11 = 10 kΩ, C9 = 3.3 nF, C13 = 220 pF) garantissant une marge de phase de 61.7° à 68.8°.
 * **[2026-09-20] Dépouillement des revues & Esprit critique :**
   - Mise en évidence des confusions de variantes matérielles chez les reviewers (différences de brochage ADC entre ESP32 classique et ESP32-S3).
-  - Nécessité d'un pull-up fort de $1\text{ k}\Omega$ vers le 12V sur la ligne K-Line pour la Daewoo Kalos (ISO 9141-2).
+  - Nécessité d'un pull-up fort de 1 kΩ vers le 12V sur la ligne K-Line pour la Daewoo Kalos (ISO 9141-2).
   - Création du moteur d'auto-placement par contraintes `pcb-placer`.
