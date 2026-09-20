@@ -1,5 +1,14 @@
 # Règles du projet : Scanner OBD-II ESP32
 
+## 0. Modularité et Découplage des Skills & Outils
+- **Interdiction du hardcoding de composants :** Les skills sous `.agents/skills/` et les scripts réutilisables ne doivent comporter **aucune référence en dur** à des composants spécifiques du projet (ex. `U4`, `R13`, `C14`, etc.), ni coordonnées physiques ou valeurs figées dans leur code source Python.
+- **Principe du Moteur Agnostique :** Un skill est un moteur algorithmique pur et réutilisable (calculateur, placeur, solveur, auditeur). Il manipule des abstractions (règles de proximité CEM, découplage, modèles de boucle, critères DRC) et non les instances singulières d'un circuit donné.
+- **Provenance des Données (Inputs) :** Les données d'entrée doivent être systématiquement injectées à l'exécution et provenir exclusivement de trois sources :
+  1. *La documentation ou les fichiers de configuration du projet :* Fichiers dédiés versionnés dans le projet (ex. `floorplan.json`, `constraints.yaml`, `BOM.md`, ou extraction dynamique via l'API EasyEDA).
+  2. *L'utilisateur :* Arguments passés en ligne de commande (`--config`, `--params`), options explicites ou prompts.
+  3. *L'agent :* Synthèse dynamique générée par l'agent depuis la documentation et le schéma avant transmission sous forme de payload au skill.
+- **Exécution Python obligatoire via `uv` :** Tout lancement de script ou de commande Python doit être impérativement exécuté via `uv` (ex. `uv run <script>.py` ou `uv run python -m ...`). L'appel direct à `python` sans `uv` est strictement proscrit.
+
 ## 1. Transparence et Sécurité
 - **Explication obligatoire :** Avant tout script interactif sur le pont EasyEDA (`http://localhost:49620`), expliciter l'intention, le motif technique précis (composants/coordonnées) et l'action concrète.
 - **Périmètre strict :** Modifications cantonnées à `D:\Dev\ODB`. Interdiction de toucher aux répertoires externes ou au skill `easyeda-api`. Nettoyer les scripts `.js`/`.mjs` temporaires avant validation.

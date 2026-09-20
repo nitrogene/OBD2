@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-Module d'Audit Géométrique et de Contrôle des Règles de Conception
-===================================================================
-Vérifie la conformité physique du PCB sans modification :
-- Distances de découplage HF (< 2.0 mm)
-- Distances des filtres RC Reset (< 2.0 mm)
-- Distances des diodes TVS / ESD (< 5.0 mm)
-- Respect de la zone d'exclusion d'antenne RF 2.4 GHz
-- Respect des marges de bord de carte (Edge Clearance)
+Module d'Audit Géométrique et de Contrôle des Règles de Conception (Agnostique)
+================================================================================
+Vérifie la conformité physique du PCB actif dans EasyEDA Pro par rapport à un
+fichier de configuration formel (ex: floorplan.json) passé obligatoirement en paramètre :
+- Position des ancres mécaniques
+- Distances de découplage HF, reset, TVS/ESD
+- Respect des zones d'exclusion (Keepouts)
+- Marges de bord de carte (Edge Clearance)
 """
 
+import argparse
 import math
 import sys
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 if sys.platform == "win32":
     try:
@@ -24,12 +25,8 @@ if sys.platform == "win32":
 
 from easyeda_client import EasyEDAClient
 from placement_constraints import (
-    PROXIMITY_RULES,
-    KEEPOUT_ZONES,
-    FIXED_ANCHORS,
-    BOARD_WIDTH_MIL,
-    BOARD_HEIGHT_MIL,
-    EDGE_CLEARANCE_MIL,
+    FloorplanConfig,
+    load_floorplan,
     mil_to_mm,
     mm_to_mil
 )
@@ -39,15 +36,17 @@ logger = logging.getLogger("PCBAuditor")
 
 
 class PCBAuditor:
-    """Auditeur géométrique et CEM pour le PCB Scanner OBD-II."""
+    """Auditeur géométrique et CEM agnostique pour PCB sous EasyEDA Pro."""
 
-    def __init__(self, client: Optional[EasyEDAClient] = None):
+    def __init__(self, config: FloorplanConfig, client: Optional[EasyEDAClient] = None):
+        self.config = config
         self.client = client or EasyEDAClient()
 
     def audit_board(self) -> Dict[str, Any]:
-        """Exécute l'audit complet du PCB actif dans EasyEDA Pro."""
+        """Exécute l'audit complet du PCB actif contre la configuration chargée."""
         report = {
             "connected": False,
+            "project_name": self.config.project_name,
             "components_count": 0,
             "pads_count": 0,
             "rules_checked": 0,
@@ -66,35 +65,37 @@ class PCBAuditor:
             logger.error(f"Erreur de communication avec le pont : {e}")
             return report
 
-        # Extraction des données réelles
-        logger.info("Extraction des composants et pastilles du PCB...")
-        components = self.client.get_components()
-        pads = self.client.get_all_pads()
+        try:
+            logger.info("Extraction des composants et pastilles du PCB...")
+            components = self.client.get_components()
+            pads = self.client.get_all_pads()
+        except Exception as e:
+            logger.warning(f"Impossible de lire les éléments PCB : {e}")
+            report["warnings"].append(
+                "Impossible d'extraire les éléments du PCB depuis EasyEDA Pro. "
+                "Assurez-vous qu'un document PCB est bien ouvert au premier plan dans EasyEDA Pro."
+            )
+            return report
 
         report["components_count"] = len(components)
         report["pads_count"] = len(pads)
 
-        # Indexation par désignateur
         comp_map = {c.get("designator"): c for c in components if c.get("designator")}
-        
-        # Indexation des pads par désignateur / net
-        # (approximation si designator non inclus dans l'objet pad brut)
-        logger.info(f"Analyse géométrique de {len(components)} composants et {len(pads)} pastilles...")
+        logger.info(f"Analyse géométrique de {len(components)} composants pour le projet '{self.config.project_name}'...")
 
         # 1. Vérification des Ancres Fixes
-        for des, anchor in FIXED_ANCHORS.items():
+        for des, anchor in self.config.anchors.items():
             comp = comp_map.get(des)
             if not comp:
                 report["warnings"].append(f"Ancre mécanique {des} absente du PCB.")
                 continue
-            
+
             cur_x = comp.get("x", 0.0)
             cur_y = comp.get("y", 0.0)
-            cur_rot = comp.get("rotation", 0.0)
-            
+
             dx_mm = mil_to_mm(abs(cur_x - anchor.target_x_mil))
             dy_mm = mil_to_mm(abs(cur_y - anchor.target_y_mil))
-            
+
             if dx_mm > 1.0 or dy_mm > 1.0:
                 report["warnings"].append(
                     f"Ancre {des} décalée : position actuelle ({cur_x:.0f}, {cur_y:.0f}) mil "
@@ -102,7 +103,7 @@ class PCBAuditor:
                 )
 
         # 2. Vérification des Règles de Proximité
-        for rule in PROXIMITY_RULES:
+        for rule in self.config.proximity_rules:
             report["rules_checked"] += 1
             comp = comp_map.get(rule.component)
             ref_comp = comp_map.get(rule.reference_component)
@@ -118,8 +119,8 @@ class PCBAuditor:
             dist_mil = math.sqrt(dx * dx + dy * dy)
             dist_mm = mil_to_mm(dist_mil)
 
-            # Note : distance composant à composant (centre à centre)
-            if dist_mm <= rule.max_distance_mm * 1.5:  # Tolérance centre-à-centre vs pad-à-pad
+            # Tolérance centre-à-centre vs pad-à-pad (1.5x)
+            if dist_mm <= rule.max_distance_mm * 1.5:
                 report["rules_passed"] += 1
             else:
                 violation_msg = (
@@ -128,11 +129,12 @@ class PCBAuditor:
                 )
                 report["violations"].append(violation_msg)
 
-        # 3. Vérification de la Zone Keepout Antenne RF
-        for zone in KEEPOUT_ZONES:
+        # 3. Vérification des Zones d'Exclusion (Keepouts)
+        for zone in self.config.keepout_zones:
             for des, comp in comp_map.items():
-                if des == "U1":
-                    continue  # L'ESP32 est lui-même sur le bord
+                # On tolère le composant ancre éventuellement limitrophe
+                if des in self.config.anchors:
+                    continue
                 cx = comp.get("x", 0.0)
                 cy = comp.get("y", 0.0)
                 if zone.x_min_mil <= cx <= zone.x_max_mil and zone.y_min_mil <= cy <= zone.y_max_mil:
@@ -146,7 +148,7 @@ class PCBAuditor:
     def print_report(self, report: Dict[str, Any]):
         """Affiche un rapport lisible dans la console."""
         print("\n" + "=" * 75)
-        print(" RAPPORT D'AUDIT GÉOMÉTRIQUE & CONFORMITÉ PCB (PCB AUDITOR)")
+        print(f" RAPPORT D'AUDIT GÉOMÉTRIQUE & CEM : {report.get('project_name', 'PCB')} ")
         print("=" * 75)
 
         if not report.get("connected"):
@@ -178,9 +180,29 @@ class PCBAuditor:
 
 
 def main():
-    auditor = PCBAuditor()
+    parser = argparse.ArgumentParser(
+        description="Auditeur géométrique et CEM pour PCB EasyEDA Pro (moteur agnostique)."
+    )
+    parser.add_argument(
+        "-c", "--config",
+        required=True,
+        help="Chemin vers le fichier JSON de contraintes/floorplan (ex: floorplan.json)"
+    )
+
+    args = parser.parse_args()
+
+    try:
+        config = load_floorplan(args.config)
+    except Exception as e:
+        logger.error(f"Impossible de charger la configuration '{args.config}' : {e}")
+        sys.exit(1)
+
+    auditor = PCBAuditor(config)
     report = auditor.audit_board()
     auditor.print_report(report)
+
+    if report["violations"]:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

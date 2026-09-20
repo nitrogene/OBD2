@@ -123,7 +123,7 @@ flowchart LR
 
 ---
 
-### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `R9`, `R10`, `R11`, `C9`)
+### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C14`, `R9`, `R10`, `R11`, `C9`, `C13`)
 
 L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des transmissions radio Wi-Fi.
 * Si on utilisait un simple régulateur linéaire pour abaisser 12V en 5V sous 500 mA, la puissance perdue en pure chaleur serait de :
@@ -143,20 +143,26 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
   }
 }}%%
 flowchart LR
-    VIN["VIN (+12V_PROT)"] --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
+    VIN["VIN (+12V_PROT)"] --> C14["C14 (100 nF HF) // C7 (10 µF)"]
+    C14 --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
     U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
     VOUT --> C8["Condensateur C8\n(22 µF Filtrage)"] --> GND2["GND"]
+    U4_COMP["U4 Broche COMP (Pin 6)"] --> COMP_NET["Réseau Type II :\n(R11 10k + C9 3.3n) // C13 220p"] --> GND3["GND"]
 ```
 
-* **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée.
+* **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée. Courant de saturation Isat = 3.6A offrant une marge de sécurité de 4.5× face au pic inductif maximal (~0.79A).
 * **Diode Schottky de Roue Libre `D2` (3A / 40V - `SS34`) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
 * **Condensateur de Bootstrap `C5` (1 µF - `C0603`) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne.
 * **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
-* **Condensateur de Sortie `C8` (22 µF céramique 25V X5R - `C1206`) :** Lisse la tension 5V pour maintenir une ondulation résiduelle (*ripple*) < 20 mV.
+* **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
+* **Condensateur de Sortie `C8` (22 µF céramique 25V X5R - `C1206`) :** Lisse la tension 5V pour maintenir une ondulation résiduelle (*ripple*) < 12 mV crête-à-crête.
 * **Pont Diviseur de Contre-Réaction `R9` (10 kΩ) et `R10` (1.91 kΩ) :**
   > **Vout = 0.8V × (1 + R9 / R10) = 0.8V × (1 + 10 000 / 1 910) = 0.8 × 6.2356 ≈ 4.988 V ≈ 5.0 V**
-* **Réseau de Compensation `R11` (10 kΩ) et `C9` (3.3 nF) :** Correcteur proportionnel-intégral assurant une marge de phase sécurisée sur la boucle d'asservissement.
+* **Réseau de Compensation Type II `R11` (10 kΩ), `C9` (3.3 nF) et `C13` (220 pF C0G 0603 - LCSC `C1604`) :**
+  * *Correcteur Proportionnel-Intégral R11 / C9 :* Fixe le zéro de compensation Fz = 4.82 kHz pour annuler le pôle dominant du filtre LC et stabiliser le gain unitaire à Fco = 19.1 kHz.
+  * *Pôle HF de Réjection de Bruit C13 :* Placé en parallèle direct sur R11 + C9 vers GND, C13 introduit un second pôle à Fp1 = 77.2 kHz qui atténue drastiquement le bruit de découpage 570 kHz sur l'amplificateur d'erreur interne (gm = 92 µA/V, Ro = 8 MΩ).
+  * *Stabilité vérifiée :* Marge de phase nominale de **66.3°** (stabilité inconditionnelle sur toute l'enveloppe de charge 100 mA à 500 mA) et marge de gain > 20 dB.
 
 ---
 
@@ -242,7 +248,7 @@ flowchart LR
 
 ---
 
-### Bloc 5 : Transceiver CAN (TJA1051T) & Protection ESD (`U2`, `U8`, `R8`, `JP1`)
+### Bloc 5 : Transceiver CAN (TJA1051T) & Protection ESD (`U2`, `U8`, `R8`, `JP1`, `C3`, `C15`)
 
 ```mermaid
 %%{init: {
@@ -267,6 +273,13 @@ flowchart LR
         PIN_RX["Pin 4 (RXD)"]
         PIN_CANH["Pin 7 (CANH)"]
         PIN_CANL["Pin 6 (CANL)"]
+        PIN_VCC["Pin 3 (VCC 5V)"]
+        PIN_VIO["Pin 5 (VIO 3.3V)"]
+    end
+
+    subgraph DECOUP_CAN["DÉCOUPLAGE HF"]
+        C15["C15 (100 nF / 5V)"]
+        C3["C3 (100 nF / 3.3V)"]
     end
 
     subgraph TERM["TERMINAISON DÉCONNECTABLE"]
@@ -285,6 +298,9 @@ flowchart LR
 
     TXD --> PIN_TX
     PIN_RX --> RXD
+
+    C15 --> PIN_VCC
+    C3 --> PIN_VIO
 
     PIN_CANH --- R8
     R8 --- JP1
@@ -309,11 +325,13 @@ flowchart LR
 * **Résistance de Terminaison `R8` (120 Ω) & Cavalier Sélecteur `JP1` :**
   * *En voiture (prise OBD-II) :* Le réseau automobile possède déjà ses deux terminaisons de 120 Ω (60 Ω équivalents). **Le cavalier JP1 reste ouvert (SANS shunt)**.
   * *Sur banc de test / simulateur :* Aucun terminateur sur table. **On place un cavalier standard 2.54 mm sur JP1** pour activer R8.
-* **Adaptation Logique VIO (Pin 5) :** Reliée au 3.3V pour adapter directement les signaux logiques TXD/RXD aux niveaux du SoC ESP32.
+* **Condensateurs de Découplage Dédiés `C15` et `C3` (100 nF 50V 0603) :**
+  * `C15` (LCSC `C14663`) : Découplage de la broche 3 (`VCC` rail +5V). Implanté à moins de 2 mm de la broche 3 de `U2`, il fournit les fortes pointes de courant transitoires lors de la commutation des étages de sortie différentiels dominant/récessif.
+  * `C3` : Découplage de la broche 5 (`VIO` rail 3.3V) assurant la propreté de l'adaptation de niveau logique vers le SoC ESP32.
 
 ---
 
-### Bloc 6 : Transceiver K-Line (L9637D) & Protection ESD (`U3`, `D5`, `R1`, `R2`)
+### Bloc 6 : Transceiver K-Line (L9637D) & Protection ESD (`U3`, `D5`, `R1`, `R2`, `R16`, `C4`)
 
 ```mermaid
 %%{init: {
@@ -342,6 +360,11 @@ flowchart LR
         K_TX["Pin 4 (TX)"]
         K_RX["Pin 1 (RX)"]
         K_PIN["Pin 6 (K-Line 12V)"]
+        K_VS["Pin 3 (VS 12V)"]
+    end
+
+    subgraph PULLUP["PULL-UP ISO 9141-2"]
+        R16["R16 (1 kΩ / 1206 / 250mW)\nvers +12V_PROT"]
     end
 
     subgraph PROT_K["PROTECTION TRANSITOIRE"]
@@ -354,17 +377,22 @@ flowchart LR
 
     MCU_TX --> R2 --> K_TX
     K_RX --> R1 --> MCU_RX
+    R16 --> K_PIN
     K_PIN <==> D5
     D5 --> GND_K["GND"]
     D5 <==> PIN7
 ```
 
-* **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas, 12V = haut).
+* **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
+* **Résistance de Pull-Up Normalisée `R16` (1 kΩ 1206 1/4W - LCSC `C17902`) :**
+  * *Conformité Norme Automobile :* La spécification ISO 9141-2 impose une résistance de rappel au +12V (entre 510 Ω et 1 kΩ) pour garantir un temps de montée rapide ($t_r < 2\text{ µs}$) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF).
+  * *Raccordement sécurisé :* Reliée entre la ligne `K_LINE` et le rail protégé `+12V_PROT` (en aval direct de la protection anti-inversion Q1 et du fusible F1).
+  * *Dissipation thermique maîtrisée (boîtier 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie, la puissance crête dissipée vaut $P = V^2 / R = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$. Le boîtier 1206 (dissipation nominale de 250 mW) encaisse cet échauffement sans stress thermique, là où un boîtier 0603 (100 mW) ou 0805 (125 mW) risquerait la rupture.
 * **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C3117728` / `C2843513`) :**
   * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
   * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
-* **Transceiver Dédié `U3` (`L9637D013TR`) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique.
+* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. Condensateur C4 implanté à moins de 2 mm de la broche 3 (VS).
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 
 ---
@@ -396,7 +424,7 @@ flowchart LR
 
 ---
 
-### Bloc 10 : Monitoring Tension Batterie (`R12`, `R13`, `C10`)
+### Bloc 10 : Monitoring Tension Batterie (`R12`, `R13`, `C10`, `D6`)
 
 ```mermaid
 %%{init: {
@@ -412,19 +440,23 @@ flowchart LR
 }}%%
 flowchart LR
     VBAT["+12V_PROT\n(Protégé F1/Q1)"] --> R12["R12 (100 kΩ)"]
-    R12 --> SENSE(("VBAT_SENSE\n(Ratio 1/6 : 0-3.0V)"))
-    SENSE --> R13["R13 (20 kΩ)"] --> GND1["GND"]
-    SENSE --> C10["C10 (100 nF)\nFiltre Passe-Bas 95 Hz"] --> GND2["GND"]
+    R12 --> SENSE(("VBAT_SENSE\n(Ratio ~1/9.33)"))
+    SENSE --> R13["R13 (12 kΩ)"] --> GND1["GND"]
+    SENSE --> C10["C10 (100 nF)\nFiltre Passe-Bas 148 Hz"] --> GND2["GND"]
+    SENSE -->|Anode| D6["Diode Clamp D6\n(BAT54WS)"] -->|Cathode| V33["Rail +3.3V (Plafond 3.65V)"]
     SENSE ==> ADC["ESP32-S3 Pin 39\nIO1 (Canal ADC1_CH0)"]
 ```
 
-* **Pont Diviseur (Ratio 1/6) :**
-  > **k = R13 / (R12 + R13) = 20 / 120 = 1/6 ≈ 0.1667**
-  * 12.0V batterie → 2.00V ADC.
-  * 14.4V (alternateur actif) → 2.40V ADC.
-  * 18.0V (tension crête admissible) → 3.00V ADC.
-* **Courant de Fuite :** `I = 12V / 120 kΩ = 100 µA` (décharge batterie négligeable).
-* **Filtre Passe-Bas Anti-Bruit `C10` (100 nF) :** Avec `Req = 100k // 20k ≈ 16.7 kΩ`, fréquence de coupure `fc ≈ 95 Hz` éliminant le hachage alternateur et les parasites d'allumage.
+* **Pont Diviseur Optimisé (Ratio k ≈ 0.1071 / 1:9.33) :**
+  > **k = R13 / (R12 + R13) = 12 / (100 + 12) = 12 / 112 ≈ 0.10714**
+  * 12.0V batterie → 1.286V ADC.
+  * 14.4V (alternateur actif) → 1.543V ADC.
+  * 18.0V (tension crête normale) → 1.929V ADC.
+  * 29.2V (tension d'écrêtage crête TVS D1) → **3.129V ADC** : reste strictement sous la limite nominale 3.3V sans saturer le convertisseur ADC !
+* **Courant de Fuite :** `I = 12V / 112 kΩ ≈ 107 µA` (décharge batterie totalement négligeable).
+* **Filtre Passe-Bas Anti-Bruit `C10` (100 nF) :** Avec `Req = 100k // 12k ≈ 10.71 kΩ`, fréquence de coupure `fc ≈ 148 Hz` éliminant le hachage alternateur et les parasites d'allumage.
+* **Diode Schottky de Clamp Rapide `D6` (`BAT54WS` - SOD-323 / LCSC `C2243`) :**
+  * *Protection matérielle anti-claquage de l'ESP32 :* La tension maximale absolue admissible sur les broches GPIO de l'ESP32-S3 est de `VDD + 0.3V = 3.60V`. L'anode de D6 étant reliée à `VBAT_SENSE` et sa cathode au rail `3.3V`, toute surtension résiduelle supérieure à `3.3V + 0.35V ≈ 3.65V` est instantanément dérivée vers le rail d'alimentation et absorbée par le réservoir bulk `C11`.
 * **Canal ADC1 :** La broche `IO1` appartient à **ADC1**, garantissant une mesure analogique non perturbée pendant les émissions radio (contrairement à ADC2).
 
 ---
@@ -470,11 +502,14 @@ flowchart TD
 | **Inversion accidentelle de polarité** | Court-circuit destructeur des circuits intégrés | Commutation automatique sans perte par MOSFET | P-MOS `Q1` (60V) + N-MOS `Q2` |
 | **Court-circuit accidentel faisceau** | Échauffement critique, fonte des pistes | Coupure thermique réarmable sans intervention | Fusible PPTC 0.5A `F1` |
 | **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique | Conversion à découpage 570 kHz (rdt > 85%) | Buck `U4` (`TPS54331`) + `L1` + `D2` |
+| **Bruit de hachage & stabilité boucle Buck** | Instabilité de régulation 5V, oscillations | Réseau Type II (marge 66.3°) + condensateur HF `C13` (220pF) + découplage VIN `C14` | `U4`, `R11`, `C9`, `C13`, `C14` |
 | **Bruit de hachage sur la radio** | Portée Wi-Fi/BLE dégradée, instabilité ADC | Double filtrage : Régulateur LDO + Perle de ferrite | LDO `U5` (`LDL1117`) + `FB1` + `C6` |
 | **Micro-coupures & pics RF Wi-Fi de l'ESP32** | Chute sous 2.8V, redémarrage intempestif (*brownout*) | Découplage HF à < 2 mm + Réservoir local Bulk 10 µF | Condensateurs `C1`-`C4` + Bulk `C11` (25V 0805) |
-| **Surveillance batterie & détection contact** | Impossibilité de diagnostiquer l'alternateur | Pont diviseur 1/6 protégé + filtrage passe-bas 95 Hz | `R12`, `R13` + `C10` vers ADC1 (`IO1`) |
+| **Surveillance batterie & détection contact** | Impossibilité de diagnostiquer l'alternateur, claquage ADC | Pont diviseur 1/9.33 protégé + clamp Schottky rapide `D6` + passe-bas 148 Hz | `R12`, `R13` (12k), `C10`, `D6` vers ADC1 (`IO1`) |
 | **Parasites d'allumage moteur sur bus CAN** | Trames de diagnostic corrompues ou illisibles | Transmission différentielle symétrique + terminaison | Transceiver CAN `U2` + Terminaison `R8`/`JP1` |
+| **Pointes transitoires commutation bus CAN** | Chute de tension VCC sur U2 lors des états dominants | Découplage HF direct sur broche 3 (< 2 mm) | `C15` (100 nF 50V) |
 | **Signaux 12V de la ligne K-Line Daewoo** | Destruction des broches MCU limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line `U3` + `R1`, `R2` |
+| **Temps de montée K-Line & conformité ISO** | Trame illisible par front d'onde trop lent (> 2 µs) | Résistance pull-up 1 kΩ 1206 (250 mW) vers +12V_PROT | `R16` (1 kΩ 1206) |
 | **Décharges électrostatiques (ESD) USB** | Claquage des broches USB internes du silicium | Dérivation des pointes 30 kV en < 1 ns | Diodes ESD bidirectionnelles `U6`, `U7` |
 | **Décharges statiques & transitoires bus CAN** | Claquage différentiel des entrées transceiver U2 | Écrêtage bidirectionnel 24V ultra-rapide (< 10 pF) | Double TVS 24V `U8` (`NUP2105LT1G`) |
 | **Décharges statiques & transitoires K-Line** | Claquage de l'étage de sortie haute tension U3 | Dérivation des pointes transitoires 24V à la masse | Diode TVS 24V `D5` (`SMF24CA`) |
@@ -489,20 +524,20 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **`+12V`** | OBD-II (Pin 16), `D1(1)`, `F1(1)` | Alimentation batterie brute issue de la prise OBD-II. | Alimentation / Entrée |
 | **`+12V_FUSED`** | `F1(2)`, `Q1(3)`, `D3(3)`, `R7(1)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
-| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `U4(2)`, `R12(1)` | Rail 12V sécurisé anti-inversion alimentant le Buck et le diviseur batterie. | Alimentation / Sécurité |
+| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R12(1)`, `R16(1)`, `U3(3)` | Rail 12V sécurisé anti-inversion alimentant le Buck, K-Line et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)` | Polarisation de grille du N-MOS Q2 depuis le 12V à travers R5. | Commutation / Contrôle |
-| **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `U1(39)` | Tension batterie atténuée au ratio 1/6 vers le canal ADC1_CH0 (`IO1`). | Mesure Batterie |
+| **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(1)` (anode), `U1(39)` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6. | Mesure Batterie |
 | **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
 | **`BOOT_BUCK`** | `U4(1)`, `C5(1)` | Ligne bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
 | **`VSENSE_BUCK`** | `U4(5)`, `R9(1)`, `R10(1)` | Point milieu du feedback asservissant le 5V sur la référence interne 0.8V. | Alimentation / Buck |
-| **`COMP_BUCK`** | `U4(6)`, `R11(1)` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation. | Alimentation / Buck |
+| **`COMP_BUCK`** | `U4(6)`, `R11(1)`, `C13(1)` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation Type II. | Alimentation / Buck |
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
-| **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
+| **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
-| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3)`, `R15(1)`, `TP6` | Rail logique 3.3V purifié pour l'ESP32 et les transceivers. | Alimentation / Rail 3.3V |
-| **`GND`** | Plans de masse, blindages, condensateurs, transceivers, `U8(3)`, `D5(2)` | Potentiel de référence zéro volt (0V) commun. | Référence / Masse |
+| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VIO)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
+| **`GND`** | Plans de masse, blindages, condensateurs (`C1-C15`), transceivers, `U8(3)`, `D5(2)` | Potentiel de référence zéro volt (0V) commun. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |
@@ -515,7 +550,7 @@ flowchart TD
 | **`CANL`** | `U2(6)`, `JP1(2)`, `U8(2)`, OBD-II (Pin 14), `TP8` | Ligne de bus CAN différentielle niveau bas protégée ESD. | Communication / CAN |
 | **`TXD`** | `U1(37)`, `U2(1)` | Émission TWAI 3.3V depuis le SoC vers le transceiver CAN. | Communication / CAN |
 | **`RXD`** | `U1(36)`, `U2(4)` | Réception TWAI 3.3V depuis le transceiver CAN vers le SoC. | Communication / CAN |
-| **`K_LINE`** | `U3(6)`, `D5(1)`, OBD-II (Pin 7), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS. | Communication / K-Line |
+| **`K_LINE`** | `U3(6)`, `D5(1)`, `R16(2)`, OBD-II (Pin 7), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS et tirée par R16. | Communication / K-Line |
 | **`K_RX_IC`** | `U3(1)`, `R1(1)` | Réception 3.3V du transceiver K-Line avant résistance d'amortissement. | Communication / K-Line |
 | **`UART_RX_MCU`** | `R1(2)`, `U1(4)` (`IO4`) | Signal de réception UART amorti arrivant sur l'ESP32. | Communication / K-Line |
 | **`K_TX_IC`** | `U3(4)`, `R2(1)` | Émission vers le transceiver K-Line après résistance d'amortissement. | Communication / K-Line |
@@ -537,6 +572,83 @@ flowchart TD
 | **`TP6`** | **`3.3V`** | Alimentation Logique | (X=520, Y=650) | +3.30 V DC (± 1.5%) | Rail logique 3.3V purifié en sortie du régulateur LDO U5 et de FB1. |
 | **`TP7`** | **`CANH`** | Bus CAN Différentiel | (X=700, Y=555) | 2.5 V récessif / 3.5 V dominant | Ligne différentielle haute du bus CAN. Contrôle terminaison 120 Ω. |
 | **`TP8`** | **`CANL`** | Bus CAN Différentiel | (X=700, Y=515) | 2.5 V récessif / 1.5 V dominant | Ligne différentielle basse du bus CAN. Mesure Vdiff = CANH - CANL. |
-| **`TP9`** | **`VBAT_SENSE`** | Mesure Analogique ADC | (X=400, Y=755) | ~ 2.0 V (pour 12V bat, ratio 1/6) | Étalonnage ADC et contrôle du filtrage passe-bas 95 Hz (C10). |
+| **`TP9`** | **`VBAT_SENSE`** | Mesure Analogique ADC | (X=400, Y=755) | ~ 1.29 V (pour 12V bat, ratio ~1/9.33) | Étalonnage ADC et contrôle du filtrage passe-bas 148 Hz (C10) et clamp D6. |
 | **`TP10`** | **`IO0`** | Bootloader Secours | (X=1060, Y=570) | 3.3 V repos / 0 V pour forcer ROM | Mise à la masse pour forcer le téléchargement ROM si firmware bloqué. |
 | **`TP11`** | **`ESP_EN`** | Contrôle Reset | (X=650, Y=295) | 3.3 V repos / 0 V appui reset | Mesure directe de la rampe de charge RC de Power-On-Reset (10 ms). |
+
+---
+
+## 7. Règles d'Implantation PCB & Contraintes Géométriques (Floorplanning)
+
+Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et la stabilité thermique, le placement physique des composants sur le PCB doit respecter impérativement les règles suivantes :
+
+### 7.1 Découplage HF & Réservoirs d'Énergie Bulk
+* **Bulk `C11` (10 µF 25V 0805) :** Raccordé à **moins de 2 à 3 mm** des broches 1 (`GND`) et 2 (`3V3`) de l'ESP32 `U1`. Pistes larges directes et via de masse franc vers le plan de masse interne pour étouffer les appels de courant transitoires de 500 mA lors des émissions Wi-Fi.
+* **Découplage HF Microcontrôleur `C1`, `C2` (100 nF 0603) :** Implantés à **moins de 2 mm** des broches d'alimentation du module.
+* **Découplage Transceiver CAN `C15` (100 nF 50V) et `C3` (100 nF) :** `C15` implanté à **moins de 2 mm** de la broche 3 (`VCC` 5V) de `U2` pour fournir les pointes de commutation différentielle. `C3` à **moins de 2 mm** de la broche 5 (`VIO` 3.3V).
+* **Découplage Entrée Buck `C14` (100 nF 50V) et `C7` (10 µF 50V) :** `C14` implanté **collé à la broche 2 (`VIN`) de `U4` (< 1.5 mm)**, en amont immédiat de `C7`, avec une boucle de retour masse minimale vers la broche 9 (pad thermique GND) pour court-circuiter les harmoniques > 20 MHz.
+* **Découplage K-Line `C4` (100 nF) :** Implanté à **moins de 2 mm** de la broche 3 (`VS`) de `U3`.
+* **Filtrage LDO `C6` (1 µF) :** Raccordé au plus près de la perle de ferrite `FB1` et de la sortie de `U5`.
+
+### 7.2 Étage Buck & Boucle de Commutation Haute Fréquence (570 kHz)
+* **Boucle de puissance critique ultra-compacte :** La maille formée par la broche 8 (`PH`) de `U4`, l'inductance blindée `L1`, la diode Schottky `D2` et le retour vers les condensateurs d'entrée `C7`/`C14` doit présenter une surface géométrique minimale pour réduire le rayonnement magnétique parasite ($e = -d\Phi/dt$). Pistes courtes et larges (0.8 mm à 1.0 mm).
+* **Réseau de compensation Type II `C13`, `R11`, `C9` :**
+  * Implantés à **moins de 2 mm** de la broche 6 (`COMP`) de `U4`.
+  * **Isolement physique strict face au nœud bruité `PH` (broche 8, D2, L1)** : la broche COMP présentant une impédance interne de 8 MΩ, toute proximité ou couplage capacitif avec le nœud PH injecterait du bruit de hachage et perturberait la boucle d'asservissement.
+  * Retour de masse direct sur une zone de masse analogique/calme (*quiet GND*).
+
+### 7.3 Protection Entrée ADC & Surveillance Batterie
+* **Diode de Clamp `D6` (`BAT54WS`) :** Positionnée **immédiatement accolée à `R13` et `C10` (< 2 mm)** sur le nœud `VBAT_SENSE`, avec une piste très courte vers le port `3.3V` pour garantir un temps de réponse sub-nanoseconde face aux pointes transitoires.
+* **Piste analogique `VBAT_SENSE` :** Éloignée des pistes de puissance du Buck et du signal d'horloge haché pour préserver la précision de conversion de l'ADC1 (`IO1`).
+
+### 7.4 Circuit de Reset & Strapping Bootloader
+* **Temporisation RC `C12` (1 µF) et `R15` (10 kΩ) :** Implantées à **moins de 2 mm** de la broche 3 (`EN`) de l'ESP32 `U1`. Cette ligne étant à haute impédance, une piste longue capterait le champ électromagnétique 2.4 GHz de l'antenne radio et provoquerait des resets intempestifs.
+* **Bouton Poussoir `SW1` :** Aligné géométriquement avec le trou d'épingle prévu sur la face supérieure du boîtier.
+* **Point de Test `TP10` (`IO0`) :** Placé à proximité immédiate d'une pastille `GND` pour faciliter le court-circuit à la masse lors de la récupération bootloader ROM.
+
+### 7.5 Protections Transitoires Faisceau OBD-II & USB
+* **Double TVS CAN `U8` (`NUP2105L`) :** Positionnée à **moins de 5 mm** des broches 6 (`CANH`) et 14 (`CANL`) du connecteur `J1`. Le flux d'entrée doit traverser les pastilles de `U8` avant d'atteindre la terminaison `R8`/`JP1` et le transceiver `U2`.
+* **TVS K-Line `D5` (`SMF24CA`) & Pull-Up `R16` :**
+  * `D5` implantée à **moins de 5 mm** de la broche 7 (`K_LINE`) du connecteur `J1` pour dériver les transitoires directement à la masse à l'entrée de carte.
+  * Résistance de pull-up `R16` (1 kΩ 1206) implantée à proximité immédiate de `D5` et de la broche 7 (< 5 mm), dans une zone aérée pour assurer une bonne dissipation thermique de ses 207 mW crête.
+* **Diodes ESD USB `U6`, `U7` (`SD05C`) :** Alignées côte à côte face aux broches A6/B6 (`USB_D+`) et A7/B7 (`USB_D-`) du port USB-C `J2` pour un clamp immédiat avant d'entrer dans les GPIOs IO20 et IO19 de l'ESP32.
+
+### 7.6 Gestion Radiofréquence (RF) & Plans de Masse
+* **Zone d'exclusion RF d'antenne (Keepout multicouche) :** Définir une exclusion stricte sur toutes les couches (Top, Bottom, Internes) sous et autour de l'antenne méandre 2.4 GHz de l'ESP32-S3 (`NO_WIRES`, `NO_FILLS`, `NO_POURS`). Aucun plan de cuivre ni piste ne doit se trouver dans cette zone.
+* **Matrice thermique centrale :** Matrice de vias de masse (perçage 0.3 mm, diamètre 0.6 mm) sous le pad thermique central (broche 41) de l'ESP32-S3 pour dissiper les calories vers le plan de masse de la couche inférieure.
+
+---
+
+### 7.7 Modélisation Formelle du Layout : Le Fichier `floorplan.json`
+
+Conformément au principe du **Moteur Agnostique** (règle `## 0.` d'[`AGENTS.md`](AGENTS.md)), les outils de calcul, de placement et d'audit sous `.agents/skills/` ne comportent aucune référence en dur à un composant ou à une coordonnée. 
+
+L'intégralité des contraintes physiques du Scanner OBD-II est formalisée dans le fichier [`floorplan.json`](floorplan.json) situé à la racine du projet. Ce document constitue la source unique de vérité machine-readable pour l'outillage logiciel.
+
+#### Structure du Fichier `floorplan.json` :
+1. **`meta` :** Identité et version du projet (*Scanner OBD-II ESP32*).
+2. **`board` :** Enveloppe physique du PCB (81.28 mm × 35.56 mm / 3200 × 1400 mil), marge de sécurité périphérique (*edge clearance* de 1.0 mm) et pas de grille d'alignement (25 mil).
+3. **`thresholds` :** Seuils physiques d'audit géométrique (découplage HF < 2.0 mm, reset RC < 2.0 mm, protections ESD/TVS < 5.0 mm).
+4. **`anchors` :** Positions mécaniques imposées par l'enveloppe du boîtier et l'ergonomie :
+   * `J1` : Connecteur OBD-II traversant 90° centré sur la face Ouest (`x=200, y=700, rot=270°`).
+   * `J2` : Prise USB-C horizontale CMS affleurante au bord Sud (`x=1600, y=150, rot=0°`).
+   * `U1` : Module ESP32-S3 avec son antenne dégagée vers l'Est (`x=2550, y=700, rot=0°`).
+5. **`keepout_zones` :** Définition géométrique des zones d'exclusion multicouches strictes (`RF_ANTENNA_KEEPOUT` de x=2900 à 3200 mil et y=300 à 1100 mil).
+6. **`functional_clusters` :** Découpage des 63 composants en 8 îlots fonctionnels étanches (Protections 12V, Diviseur batterie, Transceivers OBD, Régulateur Buck, LDO 3.3V, Interface USB, Cœur MCU, Témoin LED).
+7. **`proximity_rules` :** Règles relationnelles de proximité physique associant chaque composant critique à son circuit cible et son équipotentielle (découplage direct, mailles courtes, diodes TVS frontalières).
+8. **`components` :** Coordonnées 2D déterministes (X, Y, rotation, couche) de l'ensemble des 63 composants et 11 points de test, permettant au moteur d'injection d'ordonnancer le placement en une passe sans collision.
+
+#### Pilotage via les Scripts Agnostiques (uv) :
+Le fichier est transmis obligatoirement en paramètre `--config` aux outils du skill `pcb-placer` :
+```bash
+# Simulation du placement
+uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json
+
+# Audit géométrique et CEM du PCB actif sous EasyEDA Pro
+uv run .agents/skills/pcb-placer/audit_placement.py --config floorplan.json
+
+# Injection réelle du placement dans EasyEDA Pro avec sauvegarde et DRC
+uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --apply --audit
+```
+
+

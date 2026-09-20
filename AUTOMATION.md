@@ -124,6 +124,8 @@ asyncPrim.done();
 3. **DRC systématique après chaque lot :** Lancer `pcb_Drc` après chaque groupe de pistes tracées pour intercepter les anomalies immédiatement.
 4. **Sauvegarde préalable :** Toujours versionner ou sauvegarder `ODB2-Scanner.eprj2` avant un lot de modifications en masse.
 5. **Ordre rigoureux de routage :** Paires différentielles USB/CAN d'abord, signaux logiques sensibles ensuite, rails de puissance (12V, 5V, 3.3V) avec largeurs spécifiées enfin.
+6. **Exécution Python obligatoire via `uv` :** Tout script ou outil Python du projet doit impérativement être lancé avec `uv` (ex. `uv run python ...` ou `uv run <script>.py`). Ne jamais appeler `python` nu directement.
+7. **Découplage strict Données vs Moteur :** Les skills d'automatisation sous `.agents/skills/` ne contiennent aucune valeur ou composant en dur (règle `## 0.` d'[`AGENTS.md`](AGENTS.md)). Les données proviennent exclusivement de fichiers de configuration du projet (ex: [`floorplan.json`](floorplan.json)) passés en argument obligatoire (`--config`).
 
 ---
 
@@ -134,8 +136,8 @@ Le projet `ODB2-Scanner` embarque 3 compétences logicielles (*Skills*) autonome
 | Skill | Emplacement | Domaine | Rôle & Utilité Opérationnelle |
 | :--- | :--- | :--- | :--- |
 | 🔌 **`easyeda-api`** | [`.agents/skills/easyeda-api/`](.agents/skills/easyeda-api/SKILL.md) | CAO & PCB | **Pont de pilotage en direct :** Fournit le serveur pont Node.js (port 49620), les types, la documentation des 120+ classes EasyEDA Pro et l'accès à l'API (`eda.pcb_*`, `eda.sch_*`, `eda.dmt_*`) pour automatiser le placement, le routage et les audits sans manipulation humaine hasardeuse. |
-| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | Électronique de puissance | **Modélisation & Stabilité de boucle :** Outil de calcul analytique et petit-signal du régulateur Buck TI TPS54331 (réseau Type II Rz, Cz, Cp). Calcule la réponse fréquentielle (Bode), vérifie la stabilité (marge de phase ≥ 45°, marge de gain ≥ 10 dB) et optimise le choix des composants en composants de base (*Basic Parts*) JLCPCB. |
-| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | CAO & Floorplanning | **Auto-Placement par Contraintes :** Algorithme déterministe d'agencement 2D en une passe pour les 60 composants du PCB sous EasyEDA Pro. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3), d'audit géométrique pad-à-pad et d'injection en direct. |
+| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | Électronique de puissance | **Modélisation & Stabilité de boucle :** Outil de calcul analytique et petit-signal du régulateur Buck TI TPS54331 (réseau Type II Rz, Cz, Cp). Calcule la réponse fréquentielle (Bode), vérifie la stabilité (marge de phase ≥ 45°, marge de gain ≥ 10 dB) et optimise le choix des composants en composants de base (*Basic Parts*) JLCPCB. Lancé via `uv run`. |
+| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | CAO & Floorplanning | **Moteur Agnostique d'Auto-Placement par Contraintes :** Algorithme déterministe d'agencement 2D en une passe pour les composants du PCB sous EasyEDA Pro. Totalement découplé (aucun composant en dur), il prend en entrée obligatoire `--config floorplan.json` et s'exécute via `uv run`. Intègre l'audit de proximité CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3), d'audit géométrique et d'injection en direct. |
 
 ---
 

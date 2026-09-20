@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire complet des **60 composants** du projet **Scanner OBD-II ESP32**, extrait directement du projet actif sous EasyEDA Pro (Schéma complet validé DRC / ERC = 0).
+Inventaire complet des **63 composants** du projet **Scanner OBD-II ESP32**, extrait directement du projet actif sous EasyEDA Pro (Schéma complet validé DRC / ERC = 0).
 
 ---
 
@@ -20,11 +20,14 @@ Inventaire complet des **60 composants** du projet **Scanner OBD-II ESP32**, ext
 | **C10** | 100nF | CL10B104KB8NNNC | `C0603` | Filtrage HF et réservoir de charge ADC pont diviseur batterie `VBAT_SENSE` |
 | **C11** | 10uF | CL21A106KAYNNNE (C15850) | `C0805` | Condensateur réservoir local Bulk 10 µF 25V X5R (absorption pics Wi-Fi 500 mA - Basic Part) |
 | **C12** | 1uF | CL10A105KB8NNNC (C15849) | `C0603` | Temporisation RC Power-On-Reset (10 ms) et filtre anti-rebond broche `EN` (Basic Part) |
+| **C13** | 220pF | CL10C221JB8NNNC (C1604) | `C0603` | Condensateur compensation HF boucle Buck `U4` (broche COMP vers GND - Basic Part) |
+| **C14** | 100nF | CL10B104KB8NNNC (C14663) | `C0603` | Découplage HF entrée Buck `U4` (rail +12V_PROT vers GND - Basic Part) |
 | **D1** | *—* | SMBJ18A_C5860928 | `SMB_L4.6-W3.6-LS5.3-RD` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | *—* | SS34_C52023881 | `SMA_L4.3-W2.6-LS5.1-RD` | Diode Schottky 40V 3A de roue libre (Cathode sur PH, Anode sur GND) pour convertisseur Buck `U4` |
 | **D3** | *—* | BZX84C12 | `SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 |
 | **D4** | BAT54CW | BAT54CW (C962771) | `sot-323-3_l2.0-w1.3-p1.30-ls2.1-br` | Diode Schottky double 30V 2x200mA cathode commune (alimentation autonome USB et protection anti-retour) |
 | **D5** | 24V | SMF24CA (C3117728) | `SOD-123FL_L2.8-W1.8-LS3.7-BI` | Diode TVS 24V bidirectionnelle protection transitoire ligne K-Line (`K_LINE`) |
+| **D6** | BAT54WS | BAT54WS (C2243) | `SOD-323` | Diode Schottky rapide de clamp protection surtension entrée ADC `VBAT_SENSE` vers 3.3V (Basic Part) |
 | **F1** | *—* | MF-MSMF050-2 | `F1812` | Fusible réarmable PPTC 0.5A protection ligne 12V |
 | **FB1** | *—* | BLM18PG121SN1D_C14709 | `L0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
 | **J1** | *—* | OBD2-M-90D | `CONN-TH_OBD2` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
@@ -46,7 +49,7 @@ Inventaire complet des **60 composants** du projet **Scanner OBD-II ESP32**, ext
 | **R10** | 1.91kΩ | 0805W8F1911T5E | `R0805` | Résistance basse pont diviseur feedback Buck `U4` (VSENSE vers GND) |
 | **R11** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance série compensation de boucle Buck `U4` (broche COMP) |
 | **R12** | 100kΩ | 0805W8F1003T5E | `R0805` | Résistance haute pont diviseur monitoring tension batterie (+12V_PROT vers VBAT_SENSE) |
-| **R13** | 20kΩ | 0805W8F2002T5E | `R0805` | Résistance basse pont diviseur monitoring tension batterie (VBAT_SENSE vers GND) |
+| **R13** | 12kΩ | 0805W8F1202T5E (C17413) | `R0805` | Résistance basse pont diviseur monitoring tension batterie (VBAT_SENSE vers GND - Basic Part) |
 | **R14** | 10kΩ | 0805W8F1002T5E | `R0805` | Résistance série limitation courant Zener D3 commande grille Q1 |
 | **R15** | 10kΩ | 0805W8F1002T5E (C17414) | `R0805` | Résistance de pull-up externe broche `EN` vers le rail `3.3V` (Basic Part) |
 | **SW1** | *—* | TS-1187A-C-A-B (C318884) | `SW-SMD_4P-L5.1-W5.1-P3.70-LS6.5-TL_H1.5` | Bouton poussoir tactile CMS de reset matériel (accessible via trou d'épingle boîtier) |

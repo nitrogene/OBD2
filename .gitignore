@@ -5,3 +5,9 @@
 # Visualisation locale des diagrammes Mermaid
 preview_diagrams.html
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+

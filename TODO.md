@@ -41,10 +41,10 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 
 - [x] **1.1 Type de boîtier :** Boîtier sur mesure en résine SLA fabriqué chez JLCPCB (tolérance +/- 0.05 mm, gorge de verrouillage mécanique pour absorber l'effort d'insertion OBD de 40-60 N, inserts filetés laiton M2).
 - [x] **1.2 Connecteur physique OBD-II (J1) :** Modèle mâle 16 broches (SAE J1962) coudé à 90° traversant (pas 4.00 mm), implanté sur le bord Ouest à (X = 1400 mil, Y = -600 mil, rotation 270°), parfaitement centré sur l'axe vertical.
-- [ ] **1.3 Pont diviseur pour monitoring tension batterie (ESP32 ADC) :**
+- [x] **1.3 Pont diviseur pour monitoring tension batterie (ESP32 ADC) :**
   - [x] Implantation physique initiale à droite de `J1` (`R12`, `R13`, `C10` et point de test `TP9` / `VBAT_SENSE`).
   - [x] Arbitrer les valeurs de `R12` et `R13` : adoption d'un ratio ~1/9.3 (R12 = 100 kΩ, R13 = 12 kΩ, Basic Part LCSC C17413) pour centrer les 14.4V alternateur à 1.54V au cœur de la zone linéaire de l'ADC ESP32-S3 (atténuation 11 dB).
-  - [ ] Mettre à jour R13 à 12 kΩ sur le schéma et ajouter une diode de protection/clamp rapide vers le rail 3.3V (diode Schottky BAT54) pour sécuriser l'entrée ADC face aux transitoires.
+  - [x] Mettre à jour R13 à 12 kΩ sur le schéma et ajouter une diode de protection/clamp rapide vers le rail 3.3V (diode Schottky BAT54WS D6) pour sécuriser l'entrée ADC face aux transitoires.
 - [x] **1.4 Revue du schéma par l'utilisateur :** Contrôle, vérification et validation visuelle/technique du schéma complet par l'utilisateur (raccordement de J1, pont diviseur batterie, NetPorts miroirs +12V, CANH, CANL, K_LINE, points de test et ERC = 0) avant de figer les fixations mécaniques et d'engager la synchronisation PCB.
 - [x] **1.5 Fixations mécaniques :** Déterminer et placer les trous de perçage pour vis M2 (diamètre 2.2 mm avec zone d'exclusion de 4.5 mm pour tête de vis et inserts de colonnettes).
 - [ ] **1.6 Traiter les retours du reviewer :**
@@ -64,19 +64,20 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [x] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours (TP10 / IO0).
   - [ ] **Réseau de compensation Buck U4 (Revue TPS54331) :**
     - [x] Valider le dimensionnement théorique de R11 (10 kΩ) et C9 (3.3 nF) via les équations fermées TI SLVS839H (écart < 5% vs calcul optimal Rz=9.8 kΩ / Cz=3.1 nF).
-    - [ ] Ajouter le condensateur haute fréquence C13 (220 pF 50V C0G 0603, LCSC C1604, Basic Part) entre la broche COMP (pin 6) de U4 et GND pour filtrer le bruit de commutation 570 kHz en milieu automobile.
-    - [ ] Mettre à jour la nomenclature (BOM.md) et synchroniser le schéma avec le PCB.
+    - [x] Ajouter le condensateur haute fréquence C13 (220 pF 50V C0G 0603, LCSC C1604, Basic Part) entre la broche COMP (pin 6) de U4 et GND pour filtrer le bruit de commutation 570 kHz en milieu automobile.
     - [x] Créer le skill dédié `.agents/skills/buck-compensation/` avec optimisation paramétrique et consigner la modélisation de boucle dans LEARNINGS.md.
   - [ ] **Dépouillement Revue Critique Schéma (19/09) — Arbitrage & Actions retenues :**
     - [x] **Clarification du périmètre :** Véhicules légers 12V exclusivement (inscrit dans README.md). Rejet de la sur-spécification Buck 60V / TVS industrielle : le TPS54331 et la SMBJ18A sont validés et maintenus.
     - [x] **Vérification critique des points reviewer :** Écarté fausses alertes et points déjà résolus (Pin 39/IO1 = ADC1_CH0 100% conforme Wi-Fi sur ESP32-S3 ; Q1/Q2 déjà au BOM ; STB Pin 8 déjà à GND ; C11 Bulk déjà implanté ; Vgs max CJ2309A = ±20V protégé par D3 12V ; marge LDO sur banc USB largement suffisante à > 1.0V).
-    - [ ] Mettre à jour le diviseur batterie R12/R13 (100 kΩ / 12 kΩ) et ajouter la diode clamp 3.3V sur le schéma.
-    - [ ] Implanter le condensateur C13 (220 pF COMP) sur le schéma (couplé au point Buck ci-dessus).
+    - [x] Mettre à jour le diviseur batterie R12/R13 (100 kΩ / 12 kΩ) et ajouter la diode clamp 3.3V (D6 BAT54WS) sur le schéma.
+    - [x] Implanter le condensateur C13 (220 pF COMP) sur le schéma (couplé au point Buck ci-dessus).
     - [ ] Préciser la sérigraphie du cavalier JP1 sur le PCB (« Shunt = Bench only / Open = Car »).
   - [ ] **Revue Schéma & Recommandations PCB (19/09 17h) — Arbitrage & Actions retenues :**
     - [x] **Vérification critique des points reviewer :** Confirmé que la broche S de U2 est déjà à GND, C6 est déjà après FB1, et la stratégie 2 couches (plans de masse massifs Top/Bottom + vias de couture) est validée pour l'optimisation des coûts JLCPCB.
     - [ ] **Pull-up K-Line (`R16` - 1 kΩ 1206 / LCSC C17902) :** Implanter la résistance de tirage vers `+12V_PROT` sur la ligne `K_LINE` pour garantir l'initialisation et la conformité ISO 9141-2 avec le calculateur Daewoo Kalos.
-    - [ ] **Découplages HF complémentaires (`C14`, `C15`) :** Ajouter `C14` (100 nF 50V 0603) sur le rail `+5V` au plus près de la broche 3 (VCC) de `U2`, et `C15` (100 nF 50V 0603) sur le rail `+12V_PROT` au plus près de la broche 2 (VIN) de `U4`.
+    - [x] **Découplage HF entrée Buck (`C14`) :** Ajouté `C14` (100 nF 50V 0603) sur le rail `+12V_PROT` au plus près de la broche 2 (VIN) de `U4`.
+    - [ ] **Découplage HF transceiver CAN (`C15`) :** Ajouter `C15` (100 nF 50V 0603) sur le rail `+5V` au plus près de la broche 3 (VCC) de `U2`.
+    - [ ] Mettre à jour la nomenclature (BOM.md) et synchroniser le schéma avec le PCB.
 - [ ] **1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
 
@@ -98,8 +99,8 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 ## 3. Disposition Macro & Placement Optimisé des Composants (Floorplanning)
 
 - [ ] **3.1 Organisation des 4 blocs fonctionnels :**
-  - *Bloc Puissance & Protection (Ouest) :* F1, D1, Q1, Q2, étage Buck (U4, L1, D2, C7, C8, R9, R10, R11, C9) et LDO (U5, FB1, C6).
-  - *Bloc Transceivers & Interfaces (Centre) :* CAN (U2, R8, JP1, TVS U8) et K-Line (U3, R1, R2, TVS D5).
+  - *Bloc Puissance & Protection (Ouest) :* F1, D1, Q1, Q2, étage Buck (U4, L1, D2, C7, C14, C8, R9, R10, R11, C9, C13), diviseur batterie (R12, R13, C10, D6) et LDO (U5, FB1, C6).
+  - *Bloc Transceivers & Interfaces (Centre) :* CAN (U2, R8, JP1, TVS U8, C3, C15) et K-Line (U3, R1, R2, TVS D5, R16, C4).
   - *Bloc USB-C & ESD (Sud-Centre) :* Connecteur horizontal J2, pull-downs R3/R4, diodes ESD U6/U7, point de test TP1.
   - *Bloc Cœur de Calcul & Radio (Est) :* ESP32-S3 (U1) avec son antenne orientée vers le bord extérieur libre.
 - [ ] **3.2 Optimisation du cluster USB Sud :**
@@ -108,17 +109,23 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 - [ ] **3.3 Optimisation du découplage HF & Réservoir d'énergie Bulk :**
   - Positionner les condensateurs de découplage HF `C1` et `C2` (100 nF) à moins de 2 mm des broches d'alimentation de l'ESP32.
   - **Implanter impérativement le condensateur réservoir Bulk `C11` (10 µF 25V 0805) au plus près immédiat des broches 1 (`GND`) et 2 (`3V3`) de l'ESP32 `U1` (distance < 2 à 3 mm)** avec des pistes directes larges et un via de masse franc vers le plan interne GND, pour étouffer les appels de courant transitoires de 500 mA lors des transmissions radio Wi-Fi.
-  - Positionner `C3` au plus près de la broche 5 (`VIO`) de `U2`.
-  - Positionner `C4` au plus près de la broche 3 (`VCC`) de `U3`.
-  - Positionner `C6` au plus près de la sortie de `U5`/`FB1`.
-- [ ] **3.4 Optimisation de l'étage Reset & Bootloader :**
+  - Positionner `C3` (100 nF) au plus près de la broche 5 (`VIO`) de `U2` (< 2 mm).
+  - **Positionner `C15` (100 nF 50V) au plus près de la broche 3 (`VCC`) de `U2` (< 2 mm)** pour fournir les pointes de courant lors des commutations du bus CAN.
+  - Positionner `C4` (100 nF) au plus près de la broche 3 (`VCC`) de `U3` (< 2 mm).
+  - **Positionner `C14` (100 nF 50V) collé à la broche 2 (`VIN`) de `U4` (< 1.5 mm)**, en amont immédiat de `C7` (10 µF 50V), avec boucle de masse ultra-courte pour absorber les harmoniques HF > 20 MHz.
+  - Positionner `C6` (1 µF) au plus près de la sortie de `U5`/`FB1`.
+- [ ] **3.4 Optimisation du réseau de compensation Buck & Protection ADC :**
+  - **Implanter `C13` (220 pF), `R11` (10 kΩ) et `C9` (3.3 nF) à moins de 2 mm de la broche 6 (`COMP`) de `U4`**, avec un **isolement physique strict face au nœud de découpage bruité `PH` (broche 8, diode SS34 `D2`, inductance `L1`)** pour préserver la haute impédance interne (8 MΩ) contre tout couplage capacitif. Retour sur masse calme (GND logique).
+  - **Positionner la diode clamp `D6` (`BAT54WS`) immédiatement accolée à `R13` et `C10` (< 2 mm)** sur la ligne `VBAT_SENSE`, avec piste courte vers le port 3.3V pour garantir un clamp instantané à 3.6V face aux surtensions transitoires.
+- [ ] **3.5 Optimisation de l'étage Reset & Bootloader :**
   - **Implanter impérativement le condensateur RC `C12` (1 µF) et la résistance pull-up `R15` (10 kΩ) au plus près immédiat de la broche 3 (`EN`) de l'ESP32 `U1` (distance < 2 mm)** pour minimiser la surface de boucle haute impédance et immuniser la ligne contre les bruits RF 2.4 GHz et transitoires automobiles.
   - Positionner le bouton poussoir `SW1` avec orientation et dégagement adaptés pour un alignement propre avec l'orifice trou d'épingle (*pinhole*) prévu sur la coque du boîtier.
   - Positionner le point de test `TP10` (`IO0`) à proximité de la broche 27 de `U1` et proche d'une zone GND pour faciliter la mise à la masse en cas de récupération bootloader.
-- [ ] **3.5 Optimisation des protections transitoires OBD (U8, D5) :**
-  - Positionner la double diode TVS `U8` au plus près des broches `CANH` (Pin 6) et `CANL` (Pin 14) du connecteur OBD `J1` pour un clamp immédiat avant la terminaison `R8`/`JP1` et le transceiver `U2`.
-  - Positionner la diode TVS `D5` au plus près de la broche `K_LINE` (Pin 7) de `J1` pour dériver les transitoires avant le transceiver `U3` et le point de test `TP2`.
-- [ ] **3.6 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
+- [ ] **3.6 Optimisation des protections transitoires OBD & Pull-up K-Line (U8, D5, R16) :**
+  - Positionner la double diode TVS `U8` au plus près des broches `CANH` (Pin 6) et `CANL` (Pin 14) du connecteur OBD `J1` (< 5 mm) pour un clamp immédiat avant la terminaison `R8`/`JP1` et le transceiver `U2`.
+  - Positionner la diode TVS `D5` au plus près de la broche `K_LINE` (Pin 7) de `J1` (< 5 mm) pour dériver les transitoires avant le transceiver `U3` et le point de test `TP2`.
+  - **Positionner la résistance de pull-up `R16` (1 kΩ 1206) à proximité immédiate de `D5` et de la pin 7 de `J1` (< 5 mm)**, en zone aérée pour dissiper convenablement les échauffements lors des commutations K-Line.
+- [ ] **3.7 Alignement esthétique & lisibilité :** Vérifier l'orientation horizontale de toutes les sérigraphies de composants (règle AGENTS.md) et la cohérence visuelle.
 
 ---
 
