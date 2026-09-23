@@ -103,10 +103,10 @@ flowchart TD
 ![Schéma ESP32](./images/SCH_ESP32.png)
 
 ### Circuit Imprimé (PCB)
-![PCB ODB2 Scanner](./images/PCB.png)
+![PCB OBD2 Scanner](./images/PCB.png)
 
 ### Modélisation 3D
-![3D ODB2 Scanner](./images/3D.png)
+![3D OBD2 Scanner](./images/3D.png)
 
 ---
 
@@ -132,7 +132,7 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | 💡 **[LEARNINGS.md](LEARNINGS.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
 | 📜 **[AGENTS.md](AGENTS.md)** | **Règles de gouvernance IA** : découplage strict des skills (règle 0), exécution obligatoire sous `uv`, sécurité du pont et protocole de dépouillement. |
 | 📥 **[review.md](review.md)** | **Sas d'entrée pour revues techniques** : fichier réceptacle pour coller une revue (schéma, PCB, firmware) avant arbitrage avec l'utilisateur et transfert vers `TODO.md`. |
-| 📁 **`ODB2-Scanner.eprj2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
+| 📁 **`OBD2.eprj2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
 
 ---
 
@@ -150,7 +150,7 @@ Le projet intègre et exploite 3 compétences logicielles dédiées (*Skills*) p
 
 ## 7. Démarrage Rapide
 
-1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `ODB2-Scanner.eprj2`.
+1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `OBD2.eprj2`.
 2. **Contrôle d'intégrité :**
    - Schéma : Menu `Design` → `Check ERC` (doit retourner 0 erreur, 0 avertissement).
    - PCB : Menu `Design` → `Check DRC` (doit retourner 0 erreur).

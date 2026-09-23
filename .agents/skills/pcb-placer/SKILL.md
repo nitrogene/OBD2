@@ -7,7 +7,7 @@ description: >-
   audite les distances et injecte le placement en une passe via le pont local EasyEDA.
 compatibility: Python 3.8+, Node.js 18+, uv, EasyEDA Pro desktop avec run-api-gateway
 metadata:
-  author: ODB2-Scanner-Dev
+  author: OBD2-Scanner-Dev
   version: "2.0.0"
 ---
 

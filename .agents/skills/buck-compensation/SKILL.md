@@ -8,7 +8,7 @@ description: >-
   du régulateur, de l'inductance L1, du condensateur Cout ou de la consommation estimée.
 compatibility: Python 3.8+
 metadata:
-  author: ODB2-Scanner-Dev
+  author: OBD2-Scanner-Dev
   version: "1.0.0"
 ---
 

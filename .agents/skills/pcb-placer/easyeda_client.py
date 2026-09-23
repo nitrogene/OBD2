@@ -259,7 +259,7 @@ def main():
         if not h.get("edaConnected"):
             print("\n⚠️  Note : Le client EasyEDA Pro n'est pas connecté au pont.")
             print("   Pour interagir avec le schéma/PCB en direct :")
-            print("   1. Ouvrez EasyEDA Pro et chargez le projet 'ODB2-Scanner'.")
+            print("   1. Ouvrez EasyEDA Pro et chargez le projet 'OBD2-Scanner'.")
             print("   2. Assurez-vous que l'extension 'run-api-gateway.eext' est installée et active.")
             return
 

@@ -11,7 +11,7 @@
 
 ## 1. Transparence et Sécurité
 - **Explication obligatoire :** Avant tout script interactif sur le pont EasyEDA (`http://localhost:49620`), expliciter l'intention, le motif technique précis (composants/coordonnées) et l'action concrète.
-- **Périmètre strict :** Modifications cantonnées à `D:\Dev\ODB`. Interdiction de toucher aux répertoires externes ou au skill `easyeda-api`. Nettoyer les scripts `.js`/`.mjs` temporaires avant validation.
+- **Périmètre strict :** Modifications cantonnées au répertoire courant. Interdiction de toucher aux répertoires externes ou au skill `easyeda-api`. Nettoyer les scripts `.js`/`.mjs` temporaires avant validation.
 
 ## 2. Contraintes Techniques & API
 - **Nets explicites :** Interdiction absolue des identifiants anonymes type `$1N...`.
@@ -32,7 +32,7 @@
 2. Nettoyer les fichiers `.js` / `.mjs` temporaires.
 3. Vérifier DRC = 0 et ERC = 0.
 4. Mettre à jour `LEARNINGS.md` si découverte technique. Si la découverte constitue un calcul, un audit ou un automatisme réutilisable, proposer ou acter sa transformation en Skill autonome sous `.agents/skills/<nom>/`.
-5. Exporter `ProPrj_ODB2-Scanner.epro2` via les skills easyeda-api.
+5. Exporter `ProPrj_OBD2-Scanner.epro2` via les skills easyeda-api.
 6. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
 7. Commit et push **uniquement** après accord explicite sur le message de commit.
 
