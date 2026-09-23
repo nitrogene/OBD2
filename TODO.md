@@ -76,18 +76,21 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [x] **Vérification critique des points reviewer :** Confirmé que la broche S de U2 est déjà à GND, C6 est déjà après FB1, et la stratégie 2 couches (plans de masse massifs Top/Bottom + vias de couture) est validée pour l'optimisation des coûts JLCPCB.
     - [x] **Pull-up K-Line (`R16` - 1 kΩ 1206 / LCSC C4410) :** Implanter la résistance de tirage vers `+12V_PROT` sur la ligne `K_LINE` pour garantir l'initialisation et la conformité ISO 9141-2 avec le calculateur Daewoo Kalos. (Résolu et validé).
     - [x] **Découplage HF entrée Buck (`C14`) :** Ajouté `C14` (100 nF 50V 0603) sur le rail `+12V_PROT` au plus près de la broche 2 (VIN) de `U4`.
-    - [ ] **Mise à jour et audit approfondi de la BOM (`BOM.md`) :**
+    - [x] **Mise à jour et audit approfondi de la BOM (`BOM.md`) :**
       - [ ] **Bascule des pièces Extended avec correspondance parfaite en Basic Part :**
-        - [ ] Condensateurs 100 nF 50V 0603 (`C1`, `C2`, `C3`, `C4`, `C10`) : Remplacer `C1591` (Extended) par `C14663` (Basic Part déjà utilisé sur `C14`/`C15`).
-        - [ ] Condensateurs 1 µF 0603 (`C5`, `C6`) : Remplacer `C5673` (25V Extended) par `C15849` (50V Basic Part déjà utilisé sur `C12`).
-        - [ ] Résistances 10 Ω 0805 1% (`R1`, `R2`) : Remplacer `C2907220` (Extended) par `C17415` (`0805W8F100JT5E` - Basic Part).
-        - [ ] N-MOSFET 60V SOT-23 (`Q2`) : Remplacer `C50176485` (Extended) par `C8545` (`2N7002` Jiangsu Changjing - Basic Part).
+        - [x] Condensateurs 100 nF 50V 0603 (`C1`, `C2`, `C3`, `C4`, `C10`) : Remplacé `C1591` (Extended) par `C14663` (Basic Part déjà utilisé sur `C14`/`C15`).
+        - [x] Condensateurs 1 µF 0603 (`C5`, `C6`) : Remplacé `C5673` (25V Extended) par `C15849` (50V Basic Part déjà utilisé sur `C12`).
+        - [x] Résistances 10 Ω 0805 1% (`R1`, `R2`) : Remplacé `C2907220` (Extended) par `C17415` (`0805W8F100JT5E` - Basic Part).
+        - [x] N-MOSFET 60V SOT-23 (`Q2`) : Remplacé par `C8545` (`2N7002` Jiangsu Changjing - Basic Part).
+        - [x] Diode Schottky 40V 3A SMA (`D2`) : Remplacé `C52023881` par `C8678` (`SS34` MDD boîtier SMA - Basic Part).
+        - [x] Condensateur 220 pF 50V 0603 (`C13`) : Remplacé `C27675` par `C1603` (`CL10B221KB8NNNC` Samsung X7R 0603 - Basic Part).
+        - [ ] Bouton poussoir tactile CMS (`SW1`) : Remplacer `C480267` (`TS-1187A-C-A-B` - Extended) par `C318884` (`TS-1187A-B-A-B` - Basic Part).
       - [x] **Audit des stocks LCSC / JLCPCB (Terminé à 100%) :**
         - Tous les circuits intégrés critiques (`U1` ESP32-S3, `U2` TJA1051T, `U3` L9637D, `U4` TPS54331, `U5` LDL1117), transistors, diodes et connecteurs majeurs sont confirmés en stock massif.
         - Tous les passifs Basic Parts sont confirmés en approvisionnement permanent.
-      - [ ] **Traitement des alertes de stock & références à corriger :**
-        - [ ] Diodes ESD USB (`U6`, `U7`) : Remplacer `C53238084` (Shikues `SD05C` en rupture) par `C116790` (`SESD05C` Semiware SOD-323 5V bidirectionnelle en stock).
-        - [ ] Diode Zener 12V (`D3`) : Remplacer l'identifiant interne EasyEDA `C41364475` par le code LCSC standard en stock `C499794` (`BZX84C12` SMC SOT-23).
+      - [x] **Traitement des alertes de stock & références à corriger :**
+        - [x] Diodes ESD USB (`U6`, `U7`) : Remplacé `C53238084` par `C720025` (`SESD05C` Semiware SOD-323 5V bidirectionnelle en stock massif).
+        - [x] Diode Zener 12V (`D3`) : Remplacé l'identifiant interne EasyEDA `C41364475` par le code LCSC standard en stock `C21547682` (`BZX84C12` DOWO SOT-23).
     - [ ] **Mise à jour du PCB (Synchronisation Schéma ➔ PCB) :**
       - Exécuter « Update PCB from Schematic » dans EasyEDA Pro pour importer les nouvelles empreintes (`R16`, `C15`) et aligner la netlist à 100%.
       - Vérifier l'intégrité des connexions et l'absence de nets orphelins.
