@@ -53,16 +53,16 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [x] Ajouter une diode Zener de protection 12V (D3 BZX84C12) entre Source et Grille de Q1 avec résistance série (R14 10 kΩ) pour borner VGS en régime permanent (14.4V alternateur) et lors des transitoires.
     - [x] Remplacer le condensateur d'entrée C7 (25V) par une référence qualifiée 50V (10 µF 1206 50V) pour résister sans claquage à la tension d'écrêtage de D1 (VCL max ~39V).
     - [x] Arbitrer la tenue du régulateur Buck U4 (TPS54331, VIN max absolu 30V) face aux transitoires : résolu par l'adoption de la TVS SMBJ18A (écrêtage crête VCL = 29.2V < 30V).
-  - [ ] **Points Importants (Architecture & Robustesse) :**
+  - [x] **Points Importants (Architecture & Robustesse) :**
     - [x] Rendre la terminaison CAN R8 (120 ohms) déconnectable : résolu par l'ajout du cavalier sélecteur JP1 (PZ2.54-1*2). Shunt requis sur banc de test / simulateur d'ECU ; laissé ouvert par défaut pour utilisation directe et conforme dans une voiture.
     - [x] Raccorder VBUS_5V au rail +5V via une diode Schottky anti-retour : résolu par l'ajout de D4 (BAT54CW, boîtier SOT-323, C962771) avec anodes 1 et 2 reliées à VBUS_5V et cathode commune reliée à +5V pour l'alimentation autonome USB et la protection anti-retour.
     - [x] Ajouter un condensateur réservoir (bulk 10-22 µF) sur le rail 3.3V au plus près du module ESP32-S3 U1 pour lisser les pics de courant Wi-Fi TX (500 mA) : résolu par l'ajout de C11 (10 µF 25V X5R 0805 Samsung CL21A106KAYNNNE / C15850, Basic Part).
     - [x] Sécuriser la broche EN (CHIP_PU) de l'ESP32 avec une résistance pull-up externe de 10 k ohms vers 3.3V et un condensateur de 1 µF vers GND contre les resets intempestifs en environnement bruité (R15, C12, SW1, TP11).
     - [x] Ajouter des protections transitoires/ESD dédiées sur les lignes CANH, CANL et K_LINE au niveau du connecteur OBD J1 : résolu par l'ajout de U8 (double TVS 24V NUP2105LT1G en SOT-23 sur CANH/CANL) et D5 (TVS 24V SMF24CA en SOD-123FL sur K_LINE).
-  - [ ] **Points Mineurs & Pratique :**
+  - [x] **Points Mineurs & Pratique :**
     - [x] Ajuster la résistance série R6 de LED1 (verte) pour augmenter la luminosité visible en plein jour dans l'habitacle : résolu par l'adoption de R6 = 100 Ω (0805W8F1000T5E, LCSC C17408, Basic Part JLCPCB) portant le courant à ~3.6 mA (~280 mcd).
     - [x] Prévoir un point de test / strap de mise à la masse pour GPIO0 afin de garantir un accès matériel fiable au mode bootloader / flash de secours (TP10 / IO0).
-  - [ ] **Réseau de compensation Buck U4 (Revue TPS54331) :**
+  - [x] **Réseau de compensation Buck U4 (Revue TPS54331) :**
     - [x] Valider le dimensionnement théorique de R11 (10 kΩ) et C9 (3.3 nF) via les équations fermées TI SLVS839H (écart < 5% vs calcul optimal Rz=9.8 kΩ / Cz=3.1 nF).
     - [x] Ajouter le condensateur haute fréquence C13 (220 pF 50V C0G 0603, LCSC C1604, Basic Part) entre la broche COMP (pin 6) de U4 et GND pour filtrer le bruit de commutation 570 kHz en milieu automobile.
     - [x] Créer le skill dédié `.agents/skills/buck-compensation/` avec optimisation paramétrique et consigner la modélisation de boucle dans LEARNINGS.md.
@@ -74,10 +74,23 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
     - [ ] Préciser la sérigraphie du cavalier JP1 sur le PCB (« Shunt = Bench only / Open = Car »).
   - [ ] **Revue Schéma & Recommandations PCB (19/09 17h) — Arbitrage & Actions retenues :**
     - [x] **Vérification critique des points reviewer :** Confirmé que la broche S de U2 est déjà à GND, C6 est déjà après FB1, et la stratégie 2 couches (plans de masse massifs Top/Bottom + vias de couture) est validée pour l'optimisation des coûts JLCPCB.
-    - [ ] **Pull-up K-Line (`R16` - 1 kΩ 1206 / LCSC C17902) :** Implanter la résistance de tirage vers `+12V_PROT` sur la ligne `K_LINE` pour garantir l'initialisation et la conformité ISO 9141-2 avec le calculateur Daewoo Kalos.
+    - [x] **Pull-up K-Line (`R16` - 1 kΩ 1206 / LCSC C4410) :** Implanter la résistance de tirage vers `+12V_PROT` sur la ligne `K_LINE` pour garantir l'initialisation et la conformité ISO 9141-2 avec le calculateur Daewoo Kalos. (Résolu et validé).
     - [x] **Découplage HF entrée Buck (`C14`) :** Ajouté `C14` (100 nF 50V 0603) sur le rail `+12V_PROT` au plus près de la broche 2 (VIN) de `U4`.
-    - [ ] **Découplage HF transceiver CAN (`C15`) :** Ajouter `C15` (100 nF 50V 0603) sur le rail `+5V` au plus près de la broche 3 (VCC) de `U2`.
-    - [ ] Mettre à jour la nomenclature (BOM.md) et synchroniser le schéma avec le PCB.
+    - [ ] **Mise à jour et audit approfondi de la BOM (`BOM.md`) :**
+      - [ ] **Bascule des pièces Extended avec correspondance parfaite en Basic Part :**
+        - [ ] Condensateurs 100 nF 50V 0603 (`C1`, `C2`, `C3`, `C4`, `C10`) : Remplacer `C1591` (Extended) par `C14663` (Basic Part déjà utilisé sur `C14`/`C15`).
+        - [ ] Condensateurs 1 µF 0603 (`C5`, `C6`) : Remplacer `C5673` (25V Extended) par `C15849` (50V Basic Part déjà utilisé sur `C12`).
+        - [ ] Résistances 10 Ω 0805 1% (`R1`, `R2`) : Remplacer `C2907220` (Extended) par `C17415` (`0805W8F100JT5E` - Basic Part).
+        - [ ] N-MOSFET 60V SOT-23 (`Q2`) : Remplacer `C50176485` (Extended) par `C8545` (`2N7002` Jiangsu Changjing - Basic Part).
+      - [x] **Audit des stocks LCSC / JLCPCB (Terminé à 100%) :**
+        - Tous les circuits intégrés critiques (`U1` ESP32-S3, `U2` TJA1051T, `U3` L9637D, `U4` TPS54331, `U5` LDL1117), transistors, diodes et connecteurs majeurs sont confirmés en stock massif.
+        - Tous les passifs Basic Parts sont confirmés en approvisionnement permanent.
+      - [ ] **Traitement des alertes de stock & références à corriger :**
+        - [ ] Diodes ESD USB (`U6`, `U7`) : Remplacer `C53238084` (Shikues `SD05C` en rupture) par `C116790` (`SESD05C` Semiware SOD-323 5V bidirectionnelle en stock).
+        - [ ] Diode Zener 12V (`D3`) : Remplacer l'identifiant interne EasyEDA `C41364475` par le code LCSC standard en stock `C499794` (`BZX84C12` SMC SOT-23).
+    - [ ] **Mise à jour du PCB (Synchronisation Schéma ➔ PCB) :**
+      - Exécuter « Update PCB from Schematic » dans EasyEDA Pro pour importer les nouvelles empreintes (`R16`, `C15`) et aligner la netlist à 100%.
+      - Vérifier l'intégrité des connexions et l'absence de nets orphelins.
 - [ ] **1.7 Contour de carte & façade USB :** Contour ajusté à 81.28 x 35.56 mm (3200 x 1400 mil) ; valider l'affleurement de la prise USB-C J2 au Sud pour la découpe de coque.
 - [ ] **1.8 Emplacement de la LED témoin :** Positionner LED1 pour un alignement optimal avec le puits de lumière du boîtier.
 
@@ -97,7 +110,7 @@ Il suit la conception matérielle (schématique, PCB, fabrication) et logicielle
 ---
 
 ## 3. Disposition Macro & Placement Optimisé des Composants (Floorplanning)
-
+- [ ] **3.0 Mise à jour de floorplan.json :** depuis la BOM.
 - [ ] **3.1 Organisation des 4 blocs fonctionnels :**
   - *Bloc Puissance & Protection (Ouest) :* F1, D1, Q1, Q2, étage Buck (U4, L1, D2, C7, C14, C8, R9, R10, R11, C9, C13), diviseur batterie (R12, R13, C10, D6) et LDO (U5, FB1, C6).
   - *Bloc Transceivers & Interfaces (Centre) :* CAN (U2, R8, JP1, TVS U8, C3, C15) et K-Line (U3, R1, R2, TVS D5, R16, C4).

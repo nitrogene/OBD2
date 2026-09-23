@@ -384,7 +384,7 @@ flowchart LR
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
-* **Résistance de Pull-Up Normalisée `R16` (1 kΩ 1206 1/4W - LCSC `C17902`) :**
+* **Résistance de Pull-Up Normalisée `R16` (1 kΩ 1206 1/4W - LCSC `C4410`) :**
   * *Conformité Norme Automobile :* La spécification ISO 9141-2 impose une résistance de rappel au +12V (entre 510 Ω et 1 kΩ) pour garantir un temps de montée rapide ($t_r < 2\text{ µs}$) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF).
   * *Raccordement sécurisé :* Reliée entre la ligne `K_LINE` et le rail protégé `+12V_PROT` (en aval direct de la protection anti-inversion Q1 et du fusible F1).
   * *Dissipation thermique maîtrisée (boîtier 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie, la puissance crête dissipée vaut $P = V^2 / R = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$. Le boîtier 1206 (dissipation nominale de 250 mW) encaisse cet échauffement sans stress thermique, là où un boîtier 0603 (100 mW) ou 0805 (125 mW) risquerait la rupture.
