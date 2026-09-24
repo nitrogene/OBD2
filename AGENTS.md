@@ -36,12 +36,13 @@
 6. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
 7. Commit et push **uniquement** après accord explicite sur le message de commit.
 
-## 5. Dépouillement des Revues Techniques (`review.md`)
-- **Détection active :** Si le fichier `review.md` contient du texte non vide (revue de schéma, PCB, routage ou code firmware) :
-  1. **Analyse & Synthèse :** L'agent doit analyser le contenu, trier les remarques par ordre de criticité (Bloquant / Important / Mineur) et identifier les impacts concrets sur le projet.
+## 5. Dépouillement des Revues Techniques (`review/reviewXXX.md`)
+- **Détection active :** Scanner le répertoire `review/` à la recherche de fichiers de revue `reviewXXX.md` (ou `review*.md`) non encore dépouillés :
+  - Les revues doivent respecter le formalisme défini dans [`review/guidelines.md`](review/guidelines.md) (nom de l'agent/reviewer, date, version auditée, classification par ordre de criticité : Bloquant / Important / Mineur).
+  1. **Analyse & Synthèse :** L'agent doit analyser le contenu du fichier de revue, trier les remarques par ordre de criticité (Bloquant / Important / Mineur) et identifier les impacts concrets sur le projet.
   2. **Arbitrage interactif :** Présenter une synthèse à l'utilisateur et échanger avec lui pour valider, amender ou écarter chaque point (faisabilité, encombrement, catalogue LCSC, choix d'architecture).
   3. **Intégration au TODO :** Après accord explicite de l'utilisateur, convertir les points retenus en cases à cocher actionnables (`- [ ] ...`) dans la section appropriée de la checklist de `TODO.md`.
-  4. **Purge du sas :** Vider intégralement `review.md` une fois l'intégration actée afin de laisser le fichier prêt pour la revue suivante.
+  4. **Suppression du fichier traité :** Supprimer définitivement le fichier `reviewXXX.md` une fois l'intégration dans `TODO.md` actée afin de laisser le sas propre pour les revues suivantes.
 - **Regard critique & vérification obligatoire :** Une revue ne doit jamais être prise pour argent comptant. L'agent doit impérativement confronter les remarques du reviewer à la réalité matérielle et documentaire du projet (schéma physique, fichiers sources, datasheets constructeurs).
   - *États obsolètes :* La revue peut se baser sur un commit antérieur, un document non synchronisé ou une image non à jour (composants déjà implantés, pistes déjà routées, erratum déjà corrigés).
   - *Collisions & doublons :* Vérifier systématiquement si une remarque entre en collision ou redéfinit des choix déjà arbitrés ou en cours de traitement dans `TODO.md`.
