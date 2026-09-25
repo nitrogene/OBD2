@@ -8,7 +8,6 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ## Phase 1 : Schéma Électrique & Nomenclature (BOM)
 
 ### 1.1 Correctifs critiques & robustesse (issus des revues techniques)
-- [ ] **[BLOQUANT] Raccorder les masses OBD-II `J1` (broches 4 & 5) au net `GND` :** Retirer les drapeaux "No Connect" (NC) sur les broches 4 (*Chassis Ground*) et 5 (*Signal Ground*) de `J1` sur le schéma et les raccorder physiquement au net `GND` commun pour rétablir la boucle d'alimentation et la référence de masse véhicule.
 - [ ] **[IMPORTANT] Sécuriser la grille du N-MOS `Q2` (2N7002) contre le Load-Dump :** Remplacer `R5` par un pont diviseur (ex. 10 kΩ / 10 kΩ) ou ajouter une diode Zener de clamp 12V/15V sur la grille de `Q2` pour garantir que Vgs ne dépasse jamais sa limite absolue (±20 V) lors des transitoires 29.2V.
 - [ ] **[IMPORTANT] Corriger le raccordement de la broche VS de `U3` (L9637D) :** Raccorder la broche 7 (VS) de `U3` au rail `+12V_PROT` (après le fusible `F1` et le MOSFET anti-inversion `Q1`) au lieu du `+12V` brut, et rectifier la mention erronée `U3(3)` dans [`HARDWARE.md`](HARDWARE.md).
 - [ ] **[IMPORTANT] Mettre en conformité l'alimentation logique VCC de `U3` (L9637D) :** Alimenter VCC en `+5V` au lieu de `3.3V` pour respecter la plage constructeur nominale (4.5 V à 5.5 V), la ligne RX restant en collecteur ouvert compatible 3.3V avec pull-up vers le 3.3V.
@@ -16,7 +15,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [ ] **[IMPORTANT] Optimiser la marge de protection Buck `U4` (TVS `D1`) :** Évaluer l'adoption d'une TVS SMBJ16A (VRWM = 16 V, VCL = 26.0 V) pour dégager une marge sécuritaire de 4.0V sous les 30.0V de limite absolue du Buck TPS54331 en environnement 12V VL.
 
 ### 1.2 Optimisation du catalogue (Bascule Basic Parts JLCPCB)
-- [ ] **Bouton poussoir tactile `SW1` :** Remplacer `C480267` (*Extended*) par `C318884` (`TS-1187A-B-A-B` - *Basic Part*, même empreinte 5.1×5.1 mm).
+- [x] **Bouton poussoir tactile `SW1` :** Remplacé `C480267` (*Extended*) par `C318884` (`TS-1187A-B-A-B` - *Basic Part*, même empreinte 5.1×5.1 mm).
 - [ ] **Capacité de sortie Buck `C8` :** Remplacer la 22 µF 1206 *Extended* par 2 × 10 µF 50V 1206 (`C13585` - *Basic Part* déjà présente en BOM) en parallèle pour réduire le DC-bias et supprimer les frais de setup SMT.
 
 ### 1.3 Validation Schéma

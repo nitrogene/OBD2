@@ -54,7 +54,7 @@ Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, s
 | **R14** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance série limitation courant Zener D3 commande grille Q1 (10 kΩ) |
 | **R15** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche EN vers rail 3.3V (10 kΩ) |
 | **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ 1206) |
-| **SW1** | — | `TS-1187A-C-A-B` | `C480267` | Extended Part | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier) |
+| **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
 | **TP2** | K_LINE | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE) |
 | **TP3** | GND | `—` | *—* | — | `—` | Point de test pad cuivre pour la masse commune de référence (GND) |
@@ -82,8 +82,8 @@ Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, s
 Sur les **66 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
 - **Composants physiques à assembler :** 55 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **32 composants** (58% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **23 composants** (strict minimum technique).
+- **Basic Parts (0 $ de frais de chargement) :** **33 composants** (60% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **22 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
@@ -104,13 +104,14 @@ Sur les **66 composants** du circuit (dont 11 points de test sans composant phys
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
 * **`R16`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
+* **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
 
 ### B. Dernière Opportunité d'Optimisation (Passage en Basic Part)
 
-* **`SW1` (Bouton poussoir tactile CMS Reset) :** Actuellement `C480267` (`TS-1187A-C-A-B` - Extended Part) ; peut être basculé vers `C318884` (`TS-1187A-B-A-B` XKB - **Basic Part** JLCPCB, même empreinte 5.1x5.1mm, force 160 gf).
+* **`C8` (Capacité de sortie Buck) :** Actuellement `C5448922` (22 µF 1206 25V - Extended Part) ; peut être remplacé par 2 × 10 µF 50V 1206 (`C13585` - Basic Part déjà présente en BOM) en parallèle pour réduire le DC-bias et supprimer les frais de setup SMT.
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (11 composants basculés au total, soit **~33 $ d'économie de frais de bobines** sur chaque série). Les 22 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, derating 25V de `C8`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (12 composants basculés au total, soit **~36 $ d'économie de frais de bobines** sur chaque série). Les 22 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, derating 25V de `C8`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
 
 

@@ -34,6 +34,7 @@ Le circuit imprimé est découpé en **11 blocs fonctionnels interconnectés**, 
 flowchart TD
     subgraph OBD["PRISE VÉHICULE OBD-II (16 BROCHES)"]
         PIN16["Broche 16 (+12V Batterie)"]
+        PIN4_5["Broches 4 & 5 (Masses Châssis & Signal / GND)"]
         PIN6_14["Broches 6 & 14 (Bus CAN Différentiel)"]
         PIN7["Broche 7 (Ligne K-Line 12V)"]
     end
@@ -66,6 +67,7 @@ flowchart TD
     end
 
     PIN16 --> F1
+    PIN4_5 ===>|"Masse commune GND"| POWER
     PIN6_14 <==>|"Lignes CANH / CANL"| CAN_IC
     PIN7 <==>|"Ligne K-Line (12V)"| KLINE_IC
 
@@ -537,7 +539,7 @@ flowchart TD
 | **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VIO)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | Plans de masse, blindages, condensateurs (`C1-C15`), transceivers, `U8(3)`, `D5(2)` | Potentiel de référence zéro volt (0V) commun. | Référence / Masse |
+| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C15`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |
