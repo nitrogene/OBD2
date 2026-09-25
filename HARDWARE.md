@@ -125,7 +125,7 @@ flowchart LR
 
 ---
 
-### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C14`, `R9`, `R10`, `R11`, `C9`, `C13`)
+### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `R9`, `R10`, `R11`, `C9`, `C13`)
 
 L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des transmissions radio Wi-Fi.
 * Si on utilisait un simple régulateur linéaire pour abaisser 12V en 5V sous 500 mA, la puissance perdue en pure chaleur serait de :
@@ -149,7 +149,7 @@ flowchart LR
     C14 --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
     U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
-    VOUT --> C8["Condensateur C8\n(22 µF Filtrage)"] --> GND2["GND"]
+    VOUT --> C8_C16["Condensateurs C8 // C16\n(2 × 10 µF 50V Filtrage)"] --> GND2["GND"]
     U4_COMP["U4 Broche COMP (Pin 6)"] --> COMP_NET["Réseau Type II :\n(R11 10k + C9 3.3n) // C13 220p"] --> GND3["GND"]
 ```
 
@@ -158,7 +158,7 @@ flowchart LR
 * **Condensateur de Bootstrap `C5` (1 µF - `C0603`) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne.
 * **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
 * **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
-* **Condensateur de Sortie `C8` (22 µF céramique 25V X5R - `C1206`) :** Lisse la tension 5V pour maintenir une ondulation résiduelle (*ripple*) < 12 mV crête-à-crête.
+* **Condensateurs de Sortie `C8` et `C16` (2 × 10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Montés en parallèle direct pour obtenir une capacité effective ~18 µF sous 5V DC (faible dérating grâce à la tenue 50V), divisant par 2 l'ESR et lissant l'ondulation résiduelle (*ripple*) < 10 mV crête-à-crête.
 * **Pont Diviseur de Contre-Réaction `R9` (10 kΩ) et `R10` (1.91 kΩ) :**
   > **Vout = 0.8V × (1 + R9 / R10) = 0.8V × (1 + 10 000 / 1 910) = 0.8 × 6.2356 ≈ 4.988 V ≈ 5.0 V**
 * **Réseau de Compensation Type II `R11` (10 kΩ), `C9` (3.3 nF) et `C13` (220 pF C0G 0603 - LCSC `C1604`) :**
@@ -536,10 +536,10 @@ flowchart TD
 | **`VSENSE_BUCK`** | `U4(5)`, `R9(1)`, `R10(1)` | Point milieu du feedback asservissant le 5V sur la référence interne 0.8V. | Alimentation / Buck |
 | **`COMP_BUCK`** | `U4(6)`, `R11(1)`, `C13(1)` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation Type II. | Alimentation / Buck |
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
-| **`+5V`** | `L1(2)`, `C8(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
+| **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VIO)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C15`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
+| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C16`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |

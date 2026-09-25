@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
+Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
 
 ---
 
@@ -15,7 +15,7 @@ Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, s
 | **C5** | 1uF | `CL10A105KB8NNNC` | `C15849` | **Basic Part** | `0603` | Bootstrap convertisseur Buck U4 (broches BOOT → PH) |
 | **C6** | 1uF | `CL10A105KB8NNNC` | `C15849` | **Basic Part** | `0603` | Filtrage sortie régulateur LDO U5 (rail 3.3V) |
 | **C7** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur réservoir entrée Buck U4 qualifié 50V X5R |
-| **C8** | 22uF | `TCC1206X5R226K250HT` | `C5448922` | Extended Part | `1206` | Condensateur filtrage sortie Buck U4 (dérivation rail 5V vers GND) |
+| **C8** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C16) |
 | **C9** | 3.3nF | `CL10B332KB8NNNC` | `C1613` | **Basic Part** | `0603` | Condensateur de compensation de boucle Buck U4 (broche COMP vers GND) |
 | **C10** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Filtrage HF et réservoir de charge ADC pont diviseur batterie VBAT_SENSE |
 | **C11** | 10uF | `CL21A106KAYNNNE` | `C15850` | **Basic Part** | `0805` | Condensateur réservoir local Bulk 10 µF 25V X5R (pics Wi-Fi 500 mA) |
@@ -23,6 +23,7 @@ Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, s
 | **C13** | 220pF | `CL10B221KB8NNNC` | `C1603` | **Basic Part** | `0603` | Condensateur compensation HF boucle Buck U4 (Samsung 50V X7R) |
 | **C14** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF entrée Buck U4 (rail +12V_PROT vers GND) |
 | **C15** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF transceiver CAN U2 (rail +5V vers GND) |
+| **C16** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C8) |
 | **D1** | — | `SMBJ18A` | `C5860928` | Extended Part | `SMB` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | — | `SS34` | `C8678` | **Basic Part** | `SMA` | Diode Schottky 40V 3A de roue libre pour convertisseur Buck U4 (MDD) |
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
@@ -79,17 +80,17 @@ Inventaire exhaustif des **66 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **66 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **67 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 55 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **33 composants** (60% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **22 composants** (strict minimum technique).
+- **Composants physiques à assembler :** 56 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **35 composants** (62.5% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **21 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
 * **`C1`, `C2`, `C3`, `C4`, `C10`, `C14`, `C15`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
 * **`C5`, `C6`, `C12`** (1uF 50V, `0603`) : `CL10A105KB8NNNC` — LCSC `C15849` (**Basic Part**)
-* **`C7`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
+* **`C7`, `C8`, `C16`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
 * **`C9`** (3.3nF, `0603`) : `CL10B332KB8NNNC` — LCSC `C1613` (**Basic Part**)
 * **`C11`** (10uF 25V, `0805`) : `CL21A106KAYNNNE` — LCSC `C15850` (**Basic Part**)
 * **`C13`** (220pF 50V, `0603`) : `CL10B221KB8NNNC` — LCSC `C1603` (**Basic Part**)
@@ -106,12 +107,12 @@ Sur les **66 composants** du circuit (dont 11 points de test sans composant phys
 * **`R16`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
 * **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
 
-### B. Dernière Opportunité d'Optimisation (Passage en Basic Part)
+### B. Statut des Optimisations Basic Parts
 
-* **`C8` (Capacité de sortie Buck) :** Actuellement `C5448922` (22 µF 1206 25V - Extended Part) ; peut être remplacé par 2 × 10 µF 50V 1206 (`C13585` - Basic Part déjà présente en BOM) en parallèle pour réduire le DC-bias et supprimer les frais de setup SMT.
+Toutes les opportunités d'optimisation directe vers le catalogue Basic Parts sont désormais intégralement concrétisées. 100% des condensateurs céramiques de découplage et de filtrage sont qualifiés en Basic Parts sans compromis de tension (tenue 50V généralisée).
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (12 composants basculés au total, soit **~36 $ d'économie de frais de bobines** sur chaque série). Les 22 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, derating 25V de `C8`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (13 composants basculés au total, soit **~39 $ d'économie de frais de bobines** sur chaque série). Les 21 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
 
 

@@ -16,9 +16,12 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 
 ### 1.2 Optimisation du catalogue (Bascule Basic Parts JLCPCB)
 - [x] **Bouton poussoir tactile `SW1` :** Remplacé `C480267` (*Extended*) par `C318884` (`TS-1187A-B-A-B` - *Basic Part*, même empreinte 5.1×5.1 mm).
-- [ ] **Capacité de sortie Buck `C8` :** Remplacer la 22 µF 1206 *Extended* par 2 × 10 µF 50V 1206 (`C13585` - *Basic Part* déjà présente en BOM) en parallèle pour réduire le DC-bias et supprimer les frais de setup SMT.
+- [x] **Capacité de sortie Buck `C8` / `C16` :** Remplacé la 22 µF 1206 *Extended* par 2 × 10 µF 50V 1206 (`C13585` - *Basic Part*) en parallèle (`C8`, `C16`) pour réduire le DC-bias et supprimer les frais de setup SMT.
 
-### 1.3 Validation Schéma
+### 1.3 Référentiel Technique & Datasheets ICs
+- [ ] **Créer le dossier `datasheet/` (datasheets officielles ou résumés Markdown) pour chaque IC :** Centraliser la documentation technique de référence (`U1` ESP32-S3, `U2` TJA1051T, `U3` L9637D, `U4` TPS54331, `U5` LDL1117S33R, `U8` NUP2105L, etc.) avec leurs caractéristiques électriques, limites absolues (*Absolute Maximum Ratings*) et circuits d'application recommandés afin de vérifier rigoureusement la conformité du schéma aux préconisations constructeurs.
+
+### 1.4 Validation Schéma
 - [ ] Exécuter et valider le contrôle ERC sous EasyEDA Pro (0 erreur, 0 avertissement).
 - [ ] Mettre à jour la documentation technique ([`HARDWARE.md`](HARDWARE.md), [`BOM.md`](BOM.md)).
 
@@ -27,12 +30,12 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ## Phase 2 : Préparation & Placement PCB (Floorplanning)
 
 ### 2.1 Synchronisation & Mécanique
-- [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes (`R16`, `C15`) et aligner la netlist à 100%.
+- [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes (`R16`, `C15`, `C16`) et aligner la netlist à 100%.
 - [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'emplacement de `LED1` face au puits de lumière.
 - [ ] Mettre à jour [`floorplan.json`](floorplan.json) avec la BOM consolidée et injecter le placement initial via le skill `pcb-placer`.
 
 ### 2.2 Agencement des clusters & Règles CEM de proximité (< 2 mm)
-- [ ] **Bloc Puissance & Protection (Ouest) :** Compacité extrême de la boucle Buck SW-L1-D2-C8, isolement de la broche COMP (`C13`, `R11`, `C9`) face au nœud bruité PH, diode clamp `D6` collée à `R13`/`C10` (< 2 mm).
+- [ ] **Bloc Puissance & Protection (Ouest) :** Compacité extrême de la boucle Buck SW-L1-D2-C8/C16, isolement de la broche COMP (`C13`, `R11`, `C9`) face au nœud bruité PH, diode clamp `D6` collée à `R13`/`C10` (< 2 mm).
 - [ ] **Bloc Transceivers & Interfaces (Centre) :** Diodes TVS `U8` et `D5` collées à `J1` (< 5 mm), pull-up K-Line `R16` en zone aérée (< 5 mm de `J1`), cavalier de terminaison CAN `JP1` accessible.
 - [ ] **Bloc USB-C & ESD (Sud) :** Diodes ESD `U6`/`U7` et résistances pull-down CC `R3`/`R4` alignées immédiatement sur les pastilles de `J2`.
 - [ ] **Bloc ESP32-S3 & Radio (Est) :** Condensateur réservoir Bulk `C11` (10 µF) collé aux pins 1-2 (< 2 mm), filtre Reset `C12`/`R15` collé à la pin EN (< 2 mm), point de test `TP10` (`IO0`) accessible près de GND.

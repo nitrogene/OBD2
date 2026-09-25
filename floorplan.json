@@ -63,7 +63,7 @@
       "U8", "D5", "R16", "U2", "R8", "JP1", "C3", "C15", "TP7", "TP8", "U3", "R1", "R2", "C4", "TP2"
     ],
     "BUCK_CONVERTER": [
-      "U4", "C7", "C14", "D2", "L1", "C8", "C5", "R9", "R10", "R11", "C9", "C13", "TP4", "TP5"
+      "U4", "C7", "C14", "D2", "L1", "C8", "C16", "C5", "R9", "R10", "R11", "C9", "C13", "TP4", "TP5"
     ],
     "LDO_REGULATOR": [
       "U5", "FB1", "C6", "TP6"
@@ -240,7 +240,8 @@
     "C14":  { "x": 1050.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Découplage HF Buck 100nF 50V" },
     "D2":   { "x": 1200.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Schottky roue libre SS34" },
     "L1":   { "x": 1400.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Inductance blindée 10uH" },
-    "C8":   { "x": 1550.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage sortie Buck 22uF" },
+    "C8":   { "x": 1550.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage sortie Buck 10uF 50V (1/2)" },
+    "C16":  { "x": 1550.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage sortie Buck 10uF 50V (2/2)" },
     "C5":   { "x": 1200.0, "y": 1050.0, "rot": 0.0,   "layer": 1, "desc": "Bootstrap Buck 1uF" },
     "R9":   { "x": 1400.0, "y": 1000.0, "rot": 0.0,   "layer": 1, "desc": "Feedback haut Buck 10k" },
     "R10":  { "x": 1500.0, "y": 1000.0, "rot": 0.0,   "layer": 1, "desc": "Feedback bas Buck 1.91k" },
