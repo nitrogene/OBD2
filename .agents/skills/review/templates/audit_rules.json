@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hardware Audit Rules",
+  "description": "Règles d'audit agnostiques pour circuits électroniques embarqués et automobiles.",
+  "rules": [
+    {
+      "id": "RULE_LOGIC_LEVELS",
+      "criticality": "Bloquant",
+      "category": "Signal Integrity / Absolute Maximum Ratings",
+      "description": "Vérifier que les signaux issus de domaines de tension supérieurs (ex. 5V) n'attaquent pas directement des broches d'entrées non tolérantes (ex. GPIO 3.3V) sans adaptation de niveau bidirectionnelle ou division de tension."
+    },
+    {
+      "id": "RULE_MOSFET_GATE_PROTECTION",
+      "criticality": "Bloquant",
+      "category": "Overvoltage / Transients",
+      "description": "Vérifier que la tension Grille-Source (Vgs) de tout MOSFET piloté par une ligne haute tension ou transitoire automobile (12V/24V) est strictement bornée par un pont diviseur ou une diode Zener de clamp sous sa limite absolue (typiquement ±20V sous Load-Dump 30V-40V)."
+    },
+    {
+      "id": "RULE_POLARITY_AND_SUPPLY_SHORTS",
+      "criticality": "Bloquant",
+      "category": "Power Supply / Safety",
+      "description": "Vérifier l'absence de court-circuit entre les broches d'alimentation et de masse d'un même circuit intégré, et s'assurer que la masse de chaque IC est bien raccordée au plan de masse de référence (GND)."
+    },
+    {
+      "id": "RULE_SWITCHING_CONVERTER_RAMP",
+      "criticality": "Important",
+      "category": "Power Supply / Inrush",
+      "description": "Vérifier la présence d'une capacité de démarrage progressif (Slow-Start / Soft-Start) sur les convertisseurs à découpage ne disposant pas d'une temporisation interne pour limiter le courant d'appel et l'overshoot au démarrage."
+    },
+    {
+      "id": "RULE_LDO_STABILITY_AND_PI_FILTER",
+      "criticality": "Important",
+      "category": "Power Supply / Control Loop",
+      "description": "Vérifier la présence d'un condensateur réservoir conforme à la capacité minimale requise par le fabricant (COUT >= seuil datasheet) directement en sortie du régulateur linéaire LDO, impérativement placé en amont de toute perle de ferrite de filtrage."
+    },
+    {
+      "id": "RULE_PPTC_THERMAL_DERATING",
+      "criticality": "Important",
+      "category": "Thermal / Automotive",
+      "description": "Vérifier que le courant de maintien des fusibles réarmables PPTC intègre le facteur de déclassement thermique en environnement habitacle sévère (60°C-70°C) face au cumul des charges continues et des salves RF crêtes."
+    },
+    {
+      "id": "RULE_CONNECTOR_BOUNDARY_ESD",
+      "criticality": "Important",
+      "category": "EMC / ESD Protection",
+      "description": "Vérifier la présence d'éléments de clamp transitoire (diodes TVS, varistances) immédiatement au contact des broches des connecteurs externes avant que les lignes ne pénètrent vers les circuits intégrés sensibles."
+    },
+    {
+      "id": "RULE_MCU_BOOT_STRAPPING_IMMUNITY",
+      "criticality": "Mineur",
+      "category": "MCU / Firmware Boot",
+      "description": "Vérifier que les broches de strapping d'amorçage critique (ex. GPIO0) disposent d'un rappel externe solide (pull-up/pull-down 10 kΩ) et ne reposent pas uniquement sur des résistances internes faibles face au bruit électromagnétique."
+    },
+    {
+      "id": "RULE_LOCAL_DECOUPLING_CLARITY",
+      "criticality": "Mineur",
+      "category": "Schematic / DFM",
+      "description": "Vérifier que chaque broche d'alimentation d'IC possède son condensateur de découplage haute fréquence (100 nF) explicitement dessiné sur la même feuille et étiqueté pour un placement physique à moins de 2 mm."
+    },
+    {
+      "id": "RULE_ADC_SENSING_LEAKAGE",
+      "criticality": "Mineur",
+      "category": "Analog / Sensing Precision",
+      "description": "Vérifier que les éléments de protection ou clamp sur les ponts diviseurs analogiques haute impédance présentent un courant de fuite inverse négligeable (< 100 nA à chaud) pour préserver la précision de conversion."
+    }
+  ]
+}

@@ -13,7 +13,11 @@ La batterie 12V d'un véhicule n'est ni stable, ni propre :
 * **Inversion de polarité :** Erreur de manipulation sur les pinces de démarrage.
 * **Bus de communication hétérogènes :** Bus différentiel CAN (haute vitesse, 2.5V à 3.5V) et ligne K-Line mono-fil (half-duplex 0V / 12V batterie).
 
-Le circuit imprimé est découpé en **11 blocs fonctionnels interconnectés**, organisés pour purifier l'énergie, protéger les composants sensibles et assurer une communication bidirectionnelle infaillible.
+Le circuit imprimé est découpé en **10 blocs fonctionnels interconnectés**, organisés pour purifier l'énergie, protéger les composants sensibles et assurer une communication bidirectionnelle infaillible.
+
+> [!NOTE]
+> **Modélisation formelle & Intention de Schéma (`circuit_semantics.json`) :**
+> L'ensemble des 67 composants du projet, leurs rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation, diélectrique) et politiques de substitution sont formellement modélisés sous format machine-readable dans le fichier racine [`circuit_semantics.json`](circuit_semantics.json). Ce fichier sert de contrat sémantique vérifié à chaque évolution du schéma par l'outil de synchronisation (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
 
 ---
 
@@ -55,7 +59,7 @@ flowchart TD
 
     subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
         ESP["8. ESP32-S3-WROOM-1 (U1)\n• Xtensa LX7 Dual-Core 240 MHz\n• Wi-Fi 2.4 GHz & BLE 5.0 (Antenne PCB)"]
-        PERIPH["Périphériques associés :\n• 7. LED d'état (LED1 / IO2)\n• 9. Découplage HF & Réservoir Bulk (C11)\n• 10. Monitoring Batterie ADC1 (R12/R13, C10)\n• 11. Circuit Reset & Boot (SW1, R15, C12)"]
+        PERIPH["Périphériques associés :\n• 7. LED d'état (LED1 / IO2)\n• 9. Monitoring Batterie ADC1 (R12/R13, C10)\n• 10. Circuit Reset & Boot (SW1, R15, C12)"]
     end
 
     subgraph USB_DEBUG["INTERFACE USB-C & BANC DE TEST"]
@@ -362,7 +366,8 @@ flowchart LR
         K_TX["Pin 4 (TX)"]
         K_RX["Pin 1 (RX)"]
         K_PIN["Pin 6 (K-Line 12V)"]
-        K_VS["Pin 3 (VS 12V)"]
+        K_VS["Pin 7 (VS 12V_PROT)"]
+        K_VCC["Pin 8 (VCC 3.3V)"]
     end
 
     subgraph PULLUP["PULL-UP ISO 9141-2"]
@@ -394,7 +399,7 @@ flowchart LR
   * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
   * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
-* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. Condensateur C4 implanté à moins de 2 mm de la broche 3 (VS).
+* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 ($V_{CC}$) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 ($V_{CC}$). La broche 7 ($V_S$) est alimentée depuis le rail protégé `+12V_PROT`.
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 
 ---
@@ -407,26 +412,20 @@ flowchart LR
 
 ---
 
-### Bloc 8 : SoC ESP32-S3-WROOM-1 (`U1`)
+### Bloc 8 : SoC ESP32-S3-WROOM-1 & Découplage Local (`U1`, `C1`, `C2`, `C11`, `C12`, `R15`, `SW1`)
 
 * Microcontrôleur Xtensa LX7 double cœur 32 bits à 240 MHz avec **16 Mo Flash** et **8 Mo PSRAM**.
 * Contrôleur USB OTG natif (flash et debug direct sans convertisseur USB-série externe).
 * Contrôleur matériel **TWAI** (compatible CAN 2.0B).
 * Antenne méandre 2.4 GHz gravée sur PCB (Wi-Fi 802.11 b/g/n + BLE 5.0).
+* **Trio de Découplage Local & Réservoir Bulk (`C11`, `C1`, `C2`) :**
+  * *Condensateur Réservoir Bulk `C11` (10 µF 25V X5R 0805 - LCSC `C15850`) :* Rôle critique anti-brownout. Les salves radio Wi-Fi provoquent des appels de courant massifs de **450 à 500 mA** pendant plusieurs centaines de microsecondes. `C11` agit comme une réserve locale immédiate pour empêcher la tension de chuter sous le seuil de coupure de l'ESP32 (2.8V). Raccordé à moins de 2 mm des broches 1 (`GND`) et 2 (`3V3`). Sa tenue de 25V élimine la perte de capacité par DC-bias (> 85% de capacité conservée sous 3.3V).
+  * *Condensateurs de Découplage HF `C1` et `C2` (100 nF 50V X7R 0603) :* Céramiques MLCC implantés au plus près direct des broches 1 et 2 pour filtrer les transitoires rapides de commutation d'horloge (240 MHz) et le bruit numérique.
+* **Circuit de Reset Matériel (`R15`, `C12`, `SW1`) :** Pull-up externe 10 kΩ (`R15`) vers 3.3V et condensateur 1 µF (`C12`) vers GND formant une temporisation de reset propre, assisté du bouton poussoir tactile `SW1`.
 
 ---
 
-### Bloc 9 : Découplage HF & Réservoir Bulk (`C1-C4`, `C11`)
-
-* **Condensateurs de Découplage HF `C1` à `C4` (100 nF - `0603`) :** Céramiques MLCC implantés à moins de 2 mm de chaque broche d'alimentation pour filtrer les commutations rapides (> 10 MHz).
-* **Condensateur Réservoir Bulk `C11` (10 µF 25V X5R 0805 - LCSC `C15850`) :**
-  * *Rôle critique anti-brownout :* Les salves radio Wi-Fi provoquent des appels de courant massifs de **450 à 500 mA** pendant plusieurs centaines de microsecondes. `C11` agit comme une réserve locale pour empêcher la tension de chuter sous le seuil de coupure de l'ESP32 (2.8V).
-  * *Implantation impérative :* Raccordé à moins de 2 à 3 mm des broches 1 (`GND`) et 2 (`3V3`) de l'ESP32.
-  * *Tenue 25V (Anti DC-bias) :* Conserve plus de 85% de sa capacité nominale sous 3.3V (contrairement aux modèles 6.3V).
-
----
-
-### Bloc 10 : Monitoring Tension Batterie (`R12`, `R13`, `C10`, `D6`)
+### Bloc 9 : Monitoring Tension Batterie (`R12`, `R13`, `C10`, `D6`)
 
 ```mermaid
 %%{init: {
@@ -463,7 +462,7 @@ flowchart LR
 
 ---
 
-### Bloc 11 : Circuit de Reset Sécurisé & Bootloader (`SW1`, `R15`, `C12`, `TP10`, `TP11`)
+### Bloc 10 : Circuit de Reset Sécurisé & Bootloader (`SW1`, `R15`, `C12`, `TP10`, `TP11`)
 
 ```mermaid
 %%{init: {
@@ -526,7 +525,7 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **`+12V`** | OBD-II (Pin 16), `D1(1)`, `F1(1)` | Alimentation batterie brute issue de la prise OBD-II. | Alimentation / Entrée |
 | **`+12V_FUSED`** | `F1(2)`, `Q1(3)`, `D3(3)`, `R7(1)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
-| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R12(1)`, `R16(1)`, `U3(3)` | Rail 12V sécurisé anti-inversion alimentant le Buck, K-Line et le diviseur batterie. | Alimentation / Sécurité |
+| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R12(1)`, `R16(1)`, `U3(7)` | Rail 12V sécurisé anti-inversion alimentant le Buck, K-Line et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)` | Polarisation de grille du N-MOS Q2 depuis le 12V à travers R5. | Commutation / Contrôle |
@@ -538,7 +537,7 @@ flowchart TD
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
-| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VIO)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
+| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
 | **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C16`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
@@ -589,7 +588,7 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
 * **Découplage HF Microcontrôleur `C1`, `C2` (100 nF 0603) :** Implantés à **moins de 2 mm** des broches d'alimentation du module.
 * **Découplage Transceiver CAN `C15` (100 nF 50V) et `C3` (100 nF) :** `C15` implanté à **moins de 2 mm** de la broche 3 (`VCC` 5V) de `U2` pour fournir les pointes de commutation différentielle. `C3` à **moins de 2 mm** de la broche 5 (`VIO` 3.3V).
 * **Découplage Entrée Buck `C14` (100 nF 50V) et `C7` (10 µF 50V) :** `C14` implanté **collé à la broche 2 (`VIN`) de `U4` (< 1.5 mm)**, en amont immédiat de `C7`, avec une boucle de retour masse minimale vers la broche 9 (pad thermique GND) pour court-circuiter les harmoniques > 20 MHz.
-* **Découplage K-Line `C4` (100 nF) :** Implanté à **moins de 2 mm** de la broche 3 (`VS`) de `U3`.
+* **Découplage K-Line `C4` (100 nF) :** Implanté à **moins de 2 mm** de la broche 3 (`VCC`) de `U3`.
 * **Filtrage LDO `C6` (1 µF) :** Raccordé au plus près de la perle de ferrite `FB1` et de la sortie de `U5`.
 
 ### 7.2 Étage Buck & Boucle de Commutation Haute Fréquence (570 kHz)

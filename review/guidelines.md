@@ -34,6 +34,11 @@ Toute revue **doit impérativement débuter** par ce bloc de métadonnées pour 
 
 Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impérativement** intégrer les contraintes fondamentales du projet :
 
+0. **Posture de l'auditeur : Oubli de mémoire & Preuve matérielle exclusive (*Evidence-Based*)**
+   - Si vous êtes un modèle d'IA ayant un historique conversationnel sur ce dépôt ou un ingénieur familier de l'historique, vous **devez faire abstraction totale de tout souvenir ou échange passé**. Adoptez la posture d'un auditeur externe impartial découvrant le circuit.
+   - Toute remarque doit être **strictement étayée par les fichiers versionnés du projet** (exports graphiques PNG des schémas, nomenclature [`BOM.md`](../BOM.md), datasheets officielles archivées dans [`datasheet/`](../datasheet/) et référentiel [`DATASHEETS.md`](../DATASHEETS.md)).
+   - **Esprit critique obligatoire :** Ne jamais prendre pour argent comptant les affirmations textuelles des documents. Confrontez systématiquement chaque consigne ou affirmation aux datasheets constructeurs.
+
 1. **Périmètre véhicule : 12V VL exclusivement**
    - Le scanner est conçu pour les véhicules légers de tourisme (batterie 12.6V, alternateur 14.4V, transitoires modérés).
    - **Ne pas sur-spécifier** pour des réseaux 24V poids-lourds (le choix du régulateur Buck TPS54331 30V protégé par TVS SMBJ18A et P-MOSFET 60V est validé et dimensionné pour ce périmètre).
@@ -50,6 +55,14 @@ Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impé
 4. **Consulter l'état d'avancement réel**
    - Avant de lever une alerte, parcourez brièvement [`TODO.md`](../TODO.md), [`HARDWARE.md`](../HARDWARE.md) et [`BOM.md`](../BOM.md).
    - De nombreuses remarques antérieures sont déjà traitées ou arbitrées (ex. cavalier JP1 sur terminaison CAN, diode de clamp D6, condensateur C13 sur broche COMP, etc.).
+
+5. **Transceiver K-Line U3 (L9637D) : Alimentation VCC 3.3V vs 5V & Intégrité du MCU**
+   - *Ne pas exiger de passer VCC en 5V :* Une confusion récurrente consiste à croire que le L9637D exige $V_{CC} \ge 4.5\,\text{V}$ ou que sa sortie RX est à collecteur ouvert pur nécessitant une pull-up externe.
+   - *Spécifications de la datasheet ST (Doc ID 1765 Rev 8, Tables 5 & 6) :*
+     - La plage de tension de service logique $V_{CC}$ s'étend de **3.0 V à 7.0 V** (le seuil de 4.5 V min correspond à l'alimentation batterie $V_S$, et non à $V_{CC}$). Un fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme aux spécifications constructeur.
+     - La broche 1 (`RX`) intègre une **résistance de pull-up active $R_{RX} \approx 10\,\text{k}\Omega$ reliée en interne à $V_{CC}$** ($V_{RXH} = V_{CC} - 0.1\,\text{V}$). Elle n'est PAS un collecteur ouvert.
+   - *Sécurité vitale du microcontrôleur :* Les broches d'E/S de l'ESP32-S3 ne sont **pas tolérantes 5V** (tension maximale absolue $V_{DDIO} + 0.3\,\text{V} = 3.6\,\text{V}$). Si $V_{CC}$ était raccordé au rail +5V, la broche RX injecterait ~4.9V directement dans le GPIO4, entraînant le claquage destructif de l'ESP32.
+   - *Directive pour l'audit :* Le raccordement de la broche 3 ($V_{CC}$) au rail régulé `3.3V` est **strictement conforme et indispensable à la survie du microcontrôleur**. Ne pas soulever d'anomalie sur ce point.
 
 ---
 

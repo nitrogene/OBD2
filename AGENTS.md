@@ -31,10 +31,11 @@
 1. Sauvegarder (`eda.pcb_Document.save()`).
 2. Nettoyer les fichiers `.js` / `.mjs` temporaires.
 3. Vérifier DRC = 0 et ERC = 0.
-4. Mettre à jour `LEARNINGS.md` si découverte technique. Si la découverte constitue un calcul, un audit ou un automatisme réutilisable, proposer ou acter sa transformation en Skill autonome sous `.agents/skills/<nom>/`.
-5. Exporter `ProPrj_OBD2-Scanner.epro2` via les skills easyeda-api.
-6. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
-7. Commit et push **uniquement** après accord explicite sur le message de commit.
+4. Valider la synchronisation de `circuit_semantics.json` face à `BOM.md` (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check --bom BOM.md --semantics circuit_semantics.json`).
+5. Mettre à jour `LEARNINGS.md` si découverte technique. Si la découverte constitue un calcul, un audit ou un automatisme réutilisable, proposer ou acter sa transformation en Skill autonome sous `.agents/skills/<nom>/`.
+6. Exporter `ProPrj_OBD2-Scanner.epro2` via les skills easyeda-api.
+7. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
+8. Commit et push **uniquement** après accord explicite sur le message de commit.
 
 ## 5. Dépouillement des Revues Techniques (`review/reviewXXX.md`)
 - **Détection active :** Scanner le répertoire `review/` à la recherche de fichiers de revue `reviewXXX.md` (ou `review*.md`) non encore dépouillés :

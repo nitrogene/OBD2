@@ -81,6 +81,12 @@ Les connaissances théoriques et algorithmiques issues de ce document ont été 
 3. **📐 [Skill `pcb-placer`](.agents/skills/pcb-placer/SKILL.md) :**
    - *Origine :* Règles d'agencement physique (ancres mécaniques J1/J2/U1, découplage < 2 mm, boucle Buck compacte, exclusion RF).
    - *Capacité :* Solveur d'auto-placement en une passe pour les 60 composants, audit géométrique pad-à-pad et injection directe avec contrôle DRC.
+4. **🔍 [Skill `review`](.agents/skills/review/SKILL.md) :**
+   - *Origine :* Méthodologie d'audit critique de schéma (Axe 1 à 6), formalisation des guidelines et règles de dépouillement d'AGENTS.md.
+   - *Capacité :* Outil CLI agnostique de génération de templates, validation formelle de conformité des rapports face aux guidelines, et dépouillement/triage automatique vers `TODO.md` avec détection de collisions.
+5. **💰 [Skill `stingy-schematics`](.agents/skills/stingy-schematics/SKILL.md) :**
+   - *Origine :* Problématique des frais de configuration outillage SMT chez JLCPCB (3,00 $ par composant Extended) et nécessité de formaliser l'intention de schéma.
+   - *Capacité :* Moteur d'audit et de réduction des coûts de nomenclature, exploitant `circuit_semantics.json` pour basculer des pièces Extended en Basic Parts sans dégrader les signaux ni violer les marges de sécurité, avec outil de synchronisation continue (`sync_semantics.py`).
 
 ---
 
@@ -99,3 +105,8 @@ Les connaissances théoriques et algorithmiques issues de ce document ont été 
   - Mise en évidence des confusions de variantes matérielles chez les reviewers (différences de brochage ADC entre ESP32 classique et ESP32-S3).
   - Nécessité d'un pull-up fort de 1 kΩ vers le 12V sur la ligne K-Line pour la Daewoo Kalos (ISO 9141-2).
   - Création du moteur d'auto-placement par contraintes `pcb-placer`.
+* **[2026-09-26] Découplage Sémantique Schéma & Skill Review :**
+  - Réfutation de la fausse recommandation VCC 5V sur L9637D (L9637D possède une pull-up interne active sur RX vers VCC, qui détruirait l'ESP32 non 5V-tolerant sous 5V).
+  - Détection de l'absence de diviseur sur la grille du 2N7002 (Vgs max ±20V dépassé sous Load Dump 29.2V) et du court-circuit de masse/Silent mode sur TJA1051T.
+  - Création du skill autonome `.agents/skills/review/` pour standardiser l'audit, la validation et le dépouillement vers `TODO.md`.
+  - **Création du référentiel sémantique `circuit_semantics.json` :** Les fichiers de CAO propriétaires (EasyEDA, KiCad) stockent la géométrie et les nets, mais pas l'intention d'ingénierie (rôle, tolérance critique, politique de substituabilité). La création de `circuit_semantics.json` comble ce vide et sert de socle pour l'optimisation des coûts (`stingy-schematics`), l'audit automatique et l'auto-placement.

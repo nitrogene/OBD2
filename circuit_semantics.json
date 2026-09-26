@@ -1,0 +1,947 @@
+{
+  "$schema": "./schemas/circuit_semantics.schema.json",
+  "project": "OBD2-Scanner-ESP32",
+  "version": "1.0",
+  "date_modified": "2026-09-26",
+  "description": "Référentiel sémantique exhaustif des rôles, contraintes et politiques de substituabilité des composants du Scanner OBD-II ESP32.",
+  "power_rails": {
+    "+12V": {
+      "nominal_v": 12.0,
+      "max_v": 16.0,
+      "source": "J1.16",
+      "type": "battery_raw"
+    },
+    "+12V_FUSED": {
+      "nominal_v": 12.0,
+      "max_v": 16.0,
+      "source": "F1.Out",
+      "type": "protected_fused"
+    },
+    "+12V_PROT": {
+      "nominal_v": 12.0,
+      "clamped_v": 26.0,
+      "source": "Q1.Drain",
+      "type": "protected_anti_reverse"
+    },
+    "+5V": {
+      "nominal_v": 5.0,
+      "max_ripple_mv": 50,
+      "source": "U4.PH_L1",
+      "type": "buck_regulated"
+    },
+    "VBUS_5V": {
+      "nominal_v": 5.0,
+      "source": "J2.VBUS",
+      "type": "usb_power"
+    },
+    "3.3V_PRE": {
+      "nominal_v": 3.3,
+      "source": "U5.VOUT",
+      "type": "ldo_raw_output"
+    },
+    "3.3V": {
+      "nominal_v": 3.3,
+      "noise_sensitive": true,
+      "source": "FB1.Out",
+      "type": "ldo_filtered_logic"
+    },
+    "GND": {
+      "nominal_v": 0.0,
+      "type": "ground_reference"
+    }
+  },
+  "functional_blocks": {
+    "protection_12v": {
+      "title": "Protection 12V, Filtrage & Anti-Inversion",
+      "description": "Protection contre les surtensions d'alternateur (Load-Dump), inversion de polarité et surintensités habitacle.",
+      "components": ["F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14"]
+    },
+    "buck_5v": {
+      "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
+      "description": "Abaisseur de tension synchrone à haut rendement (>85%) générant le rail 5V pour le transceiver CAN et le LDO 3.3V.",
+      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "R9", "R10", "R11", "C9", "C13"]
+    },
+    "ldo_3v3": {
+      "title": "Régulateur Linéaire LDO 3.3V Faible Bruit",
+      "description": "Régulateur LDL1117 et perle de ferrite FB1 générant une alimentation propre pour le SoC radio ESP32-S3.",
+      "components": ["U5", "C6", "FB1"]
+    },
+    "usbc_interface": {
+      "title": "Interface USB-C, Alimentation Banc & ESD",
+      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2 et alimentation autonome banc via D4.",
+      "components": ["J2", "D4", "U6", "U7", "R3", "R4"]
+    },
+    "can_transceiver": {
+      "title": "Transceiver CAN Haute Vitesse (ISO 11898-2)",
+      "description": "Étage physique différentiel TJA1051T avec terminaison 120 ohms déconnectable et protections transitoires NUP2105L.",
+      "components": ["U2", "U8", "R8", "JP1", "C3", "C15"]
+    },
+    "kline_transceiver": {
+      "title": "Transceiver K-Line 12V (ISO 9141-2 / ISO 14230)",
+      "description": "Liaison mono-fil bidirectionnelle 12V L9637D avec pull-up normalisée R16 (1k 1206) et protections TVS 24V.",
+      "components": ["U3", "D5", "R1", "R2", "R16", "C4"]
+    },
+    "esp32_mcu": {
+      "title": "SoC ESP32-S3 & Périphériques Radio",
+      "description": "Cœur de traitement 240 MHz double cœur, Wi-Fi 2.4 GHz, BLE 5.0, bouton reset et voyant d'état LED1.",
+      "components": ["U1", "C1", "C2", "C11", "C12", "R15", "SW1", "LED1", "R6"]
+    },
+    "vbat_monitoring": {
+      "title": "Monitoring Tension Batterie (ADC1)",
+      "description": "Pont diviseur 100k/12k avec filtrage HF C10 et clamp de protection D6 raccordé sur ADC1 de l'ESP32.",
+      "components": ["R12", "R13", "C10", "D6"]
+    },
+    "test_points": {
+      "title": "Points de Test Cuivre (Mires de mesure)",
+      "description": "Pads de test pour diagnostic oscilloscope, voltmètre et forçage bootloader.",
+      "components": ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8", "TP9", "TP10", "TP11"]
+    }
+  },
+  "components": {
+    "C1": {
+      "block": "esp32_mcu",
+      "role": "hf_decoupling",
+      "description": "Découplage haute fréquence broche 2 (VDD33) de l'ESP32-S3",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C2": {
+      "block": "esp32_mcu",
+      "role": "hf_decoupling",
+      "description": "Découplage haute fréquence alimentation ESP32-S3",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C3": {
+      "block": "can_transceiver",
+      "role": "hf_decoupling",
+      "description": "Découplage alimentation logique VIO (3.3V) transceiver CAN U2",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C4": {
+      "block": "kline_transceiver",
+      "role": "hf_decoupling",
+      "description": "Découplage alimentation logique VCC (3.3V) transceiver K-Line U3",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C5": {
+      "block": "buck_5v",
+      "role": "bootstrap_capacitor",
+      "description": "Condensateur volant de charge de grille BOOT -> PH pour Buck TPS54331",
+      "value": "1uF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-06,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X5R",
+        "footprint": "0603"
+      }
+    },
+    "C6": {
+      "block": "ldo_3v3",
+      "role": "ldo_output_stability",
+      "description": "Filtrage et stabilité de boucle LDO U5 LDL1117 (prévu 10uF 1206 dans TODO 1.1)",
+      "value": "1uF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-06,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X5R",
+        "footprint": "0603",
+        "notes": "TODO 1.1 prévoit son remplacement par 10uF 1206 Basic Part C13585"
+      }
+    },
+    "C7": {
+      "block": "buck_5v",
+      "role": "bulk_input_reservoir",
+      "description": "Condensateur réservoir de hachage entrée Buck U4 sous 12V_PROT",
+      "value": "10uF",
+      "footprint": "1206",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-05,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X5R",
+        "footprint": "1206"
+      }
+    },
+    "C8": {
+      "block": "buck_5v",
+      "role": "output_reservoir",
+      "description": "Filtrage sortie Buck U4 (10uF 50V X5R en parallèle avec C16)",
+      "value": "10uF",
+      "footprint": "1206",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-05,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X5R",
+        "footprint": "1206"
+      }
+    },
+    "C9": {
+      "block": "buck_5v",
+      "role": "loop_compensation_zero",
+      "description": "Condensateur créant le zéro de compensation de boucle Buck U4 (avec R11)",
+      "value": "3.3nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 3.3e-09,
+        "voltage_min_v": 25.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C10": {
+      "block": "vbat_monitoring",
+      "role": "adc_sample_filter",
+      "description": "Réservoir de charge et filtre passe-bas anti-repliement pour l'échantillonnage ADC1",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C11": {
+      "block": "esp32_mcu",
+      "role": "mcu_bulk_reservoir",
+      "description": "Réservoir local anti-brownout 10uF 25V X5R pour pointes Wi-Fi TX (500 mA)",
+      "value": "10uF",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-05,
+        "voltage_min_v": 25.0,
+        "dielectric_min": "X5R",
+        "footprint": "0805"
+      }
+    },
+    "C12": {
+      "block": "esp32_mcu",
+      "role": "reset_timing_rc",
+      "description": "Temporisation RC Power-On-Reset (10 ms) et filtre anti-rebond broche EN (avec R15)",
+      "value": "1uF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-06,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X5R",
+        "footprint": "0603"
+      }
+    },
+    "C13": {
+      "block": "buck_5v",
+      "role": "loop_compensation_pole",
+      "description": "Condensateur créant le pôle haute fréquence de réjection de découpage Buck (avec R11)",
+      "value": "220pF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 2.2e-10,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C14": {
+      "block": "buck_5v",
+      "role": "hf_input_decoupling",
+      "description": "Découplage haute fréquence immédiat broche 2 (VIN) du Buck U4",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C15": {
+      "block": "can_transceiver",
+      "role": "hf_decoupling",
+      "description": "Découplage haute fréquence broche 3 (VCC 5V) du transceiver CAN U2",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 16.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
+      }
+    },
+    "C16": {
+      "block": "buck_5v",
+      "role": "output_reservoir",
+      "description": "Second condensateur de filtrage sortie Buck U4 (en parallèle avec C8)",
+      "value": "10uF",
+      "footprint": "1206",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-05,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X5R",
+        "footprint": "1206"
+      }
+    },
+    "D1": {
+      "block": "protection_12v",
+      "role": "load_dump_tvs",
+      "description": "Diode TVS d'écrêtage 18V (VCL=29.2V) protégeant le Buck face au plafond de 30V",
+      "value": "SMBJ18A",
+      "footprint": "SMB",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vrwm_v": 18.0,
+        "vcl_max_v": 29.2,
+        "peak_power_w": 600,
+        "footprint": "SMB",
+        "notes": "Évaluation SMBJ16A (VCL=26.0V) en cours dans TODO 1.1"
+      }
+    },
+    "D2": {
+      "block": "buck_5v",
+      "role": "freewheel_schottky",
+      "description": "Diode Schottky de roue libre 40V 3A pour le nœud de découpage PH du Buck",
+      "value": "SS34",
+      "footprint": "SMA",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vr_min_v": 40.0,
+        "if_avg_a": 3.0,
+        "vf_max_v": 0.5,
+        "footprint": "SMA"
+      }
+    },
+    "D3": {
+      "block": "protection_12v",
+      "role": "gate_zener_clamp",
+      "description": "Diode Zener 12V bornant la tension Grille-Source Vgs du P-MOS Q1 sous 12V",
+      "value": "BZX84C12",
+      "footprint": "SOT-23",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vz_nominal_v": 12.0,
+        "power_min_w": 0.25,
+        "footprint": "SOT-23"
+      }
+    },
+    "D4": {
+      "block": "usbc_interface",
+      "role": "usb_power_or_schottky",
+      "description": "Diode Schottky anti-retour pour l'alimentation de banc depuis VBUS USB",
+      "value": "BAT54CW",
+      "footprint": "SOT-323-3",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vr_min_v": 30.0,
+        "if_avg_a": 1.0,
+        "notes": "Remplacement préconisé par Schottky 1A/2A (SS14/B5819W) dans TODO 1.1 / I6"
+      }
+    },
+    "D5": {
+      "block": "kline_transceiver",
+      "role": "kline_tvs_protection",
+      "description": "Diode TVS 24V bidirectionnelle protégeant la broche K-Line face aux transitoires allumage",
+      "value": "SMF24CA",
+      "footprint": "SOD-123FL",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vrwm_v": 24.0,
+        "bidirectional": true,
+        "footprint": "SOD-123FL"
+      }
+    },
+    "D6": {
+      "block": "vbat_monitoring",
+      "role": "adc_clamp_diode",
+      "description": "Diode de clamp protégeant l'entrée ADC1 contre les dépassements 3.3V",
+      "value": "BAT54WS",
+      "footprint": "SOD-323",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "notes": "TODO 1.1 / M4 prévoit son remplacement par une diode faible fuite BAV199/BAV99"
+      }
+    },
+    "F1": {
+      "block": "protection_12v",
+      "role": "pptc_fuse",
+      "description": "Fusible réarmable PPTC de protection générale de la ligne 12V véhicule",
+      "value": "MF-MSMF050-2",
+      "footprint": "1812",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "ihold_a": 0.5,
+        "voltage_min_v": 16.0,
+        "footprint": "1812",
+        "notes": "Calibrage 0.75A ou 1.1A prévu dans TODO 1.1 / I3"
+      }
+    },
+    "FB1": {
+      "block": "ldo_3v3",
+      "role": "emi_ferrite_bead",
+      "description": "Perle de ferrite 120 ohms @ 100MHz purifiant le rail 3.3V logique pour le Wi-Fi",
+      "value": "BLM18PG121SN1D",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "impedance_ohm": 120.0,
+        "current_max_a": 1.0,
+        "footprint": "0603"
+      }
+    },
+    "J1": {
+      "block": "kline_transceiver",
+      "role": "obd2_connector",
+      "description": "Connecteur mâle 16 broches SAE J1962 coudé 90 degrés pour enfichage direct dans le véhicule",
+      "value": "OBD2-male-16pin",
+      "footprint": "弯插,P=4mm,16P",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
+    "J2": {
+      "block": "usbc_interface",
+      "role": "usbc_connector",
+      "description": "Connecteur femelle USB Type-C 16 broches CMS horizontal",
+      "value": "TYPE-C-31-M-12",
+      "footprint": "SMD",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
+    "JP1": {
+      "block": "can_transceiver",
+      "role": "can_termination_jumper",
+      "description": "Cavalier 2 broches 2.54 mm de sélection de résistance de terminaison CAN (Shunt=Banc / Ouvert=Voiture)",
+      "value": "PZ2.54-1*2",
+      "footprint": "插件,P=2.54mm",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
+    "L1": {
+      "block": "buck_5v",
+      "role": "buck_power_inductor",
+      "description": "Inductance de puissance blindée 10 uH 3.6A étage Buck TPS54331",
+      "value": "10uH",
+      "footprint": "SMD,6x6mm",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "inductance_h": 1e-05,
+        "isat_min_a": 3.0,
+        "rdc_max_ohm": 0.05,
+        "footprint": "SMD,6x6mm"
+      }
+    },
+    "LED1": {
+      "block": "esp32_mcu",
+      "role": "status_indicator_led",
+      "description": "LED verte 0603 pilotée par GPIO2 de l'ESP32 pour indication d'état et heartbeat",
+      "value": "PSC-1608U52GC-G4",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "color": "green",
+        "vf_typ_v": 2.85,
+        "footprint": "0603"
+      }
+    },
+    "Q1": {
+      "block": "protection_12v",
+      "role": "anti_reverse_pmos",
+      "description": "P-MOSFET de puissance 60V 2A blocage inversion de polarité 12V",
+      "value": "CJ2309A",
+      "footprint": "SOT-23",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vds_min_v": 60.0,
+        "id_min_a": 2.0,
+        "rdson_max_ohm": 0.25,
+        "footprint": "SOT-23"
+      }
+    },
+    "Q2": {
+      "block": "protection_12v",
+      "role": "gate_control_nmos",
+      "description": "N-MOSFET 2N7002 pilotant la commande de grille de Q1 sous tension normale",
+      "value": "2N7002",
+      "footprint": "SOT-23",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vds_min_v": 60.0,
+        "vgs_max_v": 20.0,
+        "footprint": "SOT-23"
+      }
+    },
+    "R1": {
+      "block": "kline_transceiver",
+      "role": "series_damping",
+      "description": "Résistance série d'amortissement 10 ohms sur ligne RX K-Line vers GPIO4",
+      "value": "10Ω",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R2": {
+      "block": "kline_transceiver",
+      "role": "series_damping",
+      "description": "Résistance série d'amortissement 10 ohms sur ligne TX K-Line depuis GPIO5",
+      "value": "10Ω",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R3": {
+      "block": "usbc_interface",
+      "role": "usbc_cc_pulldown",
+      "description": "Résistance pull-down normalisée USB-C 5.1k 1% sur ligne CC1 (négociation Sink)",
+      "value": "5.1kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 5100.0,
+        "tolerance": "1%",
+        "footprint": "0805",
+        "notes": "Valeur normalisée USB-C obligatoire à 1%, aucun recalcul admis"
+      }
+    },
+    "R4": {
+      "block": "usbc_interface",
+      "role": "usbc_cc_pulldown",
+      "description": "Résistance pull-down normalisée USB-C 5.1k 1% sur ligne CC2 (négociation Sink)",
+      "value": "5.1kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 5100.0,
+        "tolerance": "1%",
+        "footprint": "0805",
+        "notes": "Valeur normalisée USB-C obligatoire à 1%, aucun recalcul admis"
+      }
+    },
+    "R5": {
+      "block": "protection_12v",
+      "role": "gate_polarization",
+      "description": "Résistance de commande de grille de Q2 (prévue en pont diviseur 10k/10k dans TODO 1.1)",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R6": {
+      "block": "esp32_mcu",
+      "role": "led_current_limiting",
+      "description": "Résistance de limitation de courant LED1 (100 ohms, 3.6 mA habitacle)",
+      "value": "100Ω",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 100.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R7": {
+      "block": "protection_12v",
+      "role": "gate_source_bleeder",
+      "description": "Résistance de maintien Vgs=0V pour le blocage de Q1 lors d'inversion",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R8": {
+      "block": "can_transceiver",
+      "role": "can_bus_termination",
+      "description": "Résistance de terminaison de bus différentiel CAN (120 ohms)",
+      "value": "120Ω",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 120.0,
+        "tolerance": "1%",
+        "footprint": "0805",
+        "power_min_w": 0.25
+      }
+    },
+    "R9": {
+      "block": "buck_5v",
+      "role": "feedback_divider_top",
+      "description": "Résistance haute du pont diviseur de feedback Buck (rail 5V vers VSENSE)",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R10",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "vref_v": 0.8,
+        "target_vout_v": 5.0,
+        "max_error_pct": 1.0
+      }
+    },
+    "R10": {
+      "block": "buck_5v",
+      "role": "feedback_divider_bottom",
+      "description": "Résistance basse du pont diviseur de feedback Buck (VSENSE vers GND)",
+      "value": "1.91kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R9",
+      "constraints": {
+        "value_ohm": 1910.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "vref_v": 0.8,
+        "target_vout_v": 5.0,
+        "max_error_pct": 1.0
+      }
+    },
+    "R11": {
+      "block": "buck_5v",
+      "role": "loop_compensation_resistor",
+      "description": "Résistance de réglage de gain et positionnement de zéro de compensation Buck",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      }
+    },
+    "R12": {
+      "block": "vbat_monitoring",
+      "role": "adc_divider_top",
+      "description": "Résistance haute du pont diviseur de mesure batterie (+12V_PROT vers VBAT_SENSE)",
+      "value": "100kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R13",
+      "constraints": {
+        "value_ohm": 100000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "ratio_nominal": 0.10714,
+        "max_error_pct": 1.0
+      }
+    },
+    "R13": {
+      "block": "vbat_monitoring",
+      "role": "adc_divider_bottom",
+      "description": "Résistance basse du pont diviseur de mesure batterie (VBAT_SENSE vers GND)",
+      "value": "12kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R12",
+      "constraints": {
+        "value_ohm": 12000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "ratio_nominal": 0.10714,
+        "max_error_pct": 1.0
+      }
+    },
+    "R14": {
+      "block": "protection_12v",
+      "role": "zener_current_limiter",
+      "description": "Résistance série limitant le courant d'avalanche de D3 sous Load-Dump à moins de 2 mA",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R15": {
+      "block": "esp32_mcu",
+      "role": "reset_pullup",
+      "description": "Résistance de pull-up externe broche EN vers le rail 3.3V (10 kΩ)",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805"
+      }
+    },
+    "R16": {
+      "block": "kline_transceiver",
+      "role": "kline_pullup_iso9141",
+      "description": "Résistance de rappel normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ boîtier 1206)",
+      "value": "1kΩ",
+      "footprint": "1206",
+      "substitutability": "locked",
+      "constraints": {
+        "value_ohm": 1000.0,
+        "tolerance": "1%",
+        "power_min_w": 0.25,
+        "footprint": "1206",
+        "notes": "Dissipation crête 207 mW. Boîtier 1206 (250 mW) obligatoire"
+      }
+    },
+    "SW1": {
+      "block": "esp32_mcu",
+      "role": "reset_tactile_switch",
+      "description": "Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier)",
+      "value": "TS-1187A-B-A-B",
+      "footprint": "SMD",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "mechanical": true
+      }
+    },
+    "TP1": {
+      "block": "test_points",
+      "role": "test_point_vbus",
+      "description": "Mire de test pad cuivre pour le rail 5V USB (VBUS_5V)",
+      "value": "VBUS_5V",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP2": {
+      "block": "test_points",
+      "role": "test_point_kline",
+      "description": "Mire de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE)",
+      "value": "K_LINE",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP3": {
+      "block": "test_points",
+      "role": "test_point_gnd",
+      "description": "Mire de test pad cuivre pour la masse commune (GND)",
+      "value": "GND",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP4": {
+      "block": "test_points",
+      "role": "test_point_12v_prot",
+      "description": "Mire de test pad cuivre pour le rail 12V sécurisé (+12V_PROT)",
+      "value": "+12V_PROT",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP5": {
+      "block": "test_points",
+      "role": "test_point_5v",
+      "description": "Mire de test pad cuivre pour le rail 5V régulé Buck (+5V)",
+      "value": "+5V",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP6": {
+      "block": "test_points",
+      "role": "test_point_3v3",
+      "description": "Mire de test pad cuivre pour le rail logique 3.3V filtré (3.3V)",
+      "value": "3.3V",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP7": {
+      "block": "test_points",
+      "role": "test_point_canh",
+      "description": "Mire de test pad cuivre pour la ligne différentielle CAN High (CANH)",
+      "value": "CANH",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP8": {
+      "block": "test_points",
+      "role": "test_point_canl",
+      "description": "Mire de test pad cuivre pour la ligne différentielle CAN Low (CANL)",
+      "value": "CANL",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP9": {
+      "block": "test_points",
+      "role": "test_point_vbat_sense",
+      "description": "Mire de test pad cuivre pour l'entrée analogique ADC1 (VBAT_SENSE)",
+      "value": "VBAT_SENSE",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP10": {
+      "block": "test_points",
+      "role": "test_point_io0",
+      "description": "Mire de test pad cuivre pour forçage manuel du mode bootloader ROM (IO0)",
+      "value": "IO0",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP11": {
+      "block": "test_points",
+      "role": "test_point_en",
+      "description": "Mire de test pad cuivre pour le signal de reset matériel (ESP_EN)",
+      "value": "EN",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "U1": {
+      "block": "esp32_mcu",
+      "role": "mcu_soc",
+      "description": "Microcontrôleur Xtensa LX7 dual-core 240 MHz, 16 Mo Flash, 8 Mo PSRAM, Wi-Fi 2.4 GHz + BLE 5.0",
+      "value": "2.4GHz",
+      "footprint": "SMD,25.5x18mm",
+      "substitutability": "locked",
+      "constraints": {
+        "silicon_ic": true
+      }
+    },
+    "U2": {
+      "block": "can_transceiver",
+      "role": "can_transceiver_ic",
+      "description": "Transceiver physique CAN haute vitesse ISO 11898-2 avec adaptation de niveau logique VIO 3.3V",
+      "value": "TJA1051T/3/1J",
+      "footprint": "SOIC-8-150mil",
+      "substitutability": "locked",
+      "constraints": {
+        "silicon_ic": true
+      }
+    },
+    "U3": {
+      "block": "kline_transceiver",
+      "role": "kline_transceiver_ic",
+      "description": "Transceiver spécifique K-Line ISO 9141-2 avec translation 12V <-> 3.3V et pull-up interne RX",
+      "value": "E-L9637D013TR",
+      "footprint": "SOIC-8",
+      "substitutability": "locked",
+      "constraints": {
+        "silicon_ic": true
+      }
+    },
+    "U4": {
+      "block": "buck_5v",
+      "role": "buck_controller_ic",
+      "description": "Convertisseur Step-Down 3A 570 kHz haute efficacité avec référence 0.800V",
+      "value": "TPS54331DR",
+      "footprint": "SOIC-8",
+      "substitutability": "locked",
+      "constraints": {
+        "silicon_ic": true
+      }
+    },
+    "U5": {
+      "block": "ldo_3v3",
+      "role": "ldo_regulator_ic",
+      "description": "Régulateur linéaire LDO 3.3V 1.2A ultra faible bruit (Dropout 280 mV @ 1.2A)",
+      "value": "LDL1117S33R",
+      "footprint": "SOT-223-4",
+      "substitutability": "locked",
+      "constraints": {
+        "silicon_ic": true
+      }
+    },
+    "U6": {
+      "block": "usbc_interface",
+      "role": "usb_esd_tvs",
+      "description": "Diode TVS bidirectionnelle 5V ultra-faible capacité (< 3 pF) protection ESD USB D+",
+      "value": "SESD05C",
+      "footprint": "SOD-323",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vrwm_v": 5.0,
+        "c_parasitic_max_pf": 3.0,
+        "footprint": "SOD-323"
+      }
+    },
+    "U7": {
+      "block": "usbc_interface",
+      "role": "usb_esd_tvs",
+      "description": "Diode TVS bidirectionnelle 5V ultra-faible capacité (< 3 pF) protection ESD USB D-",
+      "value": "SESD05C",
+      "footprint": "SOD-323",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vrwm_v": 5.0,
+        "c_parasitic_max_pf": 3.0,
+        "footprint": "SOD-323"
+      }
+    },
+    "U8": {
+      "block": "can_transceiver",
+      "role": "can_differential_tvs",
+      "description": "Double diode TVS 24V bidirectionnelle protection transitoire/ESD bus CANH/CANL",
+      "value": "NUP2105LT1G",
+      "footprint": "SOT-23",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "vrwm_v": 24.0,
+        "footprint": "SOT-23"
+      }
+    }
+  }
+}
