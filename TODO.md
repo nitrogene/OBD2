@@ -20,16 +20,16 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [ ] **[IMPORTANT] Optimiser la marge de protection Buck `U4` (TVS `D1`) [M5 review] :** Évaluer l'adoption d'une TVS SMBJ16A (VRWM = 16 V, VCL = 26.0 V) pour dégager une marge sécuritaire de 4.0V sous les 30.0V de limite absolue du Buck TPS54331 en environnement 12V VL.
 - [ ] **[MINEUR] Ajouter une pull-up externe sur la broche de strapping `IO0` (`U1` pin 27 / `TP10`) [M1 review] :** Ajouter une résistance `R17` de 10 kΩ 0805 (*Basic Part* `C17414`) vers le rail 3.3V sur la ligne `IO0` pour renforcer l'immunité au bruit en habitacle et fiabiliser le boot normal face aux parasites (ne pas dépendre uniquement de la pull-up interne faible de 45 kΩ).
 - [x] **[CONFORME / VALIDÉ] Modularité schéma : Rapprocher les symboles de découplage `C3` et `C4` [M2 review] :** Symbole `C3` déplacé sur la page 2 (au contact direct de la broche 5 `VIO` de `U2`) et symbole `C4` déplacé sur la page 3 (au contact direct de la broche 3 `VCC` de `U3`).
-- [ ] **[MINEUR] Modularité schéma : Rapatrier les condensateurs de découplage `C1` et `C2` sur la page 4 (ESP32-S3) [M2 review suite] :**
-  - **Supprimer le bloc résiduel :** Supprimer le bloc de découplage orphelin situé en bas à droite de la page 4.
-  - **Positionnement & Câblage :** Placer `C1` (100 nF) et `C2` (100 nF) au contact direct des broches d'alimentation du module ESP32-S3 `U1`, en parallèle avec le condensateur réservoir `C11` (10 µF) :
-    - Borne 1 de chaque condensateur reliée au rail `3.3V` (broche 2 `3V3` de `U1`).
-    - Borne 2 de chaque condensateur reliée à la masse `GND` (broche 1 `GND` de `U1`).
+- [x] **[CONFORME / VALIDÉ] Modularité schéma : Rapatrier les condensateurs de découplage `C1` et `C2` sur la page 4 (ESP32-S3) [M2 review suite] :**
+  - **Supprimer le bloc résiduel :** Bloc de découplage orphelin supprimé en bas à droite de la page 4.
+  - **Positionnement & Câblage :** `C1` (100 nF) et `C2` (100 nF) implantés en parallèle direct avec le condensateur réservoir `C11` (10 µF) entre le rail `3.3V` (broche 2 `3V3` de `U1`) et la masse `GND` (broche 1 `GND` de `U1`).
   - **Nettoyage documentaire :** Purgé toute référence au « bloc de découplage » dans la documentation technique ([`HARDWARE.md`](HARDWARE.md), [`README.md`](README.md)), le découplage étant désormais intégralement modélisé au niveau local de chaque IC.
 - [x] **[CONFORME / VALIDÉ] Raccorder l'entrée non utilisée `LI` (Loop Input) de `U3` à GND [M3 review] :** Broche 8 (`LI`) de `U3` (L9637D) reliée à la masse `GND` pour éliminer tout flottement haute impédance du comparateur de ligne L non utilisé.
 - [ ] **[MINEUR] Fiabiliser la mesure ADC de tension batterie face au courant de fuite de `D6` [M4 review] :** Remplacer la diode Schottky `D6` (`BAT54WS`, dont la fuite inverse de 5 à 10 µA à 70°C induit une erreur de mesure batterie > 0.5 V) par une diode silicium à ultra-faible fuite (ex. `BAV199` ou `BAV99`, fuite < 5 nA à chaud) pour préserver la fidélité de l'ADC.
 - [ ] **[MINEUR] Renforcer le boîtier de la résistance de terminaison CAN `R8` (120 Ω) :** Qualifier `R8` en boîtier 0805 ou 1206 (*Basic Part* JLCPCB) pour encaisser sans surchauffe les surtensions transitoires jusqu'à 1 W en cas de court-circuit accidentel de la ligne CANH vers le rail batterie (+12V/14V).
 - [ ] **[MINEUR] Compléter les points de test (Test Points) sur les nœuds critiques :** Ajouter des mires de test TP pour le nœud de commutation Buck `SW/PH` (TP12), la broche `COMP` (TP13), le rail intermédiaire `3.3V_PRE` (TP14) et la ligne K-Line physique `K_PIN` (TP15) afin de faciliter la mise au point et les mesures à l'oscilloscope sur prototype.
+- [ ] **[MINEUR] Vérifier tous les NET PORTS :** sont ils dans le bon sens (I, O, I/O)?
+
 
 ### 1.2 Optimisation du catalogue (Bascule Basic Parts JLCPCB) & Revue de Schéma
 - [x] **Bouton poussoir tactile `SW1` :** Remplacé `C480267` (*Extended*) par `C318884` (`TS-1187A-B-A-B` - *Basic Part*, même empreinte 5.1×5.1 mm).

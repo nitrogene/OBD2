@@ -531,7 +531,7 @@ flowchart TD
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)` | Polarisation de grille du N-MOS Q2 depuis le 12V à travers R5. | Commutation / Contrôle |
 | **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(1)` (anode), `U1(39)` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6. | Mesure Batterie |
 | **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
-| **`BOOT_BUCK`** | `U4(1)`, `C5(1)` | Ligne bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
+| **`BOOT (U4)`** | `U4(1)`, `C5(1)` | Nœud local de bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
 | **`VSENSE_BUCK`** | `U4(5)`, `R9(1)`, `R10(1)` | Point milieu du feedback asservissant le 5V sur la référence interne 0.8V. | Alimentation / Buck |
 | **`COMP_BUCK`** | `U4(6)`, `R11(1)`, `C13(1)` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation Type II. | Alimentation / Buck |
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
