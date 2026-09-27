@@ -55,6 +55,7 @@ Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, s
 | **R14** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance série limitation courant Zener D3 commande grille Q1 (10 kΩ) |
 | **R15** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche EN vers rail 3.3V (10 kΩ) |
 | **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ 1206) |
+| **R17** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance basse pont diviseur grille N-MOS Q2 (10 kΩ, protection claquage Vgs) |
 | **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
 | **TP2** | K_LINE | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE) |
@@ -80,10 +81,10 @@ Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **67 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **68 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 56 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **35 composants** (62.5% des composants assemblés).
+- **Composants physiques à assembler :** 57 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **36 composants** (63.2% des composants assemblés).
 - **Extended Parts (~3 $ par bobine changée) :** **21 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
@@ -99,7 +100,7 @@ Sur les **67 composants** du circuit (dont 11 points de test sans composant phys
 * **`Q2`** (—, `SOT-23`) : `2N7002` — LCSC `C8545` (**Basic Part**)
 * **`R1`, `R2`** (10Ω, `0805`) : `0805W8F100JT5E` — LCSC `C17415` (**Basic Part**)
 * **`R3`, `R4`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
-* **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
+* **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`, `R17`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
 * **`R6`** (100Ω, `0805`) : `0805W8F1000T5E` — LCSC `C17408` (**Basic Part**)
 * **`R8`** (120Ω, `0805`) : `0805W8F1200T5E` — LCSC `C17437` (**Basic Part**)
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)

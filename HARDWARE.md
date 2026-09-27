@@ -88,7 +88,7 @@ flowchart TD
 
 ## 3. Guide Pédagogique : Le Rôle de Chaque Bloc de Composants
 
-### Bloc 1 : Protection 12V & Polarité (`F1`, `D1`, `Q1`, `Q2`, `R5`, `R7`, `D3`, `R14`)
+### Bloc 1 : Protection 12V & Polarité (`F1`, `D1`, `Q1`, `Q2`, `R5`, `R7`, `D3`, `R14`, `R17`)
 
 ```mermaid
 %%{init: {
@@ -110,7 +110,7 @@ flowchart LR
     Q1_S --- D3_R7["D3 (Zener 12V) // R7 (10k)"] --- Q1_G["Grille Q1 (GATE_PMOS)"]
     Q1_G --> R14["R14 (10k)"] --> Q2_D["Drain Q2"]
     Q2_S["Source Q2"] --> GND2["GND"]
-    IN -.->|Polarisation R5| Q2_G["Grille Q2"]
+    IN -.->|Diviseur R5/R17| Q2_G["Grille Q2"]
 ```
 
 * **Fusible Réarmable PPTC `F1` (0.5A - `MF-MSMF050-2`) :**
@@ -121,7 +121,7 @@ flowchart LR
 * **Protection Anti-Inversion par P-MOSFET Q1 (CJ2309A) et N-MOSFET Q2 (2N7002) :**
   * *Pourquoi pas une simple diode ?* Une diode de redressement classique provoquerait une chute de tension permanente de 0.7V à 1.0V et dissiperait inutilement de la chaleur (P = V × I).
   * *Fonctionnement des MOSFETs :*
-    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via la résistance R5. Q2 devient passant et tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le modèle CJ2309A (VDS max 60V, ID 2A en boîtier SOT-23) offre une résistance interne Rds(on) très faible (~ 0.25 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 60V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~29.2V).
+    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via le pont diviseur 1:2 formé par `R5` (10 kΩ) et `R17` (10 kΩ). Ce diviseur divise la tension par 2, bornant strictement $V_{GS}$ à un maximum de **14.6 V** lors des pires transitoires d'alternateur (*Load Dump* où D1 écrête à 29.2 V), garantissant une marge sécuritaire de 5.4 V sous la limite absolue destructrice de ±20 V du 2N7002. En régime nominal (12V-14.4V), $V_{GS} = 6.0\text{V} - 7.2\text{V}$, ce qui sature totalement Q2. Q2 tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le modèle CJ2309A (VDS max 60V, ID 2A en boîtier SOT-23) offre une résistance interne Rds(on) très faible (~ 0.25 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 60V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~29.2V).
     * **En cas d'inversion accidentelle de polarité :** La grille de Q2 n'est pas alimentée, Q2 reste bloqué, la grille de Q1 reste au même potentiel que sa source (Vgs = 0V via R7) : Q1 est hermétiquement ouvert. Aucun courant inverse destructeur ne pénètre dans la carte.
 * **Protection de Grille par Diode Zener `D3` (12V - `BZX84C12`) & Résistance Série `R14` (10 kΩ) :**
   * *Pourquoi borner Vgs ?* L'oxyde de grille du MOSFET Q1 ne tolère qu'une tension Vgs absolue maximale de ±20V. Lors d'un transitoire automobile où le rail 12V monte à près de 30V, sans diode Zener, la grille tirée vers 0V verrait un Vgs destructeur de près de -30V.
@@ -528,7 +528,7 @@ flowchart TD
 | **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R12(1)`, `R16(1)`, `U3(7)` | Rail 12V sécurisé anti-inversion alimentant le Buck, K-Line et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
-| **`GATE_NMOS`** | `Q2(1)`, `R5(2)` | Polarisation de grille du N-MOS Q2 depuis le 12V à travers R5. | Commutation / Contrôle |
+| **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
 | **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(1)` (anode), `U1(39)` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6. | Mesure Batterie |
 | **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
 | **`BOOT (U4)`** | `U4(1)`, `C5(1)` | Nœud local de bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |

@@ -54,7 +54,7 @@
     "protection_12v": {
       "title": "Protection 12V, Filtrage & Anti-Inversion",
       "description": "Protection contre les surtensions d'alternateur (Load-Dump), inversion de polarité et surintensités habitacle.",
-      "components": ["F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14"]
+      "components": ["F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
     },
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
@@ -749,6 +749,19 @@
         "power_min_w": 0.25,
         "footprint": "1206",
         "notes": "Dissipation crête 207 mW. Boîtier 1206 (250 mW) obligatoire"
+      }
+    },
+    "R17": {
+      "block": "protection_12v",
+      "role": "gate_voltage_divider",
+      "description": "Résistance basse pont diviseur grille N-MOS Q2 (10 kΩ, protection contre claquage Vgs)",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805"
       }
     },
     "SW1": {
