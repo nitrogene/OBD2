@@ -129,7 +129,7 @@ flowchart LR
 
 ---
 
-### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `R9`, `R10`, `R11`, `C9`, `C13`)
+### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `C17`, `R9`, `R10`, `R11`, `C9`, `C13`)
 
 L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des transmissions radio Wi-Fi.
 * Si on utilisait un simple régulateur linéaire pour abaisser 12V en 5V sous 500 mA, la puissance perdue en pure chaleur serait de :
@@ -154,15 +154,17 @@ flowchart LR
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
     U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
     VOUT --> C8_C16["Condensateurs C8 // C16\n(2 × 10 µF 50V Filtrage)"] --> GND2["GND"]
+    U4_SS["U4 Broche SS (Pin 4)"] --> C17["C17 (10 nF Slow-Start)\nTss = 4.0 ms"] --> GND4["GND"]
     U4_COMP["U4 Broche COMP (Pin 6)"] --> COMP_NET["Réseau Type II :\n(R11 10k + C9 3.3n) // C13 220p"] --> GND3["GND"]
 ```
 
 * **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée. Courant de saturation Isat = 3.6A offrant une marge de sécurité de 4.5× face au pic inductif maximal (~0.79A).
 * **Diode Schottky de Roue Libre `D2` (3A / 40V - `SS34`) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
-* **Condensateur de Bootstrap `C5` (1 µF - `C0603`) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne.
+* **Condensateur de Bootstrap `C5` (100 nF céramique 50V X7R - `0603` / LCSC `C14663` Basic Part) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne. La valeur unique de 100 nF est impérativement requise par TI (SLVS839H Table 5-1 & §8.2.2.8) pour assurer la recharge correcte de la pompe de charge en toutes conditions de charge et de démarrage à froid.
 * **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
 * **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
 * **Condensateurs de Sortie `C8` et `C16` (2 × 10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Montés en parallèle direct pour obtenir une capacité effective ~18 µF sous 5V DC (faible dérating grâce à la tenue 50V), divisant par 2 l'ESR et lissant l'ondulation résiduelle (*ripple*) < 10 mV crête-à-crête.
+* **Condensateur de Démarrage Progressif `C17` (10 nF céramique 50V X7R - `0603` / LCSC `C57112` Basic Part) :** Raccordé entre la broche 4 (`SS`) de `U4` et la masse `GND`. Il charge sous la source de courant interne $I_{SS} = 2\,\mu\text{A}$ pour générer une rampe de montée linéaire $T_{SS} = \frac{C_{SS} \times V_{REF}}{I_{SS}} = \frac{10\,\text{nF} \times 0.8\,\text{V}}{2\,\mu\text{A}} = 4.0\,\text{ms}$, éliminant tout appel de courant brutal (*inrush current*) et tout dépassement de tension (*overshoot*) sur le rail 5V lors du branchement à chaud sur le véhicule.
 * **Pont Diviseur de Contre-Réaction `R9` (10 kΩ) et `R10` (1.91 kΩ) :**
   > **Vout = 0.8V × (1 + R9 / R10) = 0.8V × (1 + 10 000 / 1 910) = 0.8 × 6.2356 ≈ 4.988 V ≈ 5.0 V**
 * **Réseau de Compensation Type II `R11` (10 kΩ), `C9` (3.3 nF) et `C13` (220 pF C0G 0603 - LCSC `C1604`) :**
@@ -192,12 +194,12 @@ flowchart LR
     V5["+5V (Buck)"] --> U5["Régulateur LDO U5\n(LDL1117S33R 1.2A)"]
     U5 -->|3.3V_PRE| FB1["Perle Ferrite FB1\n(120Ω @ 100MHz)"]
     FB1 --> V33["Rail Logique +3.3V"]
-    V33 --> C6["Condensateur C6\n(1 µF Filtrage)"] --> GND["GND"]
+    U5 -->|3.3V_PRE| C6["Condensateur C6\n(10 µF 1206 Stabilité)"] --> GND["GND"]
 ```
 
-* **Régulateur Linéaire LDO `U5` (`LDL1117S33R` - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB.
+* **Régulateur Linéaire LDO `U5` (`LDL1117S33R` - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB. Les broches 2 et 4 (`VOUT` et Tab) sont reliées en commun sur le net `3.3V_PRE` pour maximiser la dissipation thermique sur le plan de cuivre PCB.
 * **Perle de Ferrite `FB1` (`BLM18PG121SN1D` - boîtier 0603) :** Présente une impédance inductive de **120 Ω à 100 MHz**, empêchant le bruit numérique du microcontrôleur de refluer vers les capteurs et transceivers.
-* **Condensateur Réservoir `C6` (1 µF céramique - `C0603`) :** Stabilise la sortie et amortit les variations d'impédance de la perle ferrite.
+* **Condensateur Réservoir & Stabilité de Boucle `C6` (10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Placé sur le rail intermédiaire `3.3V_PRE` directement en sortie de `U5` (en amont de la perle `FB1`), il garantit le respect de la condition formelle de stabilité constructeur ($C_{OUT} \ge 4.7\,\mu\text{F}$) de la datasheet ST LDL1117.
 
 ---
 
@@ -503,6 +505,7 @@ flowchart TD
 | **Inversion accidentelle de polarité** | Court-circuit destructeur des circuits intégrés | Commutation automatique sans perte par MOSFET | P-MOS `Q1` (60V) + N-MOS `Q2` |
 | **Court-circuit accidentel faisceau** | Échauffement critique, fonte des pistes | Coupure thermique réarmable sans intervention | Fusible PPTC 0.5A `F1` |
 | **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique | Conversion à découpage 570 kHz (rdt > 85%) | Buck `U4` (`TPS54331`) + `L1` + `D2` |
+| **Appel de courant d'enfichage & pic 5V (*Inrush / Overshoot*)** | Surtension transitoire 5V destructrice à l'enfichage | Démarrage progressif linéaire 4.0 ms par capacité Slow-Start | `U4(SS)`, `C17` (10 nF) |
 | **Bruit de hachage & stabilité boucle Buck** | Instabilité de régulation 5V, oscillations | Réseau Type II (marge 66.3°) + condensateur HF `C13` (220pF) + découplage VIN `C14` | `U4`, `R11`, `C9`, `C13`, `C14` |
 | **Bruit de hachage sur la radio** | Portée Wi-Fi/BLE dégradée, instabilité ADC | Double filtrage : Régulateur LDO + Perle de ferrite | LDO `U5` (`LDL1117`) + `FB1` + `C6` |
 | **Micro-coupures & pics RF Wi-Fi de l'ESP32** | Chute sous 2.8V, redémarrage intempestif (*brownout*) | Découplage HF à < 2 mm + Réservoir local Bulk 10 µF | Condensateurs `C1`-`C4` + Bulk `C11` (25V 0805) |
@@ -530,6 +533,7 @@ flowchart TD
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
 | **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(1)` (anode), `U1(39)` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6. | Mesure Batterie |
+| **`SS_BUCK`** | `U4(4)`, `C17(1)` | Temporisation de démarrage progressif du Buck U4 (Tss = 4.0 ms). | Alimentation / Buck |
 | **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
 | **`BOOT (U4)`** | `U4(1)`, `C5(1)` | Nœud local de bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
 | **`VSENSE_BUCK`** | `U4(5)`, `R9(1)`, `R10(1)` | Point milieu du feedback asservissant le 5V sur la référence interne 0.8V. | Alimentation / Buck |
@@ -538,7 +542,7 @@ flowchart TD
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C16`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
+| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C17`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |

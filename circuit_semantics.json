@@ -59,7 +59,7 @@
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
       "description": "Abaisseur de tension synchrone à haut rendement (>85%) générant le rail 5V pour le transceiver CAN et le LDO 3.3V.",
-      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "R9", "R10", "R11", "C9", "C13"]
+      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "C17", "R9", "R10", "R11", "C9", "C13"]
     },
     "ldo_3v3": {
       "title": "Régulateur Linéaire LDO 3.3V Faible Bruit",
@@ -157,30 +157,29 @@
     "C5": {
       "block": "buck_5v",
       "role": "bootstrap_capacitor",
-      "description": "Condensateur volant de charge de grille BOOT -> PH pour Buck TPS54331",
-      "value": "1uF",
+      "description": "Condensateur volant de charge de grille BOOT -> PH pour Buck TPS54331 (100 nF impératif selon datasheet TI Table 5-1 & §8.2.2.8)",
+      "value": "100nF",
       "footprint": "0603",
       "substitutability": "direct_1to1",
       "constraints": {
-        "value_farad": 1e-06,
+        "value_farad": 1e-07,
         "voltage_min_v": 50.0,
-        "dielectric_min": "X5R",
+        "dielectric_min": "X7R",
         "footprint": "0603"
       }
     },
     "C6": {
       "block": "ldo_3v3",
       "role": "ldo_output_stability",
-      "description": "Filtrage et stabilité de boucle LDO U5 LDL1117 (prévu 10uF 1206 dans TODO 1.1)",
-      "value": "1uF",
-      "footprint": "0603",
+      "description": "Filtrage et stabilité de boucle LDO U5 LDL1117 (10 µF 50V 1206 garantissant Cout >= 4.7 µF pour stabilité inconditionnelle)",
+      "value": "10uF",
+      "footprint": "1206",
       "substitutability": "direct_1to1",
       "constraints": {
-        "value_farad": 1e-06,
-        "voltage_min_v": 16.0,
+        "value_farad": 1e-05,
+        "voltage_min_v": 50.0,
         "dielectric_min": "X5R",
-        "footprint": "0603",
-        "notes": "TODO 1.1 prévoit son remplacement par 10uF 1206 Basic Part C13585"
+        "footprint": "1206"
       }
     },
     "C7": {
@@ -321,6 +320,20 @@
         "voltage_min_v": 50.0,
         "dielectric_min": "X5R",
         "footprint": "1206"
+      }
+    },
+    "C17": {
+      "block": "buck_5v",
+      "role": "slow_start_timing",
+      "description": "Condensateur de démarrage progressif broche 4 (SS) du Buck U4 (Tss = 4.0 ms)",
+      "value": "10nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-08,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603"
       }
     },
     "D1": {

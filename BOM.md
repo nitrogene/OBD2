@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
+Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
 
 ---
 
@@ -12,8 +12,8 @@ Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, s
 | **C2** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation ESP32 (rail 3.3V) |
 | **C3** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation transceiver CAN U2 (rail 3.3V VIO) |
 | **C4** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation transceiver K-Line U3 (rail 3.3V VCC) |
-| **C5** | 1uF | `CL10A105KB8NNNC` | `C15849` | **Basic Part** | `0603` | Bootstrap convertisseur Buck U4 (broches BOOT → PH) |
-| **C6** | 1uF | `CL10A105KB8NNNC` | `C15849` | **Basic Part** | `0603` | Filtrage sortie régulateur LDO U5 (rail 3.3V) |
+| **C5** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Bootstrap convertisseur Buck U4 (broches BOOT → PH, 100 nF selon TI §8.2.2.8) |
+| **C6** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Filtrage sortie régulateur LDO U5 (rail 3.3V_PRE, Cout >= 4.7 µF pour stabilité) |
 | **C7** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur réservoir entrée Buck U4 qualifié 50V X5R |
 | **C8** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C16) |
 | **C9** | 3.3nF | `CL10B332KB8NNNC` | `C1613` | **Basic Part** | `0603` | Condensateur de compensation de boucle Buck U4 (broche COMP vers GND) |
@@ -24,6 +24,7 @@ Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, s
 | **C14** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF entrée Buck U4 (rail +12V_PROT vers GND) |
 | **C15** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF transceiver CAN U2 (rail +5V vers GND) |
 | **C16** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C8) |
+| **C17** | 10nF | `0603B103K500NT` | `C57112` | **Basic Part** | `0603` | Condensateur de démarrage progressif Buck U4 (broche SS vers GND, Tss = 4.0 ms) |
 | **D1** | — | `SMBJ18A` | `C5860928` | Extended Part | `SMB` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
 | **D2** | — | `SS34` | `C8678` | **Basic Part** | `SMA` | Diode Schottky 40V 3A de roue libre pour convertisseur Buck U4 (MDD) |
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
@@ -81,20 +82,21 @@ Inventaire exhaustif des **67 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **68 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **69 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 57 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **36 composants** (63.2% des composants assemblés).
+- **Composants physiques à assembler :** 58 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **37 composants** (63.8% des composants assemblés).
 - **Extended Parts (~3 $ par bobine changée) :** **21 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
-* **`C1`, `C2`, `C3`, `C4`, `C10`, `C14`, `C15`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
-* **`C5`, `C6`, `C12`** (1uF 50V, `0603`) : `CL10A105KB8NNNC` — LCSC `C15849` (**Basic Part**)
-* **`C7`, `C8`, `C16`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
+* **`C1`, `C2`, `C3`, `C4`, `C5`, `C10`, `C14`, `C15`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
+* **`C12`** (1uF 50V, `0603`) : `CL10A105KB8NNNC` — LCSC `C15849` (**Basic Part**)
+* **`C6`, `C7`, `C8`, `C16`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
 * **`C9`** (3.3nF, `0603`) : `CL10B332KB8NNNC` — LCSC `C1613` (**Basic Part**)
 * **`C11`** (10uF 25V, `0805`) : `CL21A106KAYNNNE` — LCSC `C15850` (**Basic Part**)
 * **`C13`** (220pF 50V, `0603`) : `CL10B221KB8NNNC` — LCSC `C1603` (**Basic Part**)
+* **`C17`** (10nF 50V, `0603`) : `0603B103K500NT` — LCSC `C57112` (**Basic Part**)
 * **`D2`** (—, `SMA`) : `SS34` — LCSC `C8678` (**Basic Part**)
 * **`FB1`** (—, `0603`) : `BLM18PG121SN1D` — LCSC `C14709` (**Basic Part**)
 * **`Q2`** (—, `SOT-23`) : `2N7002` — LCSC `C8545` (**Basic Part**)

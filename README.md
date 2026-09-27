@@ -62,6 +62,27 @@ Module électronique et logiciel compagnon destiné à émuler le comportement p
 
 ---
 
+### 1.3 Référentiel Normatif & Évaluation de la Conformité (Design Compliance)
+
+Le matériel et le firmware sont développés en référence stricte aux standards internationaux de l'ingénierie automobile. La grille ci-dessous évalue le **niveau de conformité par conception** (*Design Compliance*) atteint par l'architecture :
+
+* 🟢 **Pleine conformité matérielle (100%) :** Le circuit respecte rigoureusement les tolérances géométriques, dynamiques et électriques imposées par la norme.
+* 🟡 **Conformité ciblée VL (85% – 95%) :** Dimensionné et éprouvé pour les conditions réelles d'une voiture particulière 12V (VL), avec limites physiques explicitement tracées.
+* 🔵 **Conformité matérielle prête / Dépendant du firmware :** Le hardware est 100% capable et dimensionné ; la conformité finale dépend de la stack logicielle (Phase 5).
+
+| Domaine | Norme / Standard | Titre & Périmètre Couvert | Statut | Justification Matérielle & Choix de Conception | Limite / Condition d'Usage |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| **Connectique** | **SAE J1962 / ISO 15031-3** | Connecteur de diagnostic OBD-II | 🟢 **100%** | • Embase mâle 16 broches traversante coudée Format **Type A** (détrompeur central 12V).<br>• Brochage rigoureusement standard (16 = +12V, 4/5 = GND, 6/14 = CAN, 7 = K-Line).<br>• Broches constructeurs non utilisées laissées isolées (NC). | Respect de l'enveloppe mécanique d'enfichage. |
+| **Bus CAN** | **ISO 11898-2** | Couche physique différentielle CAN High-Speed | 🟢 **100%** | • Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique `VIO` (3.3V).<br>• Paires différentielles symétriques 120 Ω.<br>• Terminaison 120 Ω (`R8`) commutable par cavalier `JP1` (obligatoire). | Cavalier `JP1` impérativement **ouvert** sur véhicule. |
+| **Bus K-Line** | **ISO 9141-2 & ISO 14230 (KWP2000)** | Ligne K-Line mono-fil bidirectionnelle 12V | 🟢 **100%** | • Transceiver dédié STMicroelectronics **L9637D** conforme ISO 9141.<br>• Pull-up normalisée à 500 Ω ($R_{16} // R_{19}$ boîtiers 1206) garantissant $t_r < 2\,\mu\text{s}$ sur 2 nF.<br>• Compatible init lente 5-baud et *Fast-Init* 25 ms. | Débit limité à 10.4 kbps (spécification ISO). |
+| **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Dépend de l'implémentation de la pile logicielle FreeRTOS. |
+| **Transitoires 12V** | **ISO 7637-2** | Perturbations électriques conduites sur faisceau 12V | 🟢 **95%** *(Niveau III / Classe A)* | • **Impulsion 1 (–100 V inductif) :** Bloqué par MOSFET P-MOS $Q_1$ (tenue 60V, Vgs borné par $D_3$ 12V et diviseur $R_5/R_{17}$).<br>• **Impulsion 2a (+50 V) :** Écrêté sous 29.2 V par TVS $D_1$ (SMBJ18A/16A).<br>• **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtré par TVS $D_1$ + capacités d'entrée $C_{14}, C_7$. | Conçu pour impédance de source automobile standard. |
+| **Environnement VL** | **ISO 16750-2** | Contraintes électriques pour véhicules légers (12V) | 🟡 **90%** *(Ciblé 12V)* | • **Inversion polarité (§4.7, –14 V) :** Bloqué à 100% par P-MOS $Q_1$ (aucun courant inverse).<br>• **Démarrage / Cranking (§4.6.3) :** Coupure sous 7.3 V via pont UVLO ($R_{20}/R_{21}$) et démarrage doux 4 ms ($C_{17}$) pour protéger la Flash NVS.<br>• **Load-Dump centralisé (§4.6.4, 35 V) :** Écrêté à 29.2 V par $D_1$ sous la limite absolue du Buck TPS54331. | Interdiction formelle du réseau 24V et surtensions *Jump-Start* 24V prolongées (> quelques s). |
+| **Immunité ESD** | **ISO 10605 / IEC 61000-4-2** | Décharges électrostatiques (Contact & Air) | 🟢 **100%** *(Niveau 4 : ±8 kV contact / ±15 kV air)* | • Bus CAN : Diode double TVS $U_8$ (NUP2105L, qualifiée ISO 10605 jusqu'à $\pm 30\,\text{kV}$).<br>• K-Line : Diode TVS $D_5$ (SMF24CA 24V bidirectionnelle, 400 W crête).<br>• Port USB-C : Diodes ESD ultra-rapides $U_6, U_7$ (SESD05C, $C_j < 1.0\,\text{pF}$). | Nécessite un plan de masse PCB continu avec vias de couture. |
+| **Radiofréquence** | **IEEE 802.11 b/g/n & BLE 5.0** | Connectivité sans fil 2.4 GHz et Bluetooth Low Energy | 🟢 **100%** *(Certifié)* | • Module pré-certifié FCC/CE/SRRC par Espressif Systems.<br>• Antenne méandre PCB intégrée accordée à 50 Ω. | Respect rigoureux du Keepout RF PCB (zone sans cuivre multicouche). |
+
+---
+
 ## 2. Architecture Fonctionnelle Globale
 
 ```mermaid
