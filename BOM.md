@@ -31,7 +31,7 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **D4** | — | `BAT54CW` | `C962771` | Extended Part | `SOT-323-3` | Diode Schottky double 30V cathode commune (banc USB et anti-retour) |
 | **D5** | — | `SMF24CA` | `C2891487` | Extended Part | `SOD-123FL` | Diode TVS 24V bidirectionnelle protection transitoire K-Line |
 | **D6** | — | `BAT54WS` | `C17702994` | Extended Part | `SOD-323` | Diode Schottky rapide de clamp protection surtension ADC VBAT_SENSE |
-| **F1** | — | `MF-MSMF050-2` | `C17313` | Extended Part | `1812` | Fusible réarmable PPTC 0.5A protection ligne 12V |
+| **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
 | **FB1** | — | `BLM18PG121SN1D` | `C14709` | **Basic Part** | `0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
 | **J1** | — | `OBD2-male-16pin` | `C9900147921` | Extended Part | `弯插,P=4mm,16P` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
@@ -57,6 +57,8 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **R15** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche EN vers rail 3.3V (10 kΩ) |
 | **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ 1206) |
 | **R17** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance basse pont diviseur grille N-MOS Q2 (10 kΩ, protection claquage Vgs) |
+| **R19** | 510kΩ | `0805W8F5103T5E` | `C17596` | **Basic Part** | `0805` | Résistance haute pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 7.3V / reprise 8.8V) |
+| **R20** | 91kΩ | `0805W8F9102T5E` | `C17604` | **Basic Part** | `0805` | Résistance basse pont diviseur UVLO (EN de U4 vers GND, 91 kΩ) |
 | **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
 | **TP2** | K_LINE | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE) |
@@ -69,7 +71,7 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **TP9** | VBAT_SENSE | `—` | *—* | — | `—` | Point de test pad cuivre pour la mesure analogique tension batterie (VBAT_SENSE) |
 | **TP10** | IO0 | `—` | *—* | — | `—` | Point de test pad cuivre pour forcer le mode bootloader de secours (IO0) |
 | **TP11** | EN | `—` | *—* | — | `—` | Point de test pad cuivre pour le signal de reset matériel (ESP_EN) |
-| **U1** | 2.4GHz | `ESP32-S3-WROOM-1-N16R8` | `C2913202` | Extended Part | `SMD,25.5x18mm` | SoC ESP32-S3 Wi-Fi 2.4 GHz + BLE 5.0 (16MB Flash / 8MB PSRAM) |
+| **U1** | 2.4GHz | `ESP32-S3-WROOM-1-N16R2` | `C2913205` | Extended Part | `SMD,25.5x18mm` | SoC ESP32-S3 Wi-Fi 2.4 GHz + BLE 5.0 (16MB Flash / 2MB PSRAM, –40°C à +85°C) |
 | **U2** | — | `TJA1051T/3/1J` | `C38695` | Extended Part | `SOIC-8-150mil` | Transceiver CAN haute vitesse avec broche VIO (3.3V) |
 | **U3** | — | `E-L9637D013TR` | `C153038` | Extended Part | `SOIC-8` | Transceiver K-Line ISO 9141 / KWP2000 |
 | **U4** | — | `TPS54331DR` | `C9865` | Extended Part | `SOIC-8` | Régulateur abaisseur Step-Down Buck 12V → 5V, 3A (570 kHz) |
@@ -82,10 +84,10 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **69 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **71 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 58 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **37 composants** (63.8% des composants assemblés).
+- **Composants physiques à assembler :** 60 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **39 composants** (65.0% des composants assemblés).
 - **Extended Parts (~3 $ par bobine changée) :** **21 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
@@ -108,6 +110,8 @@ Sur les **69 composants** du circuit (dont 11 points de test sans composant phys
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
 * **`R16`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
+* **`R19`** (510kΩ, `0805`) : `0805W8F5103T5E` — LCSC `C17596` (**Basic Part**)
+* **`R20`** (91kΩ, `0805`) : `0805W8F9102T5E` — LCSC `C17604` (**Basic Part**)
 * **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
 
 ### B. Statut des Optimisations Basic Parts

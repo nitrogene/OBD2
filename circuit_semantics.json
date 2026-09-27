@@ -59,7 +59,7 @@
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
       "description": "Abaisseur de tension synchrone à haut rendement (>85%) générant le rail 5V pour le transceiver CAN et le LDO 3.3V.",
-      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "C17", "R9", "R10", "R11", "C9", "C13"]
+      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "C17", "R9", "R10", "R11", "R19", "R20", "C9", "C13"]
     },
     "ldo_3v3": {
       "title": "Régulateur Linéaire LDO 3.3V Faible Bruit",
@@ -418,15 +418,15 @@
     "F1": {
       "block": "protection_12v",
       "role": "pptc_fuse",
-      "description": "Fusible réarmable PPTC de protection générale de la ligne 12V véhicule",
-      "value": "MF-MSMF050-2",
+      "description": "Fusible réarmable PPTC de protection générale de la ligne 12V véhicule (Littelfuse 1.1A / 33V)",
+      "value": "1812L110/33MR",
       "footprint": "1812",
       "substitutability": "direct_1to1",
       "constraints": {
-        "ihold_a": 0.5,
-        "voltage_min_v": 16.0,
+        "ihold_a": 1.1,
+        "voltage_min_v": 33.0,
         "footprint": "1812",
-        "notes": "Calibrage 0.75A ou 1.1A prévu dans TODO 1.1 / I3"
+        "notes": "Qualifié 1.1A / 33V pour immunité thermique habitacle (I_HOLD >= 0.75A à 60°C)"
       }
     },
     "FB1": {
@@ -777,6 +777,44 @@
         "footprint": "0805"
       }
     },
+    "R19": {
+      "block": "buck_5v",
+      "role": "uvlo_divider_top",
+      "description": "Résistance haute du pont diviseur UVLO (+12V_PROT vers EN de U4)",
+      "value": "510kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R20",
+      "constraints": {
+        "value_ohm": 510000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "v_start_v": 8.8,
+        "v_stop_v": 7.3,
+        "max_error_pct": 5.0
+      }
+    },
+    "R20": {
+      "block": "buck_5v",
+      "role": "uvlo_divider_bottom",
+      "description": "Résistance basse du pont diviseur UVLO (EN de U4 vers GND)",
+      "value": "91kΩ",
+      "footprint": "0805",
+      "substitutability": "ratio_pair_recalc",
+      "coupled_with": "R19",
+      "constraints": {
+        "value_ohm": 91000.0,
+        "tolerance": "1%",
+        "footprint": "0805"
+      },
+      "validation_criteria": {
+        "v_start_v": 8.8,
+        "v_stop_v": 7.3,
+        "max_error_pct": 5.0
+      }
+    },
     "SW1": {
       "block": "esp32_mcu",
       "role": "reset_tactile_switch",
@@ -879,7 +917,7 @@
     "U1": {
       "block": "esp32_mcu",
       "role": "mcu_soc",
-      "description": "Microcontrôleur Xtensa LX7 dual-core 240 MHz, 16 Mo Flash, 8 Mo PSRAM, Wi-Fi 2.4 GHz + BLE 5.0",
+      "description": "Microcontrôleur Xtensa LX7 dual-core 240 MHz, 16 Mo Flash, 2 Mo PSRAM (Quad-SPI), –40°C à +85°C, Wi-Fi 2.4 GHz + BLE 5.0",
       "value": "2.4GHz",
       "footprint": "SMD,25.5x18mm",
       "substitutability": "locked",

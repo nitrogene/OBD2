@@ -113,8 +113,8 @@ flowchart LR
     IN -.->|Diviseur R5/R17| Q2_G["Grille Q2"]
 ```
 
-* **Fusible Réarmable PPTC `F1` (0.5A - `MF-MSMF050-2`) :**
-  * *Principe :* Contrairement à un fusible traditionnel à fil fusible qui brûle définitivement, un PPTC (*Polymeric Positive Temperature Coefficient*) est constitué d'un polymère conducteur. En cas de surintensité (> 500 mA), l'échauffement interne par effet Joule fait brutalement exploser sa résistance électrique, bloquant le courant. Une fois le court-circuit éliminé et le composant refroidi, il redevient conducteur automatiquement.
+* **Fusible Réarmable PPTC `F1` (1.1A / 33V - `1812L110/33MR`) :**
+  * *Principe & Dimensionnement :* Composé d'un polymère conducteur (PPTC), il protège la ligne 12V contre les surintensités destructrices. Calibré à $I_{HOLD} = 1.10\,\text{A}$ ($I_{TRIP} \approx 2.0\,\text{A}$) avec une tenue en tension de **$V_{MAX} = 33.0\,\text{V}$** (Littelfuse `1812L110/33MR`, boîtier 1812, LCSC `C142747`), il maintient un courant de fonctionnement $I_{HOLD} \ge 0.75\,\text{A}$ même à 60°C dans l'habitacle en été, éliminant tout risque de déclenchement intempestif lors des pics de consommation Wi-Fi ou des démarrages moteur, tout en garantissant une résistance série ultra-faible ($R \le 0.15\,\Omega$) et une immunité totale face aux surtensions automobiles jusqu'à 33 V.
 * **Diode TVS de Protection contre les Surtensions `D1` (18V - `SMBJ18A`) :**
   * *Principe :* Une diode TVS (*Transient Voltage Suppressor*) reste totalement transparente en temps normal sous la tension batterie (VRWM = 18.0V). Dès qu'une impulsion transitoire dépasse sa tension d'avalanche (VBR = 20.0V), elle devient conductrice en quelques picosecondes et court-circuite l'excédent d'énergie directement vers la masse (GND).
   * *Calibrage optimal pour le régulateur Buck :* Avec une tension de serrage crête VCL de **29.2V** sous choc d'impulsion de 20.5A (600W @ 10/1000 µs), la SMBJ18A garantit que la tension d'entrée ne dépasse jamais les **30.0V de limite absolue** du régulateur Buck U4 (TPS54331), éliminant tout risque de claquage du silicium.
@@ -129,7 +129,7 @@ flowchart LR
 
 ---
 
-### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `C17`, `R9`, `R10`, `R11`, `C9`, `C13`)
+#### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `C17`, `R9`, `R10`, `R11`, `R19`, `R20`, `C9`, `C13`)
 
 L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des transmissions radio Wi-Fi.
 * Si on utilisait un simple régulateur linéaire pour abaisser 12V en 5V sous 500 mA, la puissance perdue en pure chaleur serait de :
@@ -150,6 +150,7 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
 }}%%
 flowchart LR
     VIN["VIN (+12V_PROT)"] --> C14["C14 (100 nF HF) // C7 (10 µF)"]
+    VIN --> UVLO["Diviseur UVLO :\nR19 (510k) // R20 (91k)"] --> U4_EN["U4 Broche EN (Pin 3)\nSeuils 8.8V Start / 7.3V Stop"]
     C14 --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
     U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
@@ -160,6 +161,7 @@ flowchart LR
 
 * **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée. Courant de saturation Isat = 3.6A offrant une marge de sécurité de 4.5× face au pic inductif maximal (~0.79A).
 * **Diode Schottky de Roue Libre `D2` (3A / 40V - `SS34`) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
+* **Pont Diviseur UVLO de Coupure Sous-Tension `R19` (510 kΩ) et `R20` (91 kΩ) (0805 Basic Parts `C17596` / `C17604`) :** Raccordé entre le rail `+12V_PROT`, la broche 3 (`EN`) de `U4` et la masse `GND`. Il calibre un seuil d'enclenchement net à $V_{START} \approx 8.8\,\text{V}$ ($I_1 = 1.25\,\mu\text{A}$) et un seuil de coupure franche à $V_{STOP} \approx 7.3\,\text{V}$ ($I_{hyst} = 3\,\mu\text{A}$), évitant tout régime transitoire instable ou redémarrages en boucle lors des creux de tension au démarrage moteur (*cranking*) et préservant l'intégrité de la mémoire Flash NVS de l'ESP32.
 * **Condensateur de Bootstrap `C5` (100 nF céramique 50V X7R - `0603` / LCSC `C14663` Basic Part) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne. La valeur unique de 100 nF est impérativement requise par TI (SLVS839H Table 5-1 & §8.2.2.8) pour assurer la recharge correcte de la pompe de charge en toutes conditions de charge et de démarrage à froid.
 * **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
 * **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
@@ -416,7 +418,7 @@ flowchart LR
 
 ### Bloc 8 : SoC ESP32-S3-WROOM-1 & Découplage Local (`U1`, `C1`, `C2`, `C11`, `C12`, `R15`, `SW1`)
 
-* Microcontrôleur Xtensa LX7 double cœur 32 bits à 240 MHz avec **16 Mo Flash** et **8 Mo PSRAM**.
+* Microcontrôleur Xtensa LX7 double cœur 32 bits à 240 MHz avec **16 Mo Flash** et **2 Mo PSRAM** (version `ESP32-S3-WROOM-1-N16R2` certifiée –40°C à +85°C native pour habitacle automobile).
 * Contrôleur USB OTG natif (flash et debug direct sans convertisseur USB-série externe).
 * Contrôleur matériel **TWAI** (compatible CAN 2.0B).
 * Antenne méandre 2.4 GHz gravée sur PCB (Wi-Fi 802.11 b/g/n + BLE 5.0).

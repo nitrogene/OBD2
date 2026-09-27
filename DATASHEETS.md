@@ -8,7 +8,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 | Repère | Circuit Intégré | Fabricant | Rôle Fonctionnel | Fichier PDF Source Archivé |
 | :--- | :--- | :--- | :--- | :--- |
-| **`U1`** | **ESP32-S3-WROOM-1-N16R8** | Espressif Systems | SoC Dual-Core 240 MHz, Wi-Fi 2.4 GHz, BLE 5.0, USB natif, TWAI | [`datasheet/ESP32-S3-WROOM-1.pdf`](datasheet/ESP32-S3-WROOM-1.pdf) |
+| **`U1`** | **ESP32-S3-WROOM-1-N16R2** | Espressif Systems | SoC Dual-Core 240 MHz, Wi-Fi 2.4 GHz, BLE 5.0, USB natif, TWAI (–40°C à +85°C) | [`datasheet/ESP32-S3-WROOM-1.pdf`](datasheet/ESP32-S3-WROOM-1.pdf) |
 | **`U2`** | **TJA1051T/3/1J** | NXP Semiconductors | Transceiver CAN haute vitesse (5 Mbit/s) avec translation VIO 3.3V | [`datasheet/TJA1051T.pdf`](datasheet/TJA1051T.pdf) |
 | **`U3`** | **E-L9637D013TR (L9637D)** | STMicroelectronics | Transceiver ligne K-Line ISO 9141 / KWP2000 bidirectionnel 12V | [`datasheet/E-L9637D013TR (L9637).pdf`](datasheet/E-L9637D013TR%20(L9637).pdf) |
 | **`U4`** | **TPS54331DR** | Texas Instruments | Convertisseur Buck Step-Down 12V → 5V (3A, 570 kHz, Eco-mode) | [`datasheet/TPS54331.pdf`](datasheet/TPS54331.pdf) |
@@ -22,7 +22,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ---
 
-### U1 — SoC Wi-Fi & BLE : ESP32-S3-WROOM-1-N16R8
+### U1 — SoC Wi-Fi & BLE : ESP32-S3-WROOM-1-N16R2
 
 * **Fichier constructeur :** [`datasheet/ESP32-S3-WROOM-1.pdf`](datasheet/ESP32-S3-WROOM-1.pdf) (Espressif Systems)
 * **Boîtier :** Module SMD 41 broches + Pad thermique central (25.5 × 18.0 mm).
