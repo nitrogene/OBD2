@@ -106,7 +106,7 @@ flowchart LR
     IN["+12V OBD (Pin 16)"] --> F1["Fusible PPTC F1\n(0.5A)"]
     F1 --> Q1_S["P-MOSFET Q1\nSource (+12V_FUSED)"]
     Q1_S --> Q1_D["P-MOSFET Q1\nDrain (+12V_PROT)"]
-    F1 --> D1["TVS D1 (18V)"] --> GND1["GND"]
+    F1 --> D1["TVS D1 (16V)"] --> GND1["GND"]
     Q1_S --- D3_R7["D3 (Zener 12V) // R7 (10k)"] --- Q1_G["Grille Q1 (GATE_PMOS)"]
     Q1_G --> R14["R14 (10k)"] --> Q2_D["Drain Q2"]
     Q2_S["Source Q2"] --> GND2["GND"]
@@ -115,13 +115,13 @@ flowchart LR
 
 * **Fusible Réarmable PPTC `F1` (1.1A / 33V - `1812L110/33MR`) :**
   * *Principe & Dimensionnement :* Composé d'un polymère conducteur (PPTC), il protège la ligne 12V contre les surintensités destructrices. Calibré à $I_{HOLD} = 1.10\,\text{A}$ ($I_{TRIP} \approx 2.0\,\text{A}$) avec une tenue en tension de **$V_{MAX} = 33.0\,\text{V}$** (Littelfuse `1812L110/33MR`, boîtier 1812, LCSC `C142747`), il maintient un courant de fonctionnement $I_{HOLD} \ge 0.75\,\text{A}$ même à 60°C dans l'habitacle en été, éliminant tout risque de déclenchement intempestif lors des pics de consommation Wi-Fi ou des démarrages moteur, tout en garantissant une résistance série ultra-faible ($R \le 0.15\,\Omega$) et une immunité totale face aux surtensions automobiles jusqu'à 33 V.
-* **Diode TVS de Protection contre les Surtensions `D1` (18V - `SMBJ18A`) :**
-  * *Principe :* Une diode TVS (*Transient Voltage Suppressor*) reste totalement transparente en temps normal sous la tension batterie (VRWM = 18.0V). Dès qu'une impulsion transitoire dépasse sa tension d'avalanche (VBR = 20.0V), elle devient conductrice en quelques picosecondes et court-circuite l'excédent d'énergie directement vers la masse (GND).
-  * *Calibrage optimal pour le régulateur Buck :* Avec une tension de serrage crête VCL de **29.2V** sous choc d'impulsion de 20.5A (600W @ 10/1000 µs), la SMBJ18A garantit que la tension d'entrée ne dépasse jamais les **30.0V de limite absolue** du régulateur Buck U4 (TPS54331), éliminant tout risque de claquage du silicium.
+* **Diode TVS de Protection contre les Surtensions `D1` (16V - `SMBJ16A`) :**
+  * *Principe :* Une diode TVS (*Transient Voltage Suppressor*) reste totalement transparente en temps normal sous la tension batterie ($V_{RWM} = 16.0\,\text{V}$). Dès qu'une impulsion transitoire dépasse sa tension d'avalanche ($V_{BR} = 17.8\,\text{V} \sim 19.7\,\text{V}$), elle devient conductrice en quelques picosecondes et court-circuite l'excédent d'énergie directement vers la masse (GND).
+  * *Calibrage optimal pour le régulateur Buck :* Avec une tension de serrage crête $V_{CL}$ de **26.0 V** sous choc d'impulsion de 23.1 A (600W @ 10/1000 µs), la `SMBJ16A` garantit que la tension d'entrée ne dépasse jamais les **30.0 V de limite absolue** du régulateur Buck U4 (TPS54331), dégageant une **marge de sécurité robuste de 4.0 V** sous le seuil destructeur du silicium.
 * **Protection Anti-Inversion par P-MOSFET Q1 (CJ2309A) et N-MOSFET Q2 (2N7002) :**
   * *Pourquoi pas une simple diode ?* Une diode de redressement classique provoquerait une chute de tension permanente de 0.7V à 1.0V et dissiperait inutilement de la chaleur (P = V × I).
   * *Fonctionnement des MOSFETs :*
-    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via le pont diviseur 1:2 formé par `R5` (10 kΩ) et `R17` (10 kΩ). Ce diviseur divise la tension par 2, bornant strictement $V_{GS}$ à un maximum de **14.6 V** lors des pires transitoires d'alternateur (*Load Dump* où D1 écrête à 29.2 V), garantissant une marge sécuritaire de 5.4 V sous la limite absolue destructrice de ±20 V du 2N7002. En régime nominal (12V-14.4V), $V_{GS} = 6.0\text{V} - 7.2\text{V}$, ce qui sature totalement Q2. Q2 tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le modèle CJ2309A (VDS max 60V, ID 2A en boîtier SOT-23) offre une résistance interne Rds(on) très faible (~ 0.25 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 60V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~29.2V).
+    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via le pont diviseur 1:2 formé par `R5` (10 kΩ) et `R17` (10 kΩ). Ce diviseur divise la tension par 2, bornant strictement $V_{GS}$ à un maximum de **13.0 V** lors des pires transitoires d'alternateur (*Load Dump* où D1 écrête à 26.0 V), garantissant une marge sécuritaire de 7.0 V sous la limite absolue destructrice de ±20 V du 2N7002. En régime nominal (12V-14.4V), $V_{GS} = 6.0\text{V} - 7.2\text{V}$, ce qui sature totalement Q2. Q2 tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le modèle CJ2309A (VDS max 60V, ID 2A en boîtier SOT-23) offre une résistance interne Rds(on) très faible (~ 0.25 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 60V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~26.0V).
     * **En cas d'inversion accidentelle de polarité :** La grille de Q2 n'est pas alimentée, Q2 reste bloqué, la grille de Q1 reste au même potentiel que sa source (Vgs = 0V via R7) : Q1 est hermétiquement ouvert. Aucun courant inverse destructeur ne pénètre dans la carte.
 * **Protection de Grille par Diode Zener `D3` (12V - `BZX84C12`) & Résistance Série `R14` (10 kΩ) :**
   * *Pourquoi borner Vgs ?* L'oxyde de grille du MOSFET Q1 ne tolère qu'une tension Vgs absolue maximale de ±20V. Lors d'un transitoire automobile où le rail 12V monte à près de 30V, sans diode Zener, la grille tirée vers 0V verrait un Vgs destructeur de près de -30V.
@@ -233,7 +233,7 @@ flowchart LR
         U7["TVS U7 (SD05C)"]
         R3["R3 (5.1 kΩ)"]
         R4["R4 (5.1 kΩ)"]
-        D4["Diode Schottky D4 (BAT54CW)\nDouble Cathode Commune"]
+        D4["Diode Schottky D4 (B5819W SL)\n1A 40V SOD-123 Basic Part"]
     end
 
     subgraph MCU["ESP32-S3 (U1)"]
@@ -245,14 +245,16 @@ flowchart LR
     DM --> U7 --> IO19
     CC1 --> R3 --> GND1["GND"]
     CC2 --> R4 --> GND2["GND"]
+    VBUS --> C18["C18 (10 µF)\nRéservoir USB"] --> GND3["GND"]
     VBUS --> D4 --> V5["Rail Interne +5V"]
     VBUS --> TP1["Pad Test TP1 (VBUS_5V)"]
 ```
 
-* **Diode Schottky Double Cathode Commune `D4` (`BAT54CW` - SOT-323 / LCSC `C962771`) :**
+* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 - `CL31A106KBHNNNE` - *Basic Part*) :** Placé directement aux bornes de `VBUS_5V` à l'entrée de `J2` pour absorber les rebonds de contact et amortir le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement.
+* **Diode Schottky de Puissance `D4` (`B5819W SL` - SOD-123 / LCSC `C8598` - *Basic Part*) :**
   * *Alimentation autonome sur table :* Permet d'alimenter toute la logique (LDO 3.3V, ESP32, transceiver CAN) via le port USB-C sans source 12V OBD.
-  * *Protection anti-retour absolue :* Dès que la carte est sur véhicule (12V présent, Buck actif), la cathode est portée à 5V, polarisant la diode en inverse et interdisant tout refoulement vers le port USB de l'ordinateur.
-  * *Mise en parallèle :* Les broches 1 et 2 sont pontées, doublant le courant admissible (400 mA continu, 600 mA crête).
+  * *Protection anti-retour absolue :* Dès que la carte est connectée sur véhicule (12V présent, Buck actif), la cathode est portée à 5V, polarisant la diode en inverse et interdisant tout refoulement de courant vers le port USB de l'ordinateur.
+  * *Tenue en courant et faible chute de tension :* Calibrée à **$I_F = 1.0\,\text{A}$ continu** (tenue aux surintensités $I_{FSM} = 9\,\text{A}$) et tension inverse $V_R = 40\,\text{V}$, elle encaisse les pics de consommation radio Wi-Fi (~500 mA) avec une chute de tension minime ($V_F \approx 0.45\,\text{V}$), éliminant tout risque de surchauffe ou de brownout MCU lors des sessions de flash et de test sur banc.
 * **Résistances de Configuration `R3` et `R4` (5.1 kΩ pull-down - `R0805`) :** Indispensables en USB-C pour que la source délivre le 5V (négociation en appareil récepteur / *Sink*).
 * **Diodes de Protection Antistatique ESD `U6` et `U7` (`SD05C` - SOD-323) :** TVS bidirectionnelles canalisant les décharges jusqu'à ±30 kV en < 1 ns avec une capacité parasite infime (< 3 pF).
 
@@ -374,8 +376,8 @@ flowchart LR
         K_VCC["Pin 8 (VCC 3.3V)"]
     end
 
-    subgraph PULLUP["PULL-UP ISO 9141-2"]
-        R16["R16 (1 kΩ / 1206 / 250mW)\nvers +12V_PROT"]
+    subgraph PULLUP["PULL-UP ISO 9141-2 (500 Ω)"]
+        R16_R18["R16 // R18 (2 × 1 kΩ 1206)\nvers +12V_PROT"]
     end
 
     subgraph PROT_K["PROTECTION TRANSITOIRE"]
@@ -388,22 +390,22 @@ flowchart LR
 
     MCU_TX --> R2 --> K_TX
     K_RX --> R1 --> MCU_RX
-    R16 --> K_PIN
+    R16_R18 --> K_PIN
     K_PIN <==> D5
     D5 --> GND_K["GND"]
     D5 <==> PIN7
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
-* **Résistance de Pull-Up Normalisée `R16` (1 kΩ 1206 1/4W - LCSC `C4410`) :**
-  * *Conformité Norme Automobile :* La spécification ISO 9141-2 impose une résistance de rappel au +12V (entre 510 Ω et 1 kΩ) pour garantir un temps de montée rapide ($t_r < 2\text{ µs}$) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF).
-  * *Raccordement sécurisé :* Reliée entre la ligne `K_LINE` et le rail protégé `+12V_PROT` (en aval direct de la protection anti-inversion Q1 et du fusible F1).
-  * *Dissipation thermique maîtrisée (boîtier 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie, la puissance crête dissipée vaut $P = V^2 / R = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$. Le boîtier 1206 (dissipation nominale de 250 mW) encaisse cet échauffement sans stress thermique, là où un boîtier 0603 (100 mW) ou 0805 (125 mW) risquerait la rupture.
+* **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) :**
+  * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de $510\,\Omega \pm 5\%$ pour garantir un temps de montée rapide ($t_r < 2\text{ µs}$) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne $R_{eq} = 500\,\Omega$ (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
+  * *Raccordement sécurisé :* Reliées entre la ligne `K_LINE` et le rail protégé `+12V_PROT` (en aval direct de la protection anti-inversion Q1 et du fusible F1).
+  * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie, la puissance crête totale dissipée sous 14.4 V vaut $P_{tot} = V^2 / R_{eq} = (14.4\text{V})^2 / 500\ \Omega \approx 0.415\text{ W}$. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse $P = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
 * **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C3117728` / `C2843513`) :**
   * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
   * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
-* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 ($V_{CC}$) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 ($V_{CC}$). La broche 7 ($V_S$) est alimentée depuis le rail protégé `+12V_PROT`.
+* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 ($V_{CC}$) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 ($V_{CC}$). La broche 7 ($V_S$) est alimentée depuis le rail protégé `+12V_PROT`. L'entrée non utilisée `LI` (broche 8) est pontée directement sur la broche adjacente 7 ($V_S$), plaçant fermement le comparateur au repos inactif ($V_{LI} = V_S > 0.55\,V_S$), éliminant tout risque d'antenne parasite CEM et annulant le courant de repos permanent ($0\,\mu\text{A}$).
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 
 ---
@@ -490,9 +492,11 @@ flowchart TD
 
     IO0_NODE(("Ligne IO0 / Strapping")) --> TP10["Point de Test IO0 (TP10)\n(Relier à GND au reset pour Boot ROM)"]
     IO0_NODE ==> MCU_IO0["ESP32-S3 Pin 27 (IO0)"]
+    VCC_IO0["+3.3V"] --> R21["R21 (10 kΩ)\nPull-up externe"] --> IO0_NODE
 ```
 
 * **Temporisation Power-On-Reset `R15` (10 kΩ) & `C12` (1 µF) :** Constante de temps `τ = 10 ms` garantissant que le rail 3.3V est parfaitement établi avant le réveil de l'ESP32.
+* **Pull-up Externe de Strapping `R21` (10 kΩ 0805) :** Maintient fermement la ligne `IO0` au niveau HAUT (3.3V) au démarrage, protégeant l'ESP32 contre tout basculement accidentel en mode bootloader sous les parasites transitoires d'habitacle automobile, tout en permettant la mise à la masse manuelle via `TP10` en cas de récupération d'urgence.
 * **Bouton Tactile de Reset Matériel `SW1` (`TS-1187A`) :** Permet de réinitialiser la carte via un trou d'épingle sans forcer sur la prise OBD (effort d'insertion de 40 à 60 N).
 * **Point de Test Bootloader Secours `TP10` (`IO0`) :** Permet de forcer manuellement le téléchargement ROM en reliant le pad à la masse au reset en cas de boucle de plantage (*bootloop*).
 * **Implantation :** `C12` et `R15` à moins de 2 mm de la broche 3 (`EN`) pour immuniser cette ligne haute impédance contre le champ radio 2.4 GHz de l'antenne.
@@ -502,8 +506,7 @@ flowchart TD
 ## 4. Tableau de Synthèse : Contraintes Véhicule vs Solutions Électroniques
 
 | Contrainte du Véhicule | Risque pour l'Électronique | Solution Technique Implémentée | Composants Dédiés |
-| :--- | :--- | :--- | :--- |
-| **Pics de surtension alternateur (*Load Dump*)** | Destruction instantanée par claquage (> 30V) | Écrêtage sous 29.2V vers la masse | TVS 18V `D1` (`SMBJ18A`) |
+| **Pics de surtension alternateur (*Load Dump*)** | Destruction instantanée par claquage (> 30V) | Écrêtage sous 26.0V vers la masse (marge 4.0V) | TVS 16V `D1` (`SMBJ16A`) |
 | **Inversion accidentelle de polarité** | Court-circuit destructeur des circuits intégrés | Commutation automatique sans perte par MOSFET | P-MOS `Q1` (60V) + N-MOS `Q2` |
 | **Court-circuit accidentel faisceau** | Échauffement critique, fonte des pistes | Coupure thermique réarmable sans intervention | Fusible PPTC 0.5A `F1` |
 | **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique | Conversion à découpage 570 kHz (rdt > 85%) | Buck `U4` (`TPS54331`) + `L1` + `D2` |
@@ -530,7 +533,7 @@ flowchart TD
 | :--- | :--- | :--- | :--- |
 | **`+12V`** | OBD-II (Pin 16), `D1(1)`, `F1(1)` | Alimentation batterie brute issue de la prise OBD-II. | Alimentation / Entrée |
 | **`+12V_FUSED`** | `F1(2)`, `Q1(3)`, `D3(3)`, `R7(1)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
-| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R12(1)`, `R16(1)`, `U3(7)` | Rail 12V sécurisé anti-inversion alimentant le Buck, K-Line et le diviseur batterie. | Alimentation / Sécurité |
+| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R19(1)`, `R12(1)`, `R16(1)`, `R18(1)`, `U3(7,8)`, `TP4` | Rail 12V sécurisé anti-inversion alimentant le Buck, le transceiver K-Line (VS et LI) et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
@@ -544,10 +547,10 @@ flowchart TD
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C17`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
+| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
-| **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `TP1`, `D4(1,2)` | Alimentation 5V issue du câble USB-C hôte. | Interface / USB-C |
+| **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec condensateur réservoir Bulk 10 µF. | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)`, `R3(1)` | Ligne de configuration USB-C canal 1 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)`, `R4(1)` | Ligne de configuration USB-C canal 2 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_D+`** | `J2(A6,B6)`, `U6(1)`, `U1(14)` (`IO20`) | Ligne de données différentielle USB positive. | Interface / USB-C |
@@ -563,7 +566,7 @@ flowchart TD
 | **`K_TX_IC`** | `U3(4)`, `R2(1)` | Émission vers le transceiver K-Line après résistance d'amortissement. | Communication / K-Line |
 | **`KLINE_TX`** | `R2(2)`, `U1(5)` (`IO5`) | Émission UART issue de l'ESP32 vers la résistance d'amortissement (K-Line TX). | Communication / K-Line |
 | **`ESP_EN`** | `U1(3)`, `R15(2)`, `C12(1)`, `SW1(1,2)`, `TP11` | Signal de reset matériel et mise sous tension de l'ESP32. | Contrôle / Reset |
-| **`IO0`** | `U1(27)`, `TP10` | Ligne de strapping bootloader pour forcer la programmation ROM. | Contrôle / Bootloader |
+| **`IO0`** | `U1(27)`, `R21(1)`, `TP10` | Ligne de strapping bootloader avec pull-up 10 kΩ (R21) et point de test (TP10) pour forcer la programmation ROM. | Contrôle / Bootloader |
 
 ---
 

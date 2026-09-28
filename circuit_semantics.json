@@ -68,8 +68,8 @@
     },
     "usbc_interface": {
       "title": "Interface USB-C, Alimentation Banc & ESD",
-      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2 et alimentation autonome banc via D4.",
-      "components": ["J2", "D4", "U6", "U7", "R3", "R4"]
+      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2, réservoir C18 et alimentation autonome banc via D4.",
+      "components": ["J2", "D4", "C18", "U6", "U7", "R3", "R4"]
     },
     "can_transceiver": {
       "title": "Transceiver CAN Haute Vitesse (ISO 11898-2)",
@@ -78,13 +78,13 @@
     },
     "kline_transceiver": {
       "title": "Transceiver K-Line 12V (ISO 9141-2 / ISO 14230)",
-      "description": "Liaison mono-fil bidirectionnelle 12V L9637D avec pull-up normalisée R16 (1k 1206) et protections TVS 24V.",
-      "components": ["U3", "D5", "R1", "R2", "R16", "C4"]
+      "description": "Liaison mono-fil bidirectionnelle 12V L9637D avec pull-up normalisée R16 // R18 (500 ohms, 2x1k 1206) et protections TVS 24V.",
+      "components": ["U3", "D5", "R1", "R2", "R16", "R18", "C4"]
     },
     "esp32_mcu": {
       "title": "SoC ESP32-S3 & Périphériques Radio",
-      "description": "Cœur de traitement 240 MHz double cœur, Wi-Fi 2.4 GHz, BLE 5.0, bouton reset et voyant d'état LED1.",
-      "components": ["U1", "C1", "C2", "C11", "C12", "R15", "SW1", "LED1", "R6"]
+      "description": "Cœur de traitement 240 MHz double cœur, Wi-Fi 2.4 GHz, BLE 5.0, bouton reset, pull-up strapping R21 et voyant d'état LED1.",
+      "components": ["U1", "C1", "C2", "C11", "C12", "R15", "R21", "SW1", "LED1", "R6"]
     },
     "vbat_monitoring": {
       "title": "Monitoring Tension Batterie (ADC1)",
@@ -336,19 +336,34 @@
         "footprint": "0603"
       }
     },
+    "C18": {
+      "block": "usb_interface",
+      "role": "vbus_bulk_reservoir",
+      "description": "Condensateur réservoir local Bulk 10 µF 50V X5R sur le rail VBUS_5V au connecteur USB-C J2",
+      "value": "10uF",
+      "footprint": "1206",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_farad": 1e-05,
+        "voltage_min_v": 25.0,
+        "dielectric_min": "X5R",
+        "footprint": "1206",
+        "notes": "Absorbe les rebonds d'enfichage à chaud et le ringing inductif du câble USB lors des sessions sur banc"
+      }
+    },
     "D1": {
       "block": "protection_12v",
       "role": "load_dump_tvs",
-      "description": "Diode TVS d'écrêtage 18V (VCL=29.2V) protégeant le Buck face au plafond de 30V",
-      "value": "SMBJ18A",
+      "description": "Diode TVS d'écrêtage 16V (VCL=26.0V) protégeant le Buck TPS54331 face au plafond de 30V",
+      "value": "SMBJ16A",
       "footprint": "SMB",
       "substitutability": "direct_1to1",
       "constraints": {
-        "vrwm_v": 18.0,
-        "vcl_max_v": 29.2,
+        "vrwm_v": 16.0,
+        "vcl_max_v": 26.0,
         "peak_power_w": 600,
         "footprint": "SMB",
-        "notes": "Évaluation SMBJ16A (VCL=26.0V) en cours dans TODO 1.1"
+        "notes": "SMBJ16A garantit 4.0V de marge sous les 30.0V destructifs du TPS54331"
       }
     },
     "D2": {
@@ -381,14 +396,16 @@
     "D4": {
       "block": "usbc_interface",
       "role": "usb_power_or_schottky",
-      "description": "Diode Schottky anti-retour pour l'alimentation de banc depuis VBUS USB",
-      "value": "BAT54CW",
-      "footprint": "SOT-323-3",
+      "description": "Diode Schottky 40V 1A anti-retour pour l'alimentation de banc depuis VBUS USB (Basic Part)",
+      "value": "B5819W SL",
+      "footprint": "SOD-123",
       "substitutability": "direct_1to1",
       "constraints": {
-        "vr_min_v": 30.0,
+        "vr_min_v": 40.0,
         "if_avg_a": 1.0,
-        "notes": "Remplacement préconisé par Schottky 1A/2A (SS14/B5819W) dans TODO 1.1 / I6"
+        "vf_max_v": 0.6,
+        "footprint": "SOD-123",
+        "notes": "Qualifiée en Basic Part JLCPCB (C8598), encaisse les pointes Wi-Fi de 500 mA sans échauffement"
       }
     },
     "D5": {
@@ -752,16 +769,17 @@
     "R16": {
       "block": "kline_transceiver",
       "role": "kline_pullup_iso9141",
-      "description": "Résistance de rappel normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ boîtier 1206)",
+      "description": "Résistance de rappel normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ boîtier 1206 en parallèle avec R18)",
       "value": "1kΩ",
       "footprint": "1206",
       "substitutability": "locked",
+      "coupled_with": "R18",
       "constraints": {
         "value_ohm": 1000.0,
         "tolerance": "1%",
         "power_min_w": 0.25,
         "footprint": "1206",
-        "notes": "Dissipation crête 207 mW. Boîtier 1206 (250 mW) obligatoire"
+        "notes": "En parallèle avec R18 (R_eq = 500 Ω conforme ISO 9141-2 510 Ω ±5%). Dissipation crête 207 mW par boîtier 1206."
       }
     },
     "R17": {
@@ -775,6 +793,22 @@
         "value_ohm": 10000.0,
         "tolerance": "5%",
         "footprint": "0805"
+      }
+    },
+    "R18": {
+      "block": "kline_transceiver",
+      "role": "kline_pullup_iso9141",
+      "description": "Seconde résistance de rappel normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ boîtier 1206 en parallèle avec R16)",
+      "value": "1kΩ",
+      "footprint": "1206",
+      "substitutability": "locked",
+      "coupled_with": "R16",
+      "constraints": {
+        "value_ohm": 1000.0,
+        "tolerance": "1%",
+        "power_min_w": 0.25,
+        "footprint": "1206",
+        "notes": "En parallèle avec R16 (R_eq = 500 Ω conforme ISO 9141-2 510 Ω ±5%). Dissipation crête 207 mW par boîtier 1206."
       }
     },
     "R19": {
@@ -813,6 +847,20 @@
         "v_start_v": 8.8,
         "v_stop_v": 7.3,
         "max_error_pct": 5.0
+      }
+    },
+    "R21": {
+      "block": "esp32_mcu",
+      "role": "io0_strapping_pullup",
+      "description": "Résistance de pull-up externe robuste broche strapping IO0 vers rail 3.3V (10 kΩ)",
+      "value": "10kΩ",
+      "footprint": "0805",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 10000.0,
+        "tolerance": "5%",
+        "footprint": "0805",
+        "notes": "Renforce l'immunité au bruit de boot en habitacle automobile face à la pull-up interne faible (45 kΩ)"
       }
     },
     "SW1": {

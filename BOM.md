@@ -25,10 +25,11 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **C15** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF transceiver CAN U2 (rail +5V vers GND) |
 | **C16** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C8) |
 | **C17** | 10nF | `0603B103K500NT` | `C57112` | **Basic Part** | `0603` | Condensateur de démarrage progressif Buck U4 (broche SS vers GND, Tss = 4.0 ms) |
-| **D1** | — | `SMBJ18A` | `C5860928` | Extended Part | `SMB` | Diode TVS 18V unidirectionnelle (écrêtage 29.2V protégeant U4 TPS54331) |
+| **C18** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur réservoir local Bulk 10 µF 50V X5R entrée VBUS USB-C J2 |
+| **D1** | — | `SMBJ16A` | `C353386` | Extended Part | `SMB` | Diode TVS 16V unidirectionnelle 600W (écrêtage 26.0V protégeant U4 TPS54331) |
 | **D2** | — | `SS34` | `C8678` | **Basic Part** | `SMA` | Diode Schottky 40V 3A de roue libre pour convertisseur Buck U4 (MDD) |
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
-| **D4** | — | `BAT54CW` | `C962771` | Extended Part | `SOT-323-3` | Diode Schottky double 30V cathode commune (banc USB et anti-retour) |
+| **D4** | — | `B5819W SL` | `C8598` | **Basic Part** | `SOD-123` | Diode Schottky 40V 1A anti-retour alimentation banc USB-C (SOD-123) |
 | **D5** | — | `SMF24CA` | `C2891487` | Extended Part | `SOD-123FL` | Diode TVS 24V bidirectionnelle protection transitoire K-Line |
 | **D6** | — | `BAT54WS` | `C17702994` | Extended Part | `SOD-323` | Diode Schottky rapide de clamp protection surtension ADC VBAT_SENSE |
 | **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
@@ -55,10 +56,12 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **R13** | 12kΩ | `0805W8F1202T5E` | `C17444` | **Basic Part** | `0805` | Résistance basse pont diviseur monitoring tension batterie (12 kΩ) |
 | **R14** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance série limitation courant Zener D3 commande grille Q1 (10 kΩ) |
 | **R15** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche EN vers rail 3.3V (10 kΩ) |
-| **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 (+12V_PROT vers K_LINE, 1 kΩ 1206) |
+| **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 1/2 (+12V_PROT vers K_LINE, 1 kΩ 1206 en parallèle avec R18) |
 | **R17** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance basse pont diviseur grille N-MOS Q2 (10 kΩ, protection claquage Vgs) |
+| **R18** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 2/2 (+12V_PROT vers K_LINE, 1 kΩ 1206 en parallèle avec R16) |
 | **R19** | 510kΩ | `0805W8F5103T5E` | `C17596` | **Basic Part** | `0805` | Résistance haute pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 7.3V / reprise 8.8V) |
 | **R20** | 91kΩ | `0805W8F9102T5E` | `C17604` | **Basic Part** | `0805` | Résistance basse pont diviseur UVLO (EN de U4 vers GND, 91 kΩ) |
+| **R21** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche strapping IO0 vers rail 3.3V (10 kΩ) |
 | **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
 | **TP2** | K_LINE | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE) |
@@ -84,32 +87,33 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **71 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **74 composants** du circuit (dont 11 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 60 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **39 composants** (65.0% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **21 composants** (strict minimum technique).
+- **Composants physiques à assembler :** 63 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **43 composants** (68.3% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **20 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
 * **`C1`, `C2`, `C3`, `C4`, `C5`, `C10`, `C14`, `C15`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
 * **`C12`** (1uF 50V, `0603`) : `CL10A105KB8NNNC` — LCSC `C15849` (**Basic Part**)
-* **`C6`, `C7`, `C8`, `C16`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
+* **`C6`, `C7`, `C8`, `C16`, `C18`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
 * **`C9`** (3.3nF, `0603`) : `CL10B332KB8NNNC` — LCSC `C1613` (**Basic Part**)
 * **`C11`** (10uF 25V, `0805`) : `CL21A106KAYNNNE` — LCSC `C15850` (**Basic Part**)
 * **`C13`** (220pF 50V, `0603`) : `CL10B221KB8NNNC` — LCSC `C1603` (**Basic Part**)
 * **`C17`** (10nF 50V, `0603`) : `0603B103K500NT` — LCSC `C57112` (**Basic Part**)
 * **`D2`** (—, `SMA`) : `SS34` — LCSC `C8678` (**Basic Part**)
+* **`D4`** (—, `SOD-123`) : `B5819W SL` — LCSC `C8598` (**Basic Part**)
 * **`FB1`** (—, `0603`) : `BLM18PG121SN1D` — LCSC `C14709` (**Basic Part**)
 * **`Q2`** (—, `SOT-23`) : `2N7002` — LCSC `C8545` (**Basic Part**)
 * **`R1`, `R2`** (10Ω, `0805`) : `0805W8F100JT5E` — LCSC `C17415` (**Basic Part**)
 * **`R3`, `R4`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
-* **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`, `R17`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
+* **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`, `R17`, `R21`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
 * **`R6`** (100Ω, `0805`) : `0805W8F1000T5E` — LCSC `C17408` (**Basic Part**)
 * **`R8`** (120Ω, `0805`) : `0805W8F1200T5E` — LCSC `C17437` (**Basic Part**)
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
-* **`R16`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
+* **`R16`, `R18`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
 * **`R19`** (510kΩ, `0805`) : `0805W8F5103T5E` — LCSC `C17596` (**Basic Part**)
 * **`R20`** (91kΩ, `0805`) : `0805W8F9102T5E` — LCSC `C17604` (**Basic Part**)
 * **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
@@ -120,6 +124,6 @@ Toutes les opportunités d'optimisation directe vers le catalogue Basic Parts so
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (13 composants basculés au total, soit **~39 $ d'économie de frais de bobines** sur chaque série). Les 21 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (14 composants basculés au total, soit **~42 $ d'économie de frais de bobines** sur chaque série). Les 20 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
 
 

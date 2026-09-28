@@ -45,7 +45,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
    * Un condensateur réservoir Bulk d'au moins **10 µF** (faible ESR, céramique X5R/X7R de tension assignée >= 10V) doit être connecté directement entre la broche 2 (VDD) et la broche 1 (GND).
    * Un condensateur de découplage haute fréquence de **100 nF** en parallèle direct.
 3. **Broches de Strapping & Boot :**
-   * `GPIO0` (pin 27) : Doit être au niveau HAUT (High) au relâchement du reset pour démarrer depuis la Flash SPI. Doit pouvoir être tirée à la MASSE (Low) pour forcer le mode téléchargement ROM (Flash firmware de secours).
+   * `GPIO0` (pin 27) : Doit être au niveau HAUT (High) au relâchement du reset pour démarrer depuis la Flash SPI. Une résistance de pull-up externe robuste `R21` (10 kΩ 0805) vers 3.3V sécurise ce niveau face au bruit parasite automobile. Doit pouvoir être tirée à la MASSE (Low) via `TP10` pour forcer le mode téléchargement ROM (Flash firmware de secours).
 4. **Lignes USB D+ / D- :**
    * Connexion directe sur `IO20` (D+) et `IO19` (D-). L'ESP32-S3 intègre ses propres résistances de pull-up USB commutables par logiciel ; aucune pull-up externe ne doit être ajoutée sur D+ !
 
@@ -62,7 +62,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 * [x] **Conforme :** Circuit RC de reset implémenté avec `R15` (10 kΩ) et `C12` (1 µF) sur la broche EN.
 * [x] **Conforme :** Réservoir Bulk local `C11` (10 µF 25V 0805) et découplages `C1`, `C2` (100 nF) raccordés aux broches d'alimentation.
 * [x] **Conforme :** Lignes USB D+/D- routées directement vers IO20/IO19 avec diodes ESD externes `U6`/`U7` sans pull-up parasite.
-* [x] **Conforme :** Point de test `TP10` présent sur `IO0` et bouton poussoir `SW1` sur `EN` pour forcer le téléchargement et réinitialiser.
+* [x] **Conforme :** Pull-up externe robuste `R21` (10 kΩ vers 3.3V) et point de test `TP10` présents sur `IO0` pour fiabiliser le boot SPI et forcer le téléchargement ROM en secours. Bouton poussoir `SW1` sur `EN`.
 
 ---
 
@@ -131,40 +131,42 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 | **Coupure thermique interne** | TJ_sd | 150 | 175 | — | °C | Protection contre l'échauffement en court-circuit. |
 
 #### B. Préconisations Constructeur — Schéma Électrique
-1. **Brochage Exact & Identification des Broches (Attention aux méprises !) :**
+1. **Brochage Exact & Identification des Broches (Datasheet ST L9637D) :**
    * **Pin 1 : `RX`** (Sortie logique vers MCU - Étage push-pull avec pull-up interne $R_{RX} \approx 10\,\text{k}\Omega$ vers $V_{CC}$ ; $V_{RXH} = V_{CC} - 0.1\,\text{V}$).
-   * **Pin 2 : `LO`** (Loop Output - non utilisé, laisser ouvert).
-   * **Pin 3 : `LI`** (Loop Input - non utilisé, à raccorder à GND).
+   * **Pin 2 : `LO`** (Loop Output - non utilisé, laisser ouvert avec drapeau NC).
+   * **Pin 3 : `VCC`** (Alimentation logique du circuit interne, raccordée au rail régulé 3.3V).
    * **Pin 4 : `TX`** (Entrée logique de commande d'émission depuis le MCU).
    * **Pin 5 : `GND`** (Masse de référence).
    * **Pin 6 : `K`** (Ligne bidirectionnelle haute tension 12V vers prise OBD).
-   * **Pin 7 : `VS`** (Alimentation haute tension batterie 12V).
-   * **Pin 8 : `VCC`** (Alimentation logique du circuit interne).
-2. **Conformité & Sécurité de l'Alimentation Logique VCC (Pin 8) :**
+   * **Pin 7 : `VS`** (Alimentation haute tension batterie 12V issue de `+12V_PROT`).
+   * **Pin 8 : `LI`** (Loop Input - non utilisé, ponté directement sur la broche adjacente 7 `VS`).
+2. **Conformité & Sécurité de l'Alimentation Logique VCC (Pin 3) :**
    * *Spécification ST officielle (Table 5 & 6) :* La plage de fonctionnement de $V_{CC}$ s'étend de **3.0 V à 7.0 V** (le minimum de 4.5V de la datasheet concerne uniquement la tension batterie $V_S$). Un fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme.
    * *Structure interne de RX et danger du 5V :* La broche 1 (`RX`) possède une résistance de pull-up interne active reliée à $V_{CC}$ ($R_{RX} \approx 10\,\text{k}\Omega$). Elle n'est PAS un collecteur ouvert pur.
    * *Protection vitale de l'ESP32-S3 :* Les GPIOs de l'ESP32-S3 ne sont **pas tolérants 5V** (limite absolue à $3.6\,\text{V}$). Si $V_{CC}$ était alimenté en 5V, RX délivrerait ~4.9V dans le GPIO4, entraînant sa destruction immédiate.
    * *Décision de conception :* **VCC doit impérativement rester raccordé au rail `3.3V`** avec son condensateur de découplage de 100 nF (`C4`).
 3. **Raccordement Sécurisé de VS (Pin 7) :**
    * Bien que `U3` tolère -24V sur VS, le raccorder en aval direct de la protection anti-inversion `Q1` et du fusible `F1` (rail `+12V_PROT`) protège le composant contre les transitoires violents et évite toute fuite.
-4. **Résistance de Pull-Up Normalisée K-Line (`R16`) :**
-   * La norme ISO 9141-2 impose une résistance de pull-up comprise entre 510 Ω et 1 kΩ vers le 12V pour charger la capacité parasite du faisceau (C <= 2 nF) avec un temps de montée tr < 2 µs.
-   * R16 (1 kΩ) reliée à `+12V_PROT` dissipe en état dominant :
-     P = V^2 / R = (14.4 V)^2 / 1000 Ω ≈ 0.207 W.
-   * L'utilisation d'un boîtier **1206 (250 mW)** est strictement obligatoire.
+4. **Verrouillage de l'Entrée Inutilisée LI (Pin 8) :**
+   * La broche 8 (`LI`) est le comparateur d'entrée L (seuil $0.5 \times V_S$). La ponter directement sur la broche adjacente 7 (`VS` / `+12V_PROT`) verrouille le comparateur au repos inactif ($V_{LI} = V_S > 0.55\,V_S$), élimine tout risque d'antenne parasite CEM et garantit une consommation statique nulle ($0\,\mu\text{A}$).
+5. **Résistance de Pull-Up Normalisée K-Line (`R16` // `R18`) :**
+   * La norme ISO 9141-2 / ISO 14230-4 impose pour l'outil de test une résistance de pull-up de **510 Ω (±5%)** vers le 12V pour charger la capacité parasite du faisceau ($C \le 2\,\text{nF}$) avec un temps de montée $t_r < 2\,\mu\text{s}$.
+   * L'association en parallèle de deux résistances de 1 kΩ 1206 (`R16` et `R18`) donne $R_{eq} = 500\,\Omega$ (écart de –1.96% par rapport à 510 Ω, conforme à la tolérance ±5%).
+   * La puissance crête totale à l'état dominant sous 14.4 V vaut $P = V^2 / R = (14.4\,\text{V})^2 / 500\,\Omega \approx 0.415\,\text{W}$. Cette puissance est divisée en **2 × 207 mW**, chaque boîtier 1206 restant sous sa limite nominale de 250 mW tout en réutilisant la *Basic Part* `C4410`.
 
 #### C. Préconisations Constructeur — Implantation & Routage PCB
 * **Protection TVS `D5` (`SMF24CA`) :**
   * Doit être placée à l'entrée immédiate de la broche 7 d'OBD-II avant la broche 6 de `U3`.
-* **Dissipation thermique de `R16` :**
-  * La résistance `R16` doit être dégagée des zones thermiquement sensibles (LDO, quartz, transceivers) et entourée de cuivre généreux pour évacuer ses ~210 mW lors des transferts K-Line soutenus.
+* **Dissipation thermique de `R16` et `R18` :**
+  * Les résistances `R16` et `R18` doivent être dégagées des zones thermiquement sensibles (LDO, quartz, transceivers) et entourées de cuivre généreux pour évacuer leurs ~415 mW crête lors des transferts K-Line soutenus.
 * **Résistances d'amortissement série (`R1`, `R2`) :**
   * Placer `R1` (10 Ω sur RX) et `R2` (10 Ω sur TX) à mi-chemin entre `U3` et l'ESP32 pour amortir les réflexions et limiter les courants de fuite.
 
 #### D. Confrontation avec le Schéma Actuel & Points d'Arbitrage (TODO 1.1)
-* [x] **[CONFORME / SÉCURISÉ] Alimentation logique VCC (Pin 8) sous +3.3V :** VCC opère sous le rail 3.3V (plage autorisée 3.0V à 7.0V). Protège le GPIO4 de l'ESP32-S3 (non tolérant 5V) contre les ~4.9V qu'injecterait le pull-up interne actif de RX si VCC était relié au +5V.
-* [ ] **[ACTION REQUISE - TODO 1.1] Sécuriser le net de la broche 7 (VS) :** Raccorder physiquement la broche 7 de `U3` au rail `+12V_PROT` (après `Q1`/`F1`) et rectifier la coquille documentaire dans [`HARDWARE.md`](HARDWARE.md) qui mentionnait `U3(3)`.
-* [x] **Conforme :** Résistance normalisée `R16` (1 kΩ) qualifiée en boîtier 1206 (250 mW) sur `+12V_PROT`.
+* [x] **[CONFORME / SÉCURISÉ] Alimentation logique VCC (Pin 3) sous +3.3V :** VCC opère sous le rail 3.3V (plage autorisée 3.0V à 7.0V). Protège le GPIO4 de l'ESP32-S3 (non tolérant 5V) contre les ~4.9V qu'injecterait le pull-up interne actif de RX si VCC était relié au +5V.
+* [x] **[CONFORME / SÉCURISÉ] Sécurisation du net de la broche 7 (VS) :** Broche 7 de `U3` et pull-up raccordées au rail sécurisé `+12V_PROT` (après `Q1`/`F1`).
+* [x] **[CONFORME / SÉCURISÉ] Entrée non utilisée LI (Pin 8) pontée sur VS (Pin 7) :** Verrouille le comparateur L au repos inactif, immunise contre les bruits CEM et garantit une consommation statique nulle (0 µA).
+* [x] **Conforme :** Résistances normalisées `R16` // `R18` (2 × 1 kΩ = 500 Ω) qualifiées en boîtiers 1206 (2 × 250 mW) sur `+12V_PROT`.
 * [x] **Conforme :** Diode TVS `D5` (24V) présente sur la ligne physique K-Line.
 
 ---
@@ -225,7 +227,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 * [x] **Conforme :** Inductance blindée 10 µH (3.6A) et diode Schottky SS34 (40V 3A).
 * [x] **Conforme :** Filtrage d'entrée avec céramique 100 nF (`C14`) au plus près de VIN et 10 µF (`C7`).
 * [x] **Conforme :** Capacité de sortie optimisée en Basic Parts (2 × 10 µF 50V `C8` // `C16`) divisant par deux l'ESR.
-* [ ] **[POINT D'ARBITRAGE - TODO 1.1] Optimisation TVS D1 :** Évaluer la bascule de `SMBJ18A` vers `SMBJ16A` pour porter la marge de protection à 4.0V sous les 30.0V de limite absolue.
+* [x] **[CONFORME / SÉCURISÉ] Optimisation TVS D1 :** Bascule validée vers `SMBJ16A` (LCSC `C353386`, boîtier `SMB`), garantissant $V_{CL} = 26.0\,\text{V}$ et une marge de sécurité robuste de **4.0 V** sous les 30.0 V de limite absolue de `U4`.
 
 ---
 
@@ -330,13 +332,14 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 | **`U2`** (TJA1051T) | Broche 8 (`S`) tirée à GND pour mode actif | Raccordée en direct au net GND | **CONFORME** | Aucune. |
 | **`U2`** (TJA1051T) | Protection transitoire différentielle CAN | Double TVS U8 (NUP2105L 24V) | **CONFORME** | Aucune. |
 | **`U3`** (L9637D) | Alimentation logique VCC entre 3.0V et 7.0V | Raccordé au rail régulé 3.3V (C4 = 100 nF) | **CONFORME** | Aucune (VCC = 3.3V protège le GPIO4 de l'ESP32-S3 non tolérant 5V). |
-| **`U3`** (L9637D) | **Alimentation batterie VS sur rail sécurisé** | **Mention erronée U3(3) dans doc** | **ACTION REQUISE** | **[TODO 1.1] Relier Pin 7 à `+12V_PROT`.** |
-| **`U3`** (L9637D) | Pull-up normalisée ISO 9141-2 (1 kΩ) | R16 = 1 kΩ en boîtier 1206 (250 mW) | **CONFORME** | Aucune. |
-| **`U4`** (TPS54331) | **Plafond absolu d'entrée VIN <= 30.0 V** | TVS D1 VCL = 29.2 V (marge 0.8V) | **ATTENTION** | **[TODO 1.1] Évaluer TVS SMBJ16A.** |
+| **`U3`** (L9637D) | Alimentation batterie VS sur rail sécurisé | Pin 7 reliée à `+12V_PROT` (après Q1/F1) | **CONFORME** | Protégé contre les inversions et transitoires. |
+| **`U3`** (L9637D) | Pull-up normalisée ISO 9141-2 (500 Ω) | R16 // R18 = 2 × 1 kΩ en boîtier 1206 (2 × 250 mW) | **CONFORME** | Répond à l'exigence 510 Ω ±5% avec tenue 415 mW. |
+| **`U3`** (L9637D) | Entrée non utilisée LI au repos inactif | Pin 8 pontée directement sur Pin 7 (VS) | **CONFORME** | Comparateur L verrouillé au repos, 0 µA, immunité CEM totale. |
+| **`U4`** (TPS54331) | **Plafond absolu d'entrée VIN <= 30.0 V** | TVS D1 VCL = 26.0 V (marge 4.0V) | **CONFORME** | TVS SMBJ16A (LCSC C353386) validée. |
 | **`U4`** (TPS54331) | Découplage HF direct sur pin 2 (`VIN`) | C14 = 100 nF 50V X7R (< 1.5 mm) | **CONFORME** | Aucune. |
 | **`U4`** (TPS54331) | Diode Schottky >= 40 V, >= 3 A | Diode SS34 (40V, 3A, SMA) | **CONFORME** | Aucune. |
 | **`U4`** (TPS54331) | Stabilité Type II (f_c ≈ 20 kHz, marge > 60°) | R11 = 10 k, C9 = 3.3 n, C13 = 220 p (marge 66.3°) | **CONFORME** | Modélisé & validé par skill buck. |
-| **`U5`** (LDL1117) | Capacité de sortie COUT >= 4.7 µF pour stabilité | C6 = 1 µF sur 3.3V_PRE + C11 = 10 µF | **ATTENTION** | **Passer C6 à 10 µF Basic Part.** |
+| **`U5`** (LDL1117) | Capacité de sortie COUT >= 4.7 µF pour stabilité | C6 = 10 µF 50V 1206 (Basic Part C13585) | **CONFORME** | Stabilité garantie directement en sortie de LDO. |
 | **`U8`** (NUP2105L) | Placement frontière direct sur connecteur | U8 à < 5 mm de J1 (pistes traversantes) | **CONFORME** | Règle fixée pour Phase 2. |
 
 ---

@@ -111,6 +111,11 @@ Pour que votre retour soit directement actionnable, chaque remarque doit conteni
    - Proposez une solution précise : valeur, tolérance, boîtier/empreinte (0603, 0805, SOT-23...), référence fabricant exacte et **code LCSC**.
    - Précisez si votre proposition correspond à une *Basic Part* JLCPCB.
 
+4. **Nouveaux composants à ajouter (Pas de désignateur figé à l'avance) :**
+   - Si votre proposition implique d'ajouter un composant au schéma, **ne lui donnez pas de nom/désignateur arbitraire ou anticipé** (ex. `R18`, `C18`, `TP12`).
+   - Décrivez-le uniquement par sa fonction, sa valeur, son boîtier et ses contraintes (ex. *« Ajouter une pull-up de 10 kΩ 0805 sur IO0 »*).
+   - Le désignateur définitif sera attribué lors de l'intégration effective dans le schéma selon le prochain numéro libre dans la BOM.
+
 ---
 
 ## 5. Modèle Type de Revue (`reviewXXX.md`)
