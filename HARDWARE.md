@@ -334,7 +334,8 @@ flowchart LR
   * *Rôle frontière :* Implantée au plus près des broches 6 et 14 du connecteur `J1`, elle dérive immédiatement vers la masse `GND` les décharges électrostatiques (jusqu'à ±30 kV contact/air selon IEC 61000-4-2) et les surtensions transitoires du faisceau véhicule avant qu'elles n'atteignent le transceiver `U2`.
   * *Tension de maintien VRWM = 24 V :* Tolère sans conduction les excursions de mode commun automobile (-12V à +12V) et les anomalies 24V.
   * *Capacité parasite ultra-faible (< 10 pF à 30 pF) :* Préserve l'intégrité des fronts rapides du bus CAN haute vitesse jusqu'à 1 Mbps.
-* **Résistance de Terminaison `R8` (120 Ω) & Cavalier Sélecteur `JP1` :**
+* **Résistance de Terminaison `R8` (120 Ω 1206 / LCSC `C17909` - Basic Part) & Cavalier Sélecteur `JP1` :**
+  * *Dimensionnement thermique renforcé (1206, 250 mW) :* Qualifiée en boîtier 1206 (dissipation doublée à 1/4 W vs 1/8 W en 0805, surface 3.2 × 1.6 mm) pour encaisser les transitoires thermiques et limiter l'échauffement en cas de court-circuit accidentel de la ligne CANH vers le rail batterie (+12V/+14V) lorsque le shunt `JP1` est inséré.
   * *En voiture (prise OBD-II) :* Le réseau automobile possède déjà ses deux terminaisons de 120 Ω (60 Ω équivalents). **Le cavalier JP1 reste ouvert (SANS shunt)**.
   * *Sur banc de test / simulateur :* Aucun terminateur sur table. **On place un cavalier standard 2.54 mm sur JP1** pour activer R8.
 * **Condensateurs de Découplage Dédiés `C15` et `C3` (100 nF 50V 0603) :**
@@ -450,7 +451,8 @@ flowchart LR
     R12 --> SENSE(("VBAT_SENSE\n(Ratio ~1/9.33)"))
     SENSE --> R13["R13 (12 kΩ)"] --> GND1["GND"]
     SENSE --> C10["C10 (100 nF)\nFiltre Passe-Bas 148 Hz"] --> GND2["GND"]
-    SENSE -->|Anode| D6["Diode Clamp D6\n(BAT54WS)"] -->|Cathode| V33["Rail +3.3V (Plafond 3.65V)"]
+    GND3["GND"] -->|Anode D6a| D6["Diode Double BAV199\nClamp Rail-to-Rail"] -->|Cathode D6b| V33["Rail +3.3V (Plafond 3.95V)"]
+    SENSE <-->|Broche 3 (Point milieu)| D6
     SENSE ==> ADC["ESP32-S3 Pin 39\nIO1 (Canal ADC1_CH0)"]
 ```
 
@@ -459,11 +461,12 @@ flowchart LR
   * 12.0V batterie → 1.286V ADC.
   * 14.4V (alternateur actif) → 1.543V ADC.
   * 18.0V (tension crête normale) → 1.929V ADC.
-  * 29.2V (tension d'écrêtage crête TVS D1) → **3.129V ADC** : reste strictement sous la limite nominale 3.3V sans saturer le convertisseur ADC !
-* **Courant de Fuite :** `I = 12V / 112 kΩ ≈ 107 µA` (décharge batterie totalement négligeable).
+  * 26.0V (tension d'écrêtage crête TVS D1 SMBJ16A) → **2.785V ADC** : reste strictement sous la limite nominale 3.3V sans saturer le convertisseur ADC !
+* **Courant de Fuite Pont :** `I = 12V / 112 kΩ ≈ 107 µA` (décharge batterie totalement négligeable).
 * **Filtre Passe-Bas Anti-Bruit `C10` (100 nF) :** Avec `Req = 100k // 12k ≈ 10.71 kΩ`, fréquence de coupure `fc ≈ 148 Hz` éliminant le hachage alternateur et les parasites d'allumage.
-* **Diode Schottky de Clamp Rapide `D6` (`BAT54WS` - SOD-323 / LCSC `C2243`) :**
-  * *Protection matérielle anti-claquage de l'ESP32 :* La tension maximale absolue admissible sur les broches GPIO de l'ESP32-S3 est de `VDD + 0.3V = 3.60V`. L'anode de D6 étant reliée à `VBAT_SENSE` et sa cathode au rail `3.3V`, toute surtension résiduelle supérieure à `3.3V + 0.35V ≈ 3.65V` est instantanément dérivée vers le rail d'alimentation et absorbée par le réservoir bulk `C11`.
+* **Diode Double Silicium de Clamp Rail-to-Rail à Ultra-Faible Fuite `D6` (`BAV199,215` - SOT-23 / LCSC `C40919`) :**
+  * *Protection matérielle et fidélité métrologique :* Remplaçant l'ancienne Schottky `BAT54WS` (dont le courant de fuite inverse de 5 à 10 µA à 70°C induisait une erreur de mesure supérieure à 0.5 V sur la batterie via `ΔVBAT = IR × R12`), la `BAV199` présente une fuite inverse typique de seulement **3 pA** à 25°C (< 100 pA à 85°C, garantie < 5 nA max à 75V). L'erreur induite sur la mesure batterie est rigoureusement nulle (**ΔVBAT < 0.01 mV**, soit < 0.001 LSB de l'ADC).
+  * *Architecture Rail-to-Rail intégrée :* Dans son boîtier SOT-23 compact, la broche 1 (anode D6a) est reliée à la masse `GND` pour écrêter les sonneries et transitoires négatifs sous -0.65V, la broche 2 (cathode D6b) est reliée au rail `3.3V` pour dériver les surtensions au-delà de 3.95V, et la broche 3 (point milieu) est connectée directement sur le nœud `VBAT_SENSE`.
 * **Canal ADC1 :** La broche `IO1` appartient à **ADC1**, garantissant une mesure analogique non perturbée pendant les émissions radio (contrairement à ADC2).
 
 ---
@@ -537,7 +540,7 @@ flowchart TD
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
-| **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(1)` (anode), `U1(39)` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6. | Mesure Batterie |
+| **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(3)` (point milieu), `U1(39)`, `TP9` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6 (`BAV199`). | Mesure Batterie |
 | **`SS_BUCK`** | `U4(4)`, `C17(1)` | Temporisation de démarrage progressif du Buck U4 (Tss = 4.0 ms). | Alimentation / Buck |
 | **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
 | **`BOOT (U4)`** | `U4(1)`, `C5(1)` | Nœud local de bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
@@ -546,8 +549,8 @@ flowchart TD
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
-| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
+| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
+| **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `D6(1)` (anode D6a), `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec condensateur réservoir Bulk 10 µF. | Interface / USB-C |
@@ -608,7 +611,7 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
   * Retour de masse direct sur une zone de masse analogique/calme (*quiet GND*).
 
 ### 7.3 Protection Entrée ADC & Surveillance Batterie
-* **Diode de Clamp `D6` (`BAT54WS`) :** Positionnée **immédiatement accolée à `R13` et `C10` (< 2 mm)** sur le nœud `VBAT_SENSE`, avec une piste très courte vers le port `3.3V` pour garantir un temps de réponse sub-nanoseconde face aux pointes transitoires.
+* **Diode de Clamp `D6` (`BAV199,215`) :** Positionnée **immédiatement accolée à `R13` et `C10` (< 2 mm)** sur le nœud `VBAT_SENSE`, avec des liaisons très courtes vers la masse `GND` (broche 1) et le rail `3.3V` (broche 2) pour un écrêtage sub-nanoseconde face aux transitoires rapides.
 * **Piste analogique `VBAT_SENSE` :** Éloignée des pistes de puissance du Buck et du signal d'horloge haché pour préserver la précision de conversion de l'ADC1 (`IO1`).
 
 ### 7.4 Circuit de Reset & Strapping Bootloader

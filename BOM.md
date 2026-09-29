@@ -31,7 +31,7 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
 | **D4** | — | `B5819W SL` | `C8598` | **Basic Part** | `SOD-123` | Diode Schottky 40V 1A anti-retour alimentation banc USB-C (SOD-123) |
 | **D5** | — | `SMF24CA` | `C2891487` | Extended Part | `SOD-123FL` | Diode TVS 24V bidirectionnelle protection transitoire K-Line |
-| **D6** | — | `BAT54WS` | `C17702994` | Extended Part | `SOD-323` | Diode Schottky rapide de clamp protection surtension ADC VBAT_SENSE |
+| **D6** | — | `BAV199,215` | `C40919` | Extended Part | `SOT-23` | Diode double silicium ultra-faible fuite (< 5 nA à chaud) clamp rail-to-rail ADC1 VBAT_SENSE (Nexperia) |
 | **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
 | **FB1** | — | `BLM18PG121SN1D` | `C14709` | **Basic Part** | `0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
 | **J1** | — | `OBD2-male-16pin` | `C9900147921` | Extended Part | `弯插,P=4mm,16P` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
@@ -48,7 +48,7 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **R5** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de polarisation grille N-MOSFET Q2 (10 kΩ) |
 | **R6** | 100Ω | `0805W8F1000T5E` | `C17408` | **Basic Part** | `0805` | Résistance de limitation courant LED1 (100 Ω, 3.6 mA visibilité habitacle) |
 | **R7** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de maintien pull-up grille P-MOSFET Q1 (10 kΩ) |
-| **R8** | 120Ω | `0805W8F1200T5E` | `C17437` | **Basic Part** | `0805` | Résistance de terminaison de ligne différentielle CAN (120 Ω) |
+| **R8** | 120Ω | `1206W4F1200T5E` | `C17909` | **Basic Part** | `1206` | Résistance de terminaison de bus différentiel CAN (120 Ω, 1/4 W) |
 | **R9** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance haute pont diviseur feedback Buck U4 (rail 5V vers VSENSE, 10 kΩ) |
 | **R10** | 1.91kΩ | `0805W8F1911T5E` | `C17401` | Extended Part | `0805` | Résistance basse pont diviseur feedback Buck U4 (VSENSE vers GND, 1.91 kΩ) |
 | **R11** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance série compensation de boucle Buck U4 (broche COMP, 10 kΩ) |
@@ -110,7 +110,7 @@ Sur les **74 composants** du circuit (dont 11 points de test sans composant phys
 * **`R3`, `R4`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
 * **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`, `R17`, `R21`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
 * **`R6`** (100Ω, `0805`) : `0805W8F1000T5E` — LCSC `C17408` (**Basic Part**)
-* **`R8`** (120Ω, `0805`) : `0805W8F1200T5E` — LCSC `C17437` (**Basic Part**)
+* **`R8`** (120Ω, `1206`) : `1206W4F1200T5E` — LCSC `C17909` (**Basic Part**)
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
 * **`R16`, `R18`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)

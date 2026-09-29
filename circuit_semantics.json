@@ -424,12 +424,17 @@
     "D6": {
       "block": "vbat_monitoring",
       "role": "adc_clamp_diode",
-      "description": "Diode de clamp protégeant l'entrée ADC1 contre les dépassements 3.3V",
-      "value": "BAT54WS",
-      "footprint": "SOD-323",
+      "description": "Diode double de clamp rail-to-rail (GND et 3.3V) à ultra-faible fuite protégeant l'entrée ADC1 sans altérer la mesure batterie",
+      "value": "BAV199,215",
+      "footprint": "SOT-23",
       "substitutability": "direct_1to1",
       "constraints": {
-        "notes": "TODO 1.1 / M4 prévoit son remplacement par une diode faible fuite BAV199/BAV99"
+        "forward_current_a": 0.2,
+        "reverse_voltage_v": 85.0,
+        "leakage_current_max_na": 5.0,
+        "leakage_current_typ_pa": 3.0,
+        "footprint": "SOT-23",
+        "notes": "BAV199 Nexperia (C40919) qualifiée suite à M4 review : fuite typique 3 pA à 25°C (< 100 pA à 85°C), dérive ADC < 0.01 mV sur Vbat"
       }
     },
     "F1": {
@@ -642,15 +647,16 @@
     "R8": {
       "block": "can_transceiver",
       "role": "can_bus_termination",
-      "description": "Résistance de terminaison de bus différentiel CAN (120 ohms)",
+      "description": "Résistance de terminaison de bus différentiel CAN (120 ohms, 1/4 W)",
       "value": "120Ω",
-      "footprint": "0805",
+      "footprint": "1206",
       "substitutability": "direct_1to1",
       "constraints": {
         "value_ohm": 120.0,
         "tolerance": "1%",
-        "footprint": "0805",
-        "power_min_w": 0.25
+        "footprint": "1206",
+        "power_min_w": 0.25,
+        "notes": "Qualifiée en 1206 Basic Part (C17909, 250 mW) pour tenue thermique et dissipation accrue en cas de court-circuit de ligne CAN vers la batterie"
       }
     },
     "R9": {
