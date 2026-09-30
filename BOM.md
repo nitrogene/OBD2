@@ -38,7 +38,7 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
 | **JP1** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur terminaison CAN 120Ω (Shunt = Banc ; Ouvert = Voiture) |
 | **L1** | 10uH | `YNR6045-100M` | `C341067` | Extended Part | `SMD,6x6mm` | Inductance blindée 10µH étage Buck U4 |
-| **LED1** | — | `PSC-1608U52GC-G4` | `C22371297` | Extended Part | `0603` | LED d'état verte pilotée par la broche IO2 de l'ESP32 |
+| **LED1** | — | `KT-0603R` | `C2286` | **Basic Part** | `0603` | LED d'état rouge (heartbeat/diagnostic) pilotée par la broche IO2 de l'ESP32 |
 | **Q1** | — | `CJ2309A` | `C7433254` | Extended Part | `SOT-23` | P-MOSFET 60V 2A protection contre l'inversion de polarité 12V |
 | **Q2** | — | `2N7002` | `C8545` | **Basic Part** | `SOT-23` | N-MOSFET commande et commutation alimentation |
 | **R1** | 10Ω | `0805W8F100JT5E` | `C17415` | **Basic Part** | `0805` | Résistance série amortissement ligne K-Line RX |
@@ -46,7 +46,7 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **R3** | 5.1kΩ | `0805W8F5101T5E` | `C27834` | **Basic Part** | `0805` | Résistance pull-down USB-C configuration CC1 (5.1 kΩ) |
 | **R4** | 5.1kΩ | `0805W8F5101T5E` | `C27834` | **Basic Part** | `0805` | Résistance pull-down USB-C configuration CC2 (5.1 kΩ) |
 | **R5** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de polarisation grille N-MOSFET Q2 (10 kΩ) |
-| **R6** | 100Ω | `0805W8F1000T5E` | `C17408` | **Basic Part** | `0805` | Résistance de limitation courant LED1 (100 Ω, 3.6 mA visibilité habitacle) |
+| **R6** | 100Ω | `0805W8F1000T5E` | `C17408` | **Basic Part** | `0805` | Résistance de limitation courant LED1 (100 Ω, 13.0 mA visibilité habitacle) |
 | **R7** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de maintien pull-up grille P-MOSFET Q1 (10 kΩ) |
 | **R8** | 120Ω | `1206W4F1200T5E` | `C17909` | **Basic Part** | `1206` | Résistance de terminaison de bus différentiel CAN (120 Ω, 1/4 W) |
 | **R9** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance haute pont diviseur feedback Buck U4 (rail 5V vers VSENSE, 10 kΩ) |
@@ -94,8 +94,8 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 Sur les **78 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
 - **Composants physiques à assembler :** 63 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **43 composants** (68.3% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **20 composants** (strict minimum technique).
+- **Basic Parts (0 $ de frais de chargement) :** **44 composants** (69.8% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **19 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
@@ -109,6 +109,7 @@ Sur les **78 composants** du circuit (dont 15 points de test sans composant phys
 * **`D2`** (—, `SMA`) : `SS34` — LCSC `C8678` (**Basic Part**)
 * **`D4`** (—, `SOD-123`) : `B5819W SL` — LCSC `C8598` (**Basic Part**)
 * **`FB1`** (—, `0603`) : `BLM18PG121SN1D` — LCSC `C14709` (**Basic Part**)
+* **`LED1`** (—, `0603`) : `KT-0603R` — LCSC `C2286` (**Basic Part**)
 * **`Q2`** (—, `SOT-23`) : `2N7002` — LCSC `C8545` (**Basic Part**)
 * **`R1`, `R2`** (10Ω, `0805`) : `0805W8F100JT5E` — LCSC `C17415` (**Basic Part**)
 * **`R3`, `R4`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
@@ -128,6 +129,6 @@ Toutes les opportunités d'optimisation directe vers le catalogue Basic Parts so
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (14 composants basculés au total, soit **~42 $ d'économie de frais de bobines** sur chaque série). Les 20 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, voyants, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (15 composants basculés au total, soit **~45 $ d'économie de frais de bobines** sur chaque série). Les 19 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
 
 

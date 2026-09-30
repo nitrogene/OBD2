@@ -514,13 +514,14 @@
     "LED1": {
       "block": "esp32_mcu",
       "role": "status_indicator_led",
-      "description": "LED verte 0603 pilotée par GPIO2 de l'ESP32 pour indication d'état et heartbeat",
-      "value": "PSC-1608U52GC-G4",
+      "description": "LED rouge 0603 Basic Part pilotée par GPIO2 de l'ESP32 pour indication d'état et heartbeat",
+      "value": "KT-0603R",
       "footprint": "0603",
       "substitutability": "direct_1to1",
       "constraints": {
-        "color": "green",
-        "vf_typ_v": 2.85,
+        "color": "red",
+        "vf_typ_v": 2.0,
+        "lcsc_part": "C2286",
         "footprint": "0603"
       }
     },
@@ -621,7 +622,7 @@
     "R6": {
       "block": "esp32_mcu",
       "role": "led_current_limiting",
-      "description": "Résistance de limitation de courant LED1 (100 ohms, 3.6 mA habitacle)",
+      "description": "Résistance de limitation de courant LED1 (100 ohms, 13.0 mA habitacle)",
       "value": "100Ω",
       "footprint": "0805",
       "substitutability": "direct_1to1",

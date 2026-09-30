@@ -413,9 +413,9 @@ flowchart LR
 
 ### Bloc 7 : LED d'État (`LED1`, `R6`)
 
-* **LED Verte `LED1` (0603) & Résistance `R6` (100 Ω) :** Pilotée par la broche `IO2` du microcontrôleur (compatible modulation PWM matérielle via périphérique LEDC).
+* **LED Rouge `LED1` (0603, Basic Part `KT-0603R` / `C2286`) & Résistance `R6` (100 Ω) :** Pilotée par la broche `IO2` du microcontrôleur (compatible modulation PWM matérielle via périphérique LEDC).
 * **Courant de Fonctionnement & Visibilité Diurne :**
-  > **I_LED = (3.30V - 2.85V) / (100 Ω + 25 Ω) ≈ 3.6 mA** (luminosité de ~280 mcd pour une visibilité franche en plein jour dans l'habitacle ; dissipation thermique de R6 négligeable à ~1.3 mW pour un boîtier 0805 de 125 mW).
+  > **I_LED = (3.30V - 2.00V) / 100 Ω = 13.0 mA** (intensité lumineuse optimale pour visibilité franche en plein jour dans l'habitacle sous le puits de lumière ; dissipation thermique de R6 de ~16.9 mW parfaitement contenue pour un boîtier 0805 de 125 mW, et appel de courant respectant la limite de 20 mA max par GPIO de l'ESP32-S3).
 
 ---
 
@@ -552,7 +552,7 @@ flowchart TD
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
 | **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `D6(1)` (anode D6a), `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
-| **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (3.6 mA) vers l'anode de la LED verte. | Interface / Statut |
+| **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (13.0 mA) vers l'anode de la LED rouge. | Interface / Statut |
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec condensateur réservoir Bulk 10 µF. | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)`, `R3(1)` | Ligne de configuration USB-C canal 1 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)`, `R4(1)` | Ligne de configuration USB-C canal 2 (détection Sink 5.1 kΩ). | Interface / USB-C |
