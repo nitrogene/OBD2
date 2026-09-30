@@ -8,7 +8,7 @@
     "+12V": {
       "nominal_v": 12.0,
       "max_v": 16.0,
-      "source": "J1.16",
+      "source": "J1.1",
       "type": "battery_raw"
     },
     "+12V_FUSED": {
@@ -54,7 +54,7 @@
     "protection_12v": {
       "title": "Protection 12V, Filtrage & Anti-Inversion",
       "description": "Protection contre les surtensions d'alternateur (Load-Dump), inversion de polarité et surintensités habitacle.",
-      "components": ["F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
+      "components": ["J1", "F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
     },
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
@@ -465,11 +465,11 @@
       }
     },
     "J1": {
-      "block": "kline_transceiver",
-      "role": "obd2_connector",
-      "description": "Connecteur mâle 16 broches SAE J1962 coudé 90 degrés pour enfichage direct dans le véhicule",
-      "value": "OBD2-male-16pin",
-      "footprint": "弯插,P=4mm,16P",
+      "block": "protection_12v",
+      "role": "main_terminal_block",
+      "description": "Bornier à ressort PCB sans vis 6 contacts au pas 3.5 mm (WJ250B-3.5-06P-11-00A) pour alimentation 12V labo et bus diagnostic",
+      "value": "WJ250B-3.5-06P-11-00A",
+      "footprint": "CONN-TH_6P-P3.50_WJ250B-3.50-6P",
       "substitutability": "locked",
       "constraints": {
         "mechanical": true

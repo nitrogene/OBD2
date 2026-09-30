@@ -34,7 +34,7 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **D6** | — | `BAV199,215` | `C40919` | Extended Part | `SOT-23` | Diode double silicium ultra-faible fuite (< 5 nA à chaud) clamp rail-to-rail ADC1 VBAT_SENSE (Nexperia) |
 | **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
 | **FB1** | — | `BLM18PG121SN1D` | `C14709` | **Basic Part** | `0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
-| **J1** | — | `OBD2-male-16pin` | `C9900147921` | Extended Part | `弯插,P=4mm,16P` | Connecteur mâle OBD-II standard SAE J1962 coudé 90° (16 broches traversantes) |
+| **J1** | — | `WJ250B-3.5-06P-11-00A` | `C8418` | Extended Part | `CONN-TH_6P-P3.50_WJ250B-3.50-6P` | Bornier à ressort PCB sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex, 250V 8A, broches quinconce) |
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
 | **JP1** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur terminaison CAN 120Ω (Shunt = Banc ; Ouvert = Voiture) |
 | **L1** | 10uH | `YNR6045-100M` | `C341067` | Extended Part | `SMD,6x6mm` | Inductance blindée 10µH étage Buck U4 |

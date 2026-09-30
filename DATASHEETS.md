@@ -14,6 +14,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 | **`U4`** | **TPS54331DR** | Texas Instruments | Convertisseur Buck Step-Down 12V → 5V (3A, 570 kHz, Eco-mode) | [`datasheet/TPS54331.pdf`](datasheet/TPS54331.pdf) |
 | **`U5`** | **LDL1117S33R** | STMicroelectronics | Régulateur linéaire LDO 5V → 3.3V faible bruit, PSRR 87 dB, 1.2A | [`datasheet/LDL1117S33R(DS_ldl1117).pdf`](datasheet/LDL1117S33R(DS_ldl1117).pdf) |
 | **`U8`** | **NUP2105LT1G** | onsemi | Double diode TVS 24V différentielle protection transitoire bus CAN | [`datasheet/NUP2105L-D.PDF`](datasheet/NUP2105L-D.PDF) |
+| **`J1`** | **WJ250B-3.5-06P-11-00A** | Ningbo Kangnex | Bornier à ressort PCB sans vis 6 contacts (pas 3.5 mm, 250V 8A, –40°C à +105°C) | [`datasheet/WJ250B-3.5-06P.pdf`](datasheet/WJ250B-3.5-06P.pdf) |
 | **`U6`/`U7`** | **SESD05C** | Semiware | Diodes discrètes TVS 5V bidirectionnelles protection ESD USB D+/D- | Catalogue constructeur LCSC [`C720025`](BOM.md#L75-L76) |
 
 ---
