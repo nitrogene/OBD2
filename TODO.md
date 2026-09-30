@@ -50,6 +50,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [ ] **Remplacement du connecteur OBD-II par un bornier PCB à ressort 6 contacts [review003 I2] :** Remplacer le connecteur mâle traversant SAE J1962 16 broches (`J1`, dont 11 broches étaient NC) par un bornier PCB à ressort sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex `WJ250B-3.5-06P-11-00A`, LCSC `C8418`, 250V 8A, –40°C à +105°C, broches quinconce anti-arrachement) câblé selon le brochage : Broche 1 `+12V`, Broche 2 `GND`, Broche 3 `GND_TEST` (masse de référence dédiée pour pince de masse oscilloscope / analyseur de banc), Broche 4 `CANH`, Broche 5 `CANL`, Broche 6 `K_LINE`. Supprime la contrainte mécanique lourde, libère un volume majeur sur le PCB, et permet le raccordement direct d'une alimentation de labo ou d'un câble faisceau OBD-II 5 fils vers véhicule.
 - [ ] **Ajout d'un cavalier de débrayage de la pull-up K-Line [review003 I1] :** Insérer une embase mâle 2 broches au pas 2.54 mm (référence identique au cavalier CAN : `PZ2.54-1*2`, LCSC `C5360898`, réutilisation de ligne BOM existante) en série entre `+12V_PROT` et le bloc de pull-up K-Line (`R16` // `R18`). Configuration : ouvert par défaut pour le cas d'usage nominal voiture et le mode Scanner (haute impédance $R_{in} \ge 100\,\text{k}\Omega$ conforme ISO 9141-2, zéro shunt requis sur véhicule), et fermé par shunt pour le mode Banc d'essais (Simulateur ECU) afin d'activer la pull-up 500 Ω sans saturer le transceiver L9637D en mode miroir.
 - [ ] **Découplage HF sur le rail d'alimentation USB-C VBUS [review003 M1] :** Ajouter un condensateur céramique de découplage de 100 nF 50V X7R 0603 (*Basic Part* `C14663`) en parallèle direct sur `VBUS_5V` au plus près du connecteur USB-C `J2` en complément du condensateur réservoir de 10 µF (`C18`) pour absorber les micro-transitoires lors des branchements à chaud sur PC.
+- [ ] **Documentation formelle des 3 cas d'usage cibles (`README.md`, `HARDWARE.md`) :** Rédiger les fiches d'architecture, schémas de câblage et tableaux d'état des cavaliers (cavalier CAN 120Ω et cavalier K-Line 500Ω) pour les 3 profils opérationnels : Cas 1 (Banc d'essais bi-cartes miroir avec alim de labo 12V et double USB-C), Cas 2 (Nominal véhicule via faisceau pigtail OBD-II), et Cas 3 (Nominal + Debug in situ avec PC sur batterie et règles d'isolation de masse).
 - [ ] **Revue complète du schéma électronique :** Faire une revue systématique et approfondie de l'intégralité du schéma sous EasyEDA Pro en s'appuyant notamment sur [`DATASHEETS.md`](DATASHEETS.md) (vérification rigoureuse des préconisations constructeurs, alimentations, découplages, broches non connectées, seuils logiques et protections).
 
 ### 1.5 Validation Schéma
@@ -63,7 +64,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ### 2.1 Synchronisation & Mécanique
 - [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes et aligner la netlist à 100%.
 - [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'implantation du bornier 6P à l'Ouest.
-- [ ] Mettre à jour [`floorplan.json`](floorplan.json) avec la BOM consolidée et injecter le placement initial via le skill `pcb-placer`.
+- [ ] Mettre à jour [`floorplan.json`](floorplan.json) avec la BOM consolidée et injecter le placement initial (script de placement direct réutilisant le client pont d'API).
 
 ### 2.2 Agencement des clusters & Règles CEM de proximité (< 2 mm)
 - [ ] **Bloc Puissance & Protection (Ouest) :** Compacité extrême de la boucle Buck SW-L1-D2-C8/C16, isolement de la broche COMP (`C13`, `R11`, `C9`) face au nœud bruité PH, diode clamp `D6` collée à `R13`/`C10` (< 2 mm).
@@ -75,22 +76,32 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 
 ## Phase 3 : Routage, Plans de Masse & Finition PCB
 
-### 3.1 Paires différentielles & Signaux critiques
-- [ ] **Paire différentielle USB (`USB_D+` / `USB_D-`) :** Impédance contrôlée 90 Ω, skew < 2 mm, routage direct depuis `J2` à travers `U6`/`U7` vers GPIO19/20.
-- [ ] **Paire différentielle CAN (`CANH` / `CANL`) :** Impédance contrôlée 120 Ω, skew < 5 mm, routage symétrique à 45° entre `U2`, `JP1` et `J1`.
+### 3.1 Skill d'Auto-Routage FreeRouting (Remplacement de `pcb-placer`)
+- [ ] **Développement & Intégration du skill `freerouting` :**
+  - Supprimer le skill obsolète `.agents/skills/pcb-placer/` tout en récupérant ses briques réutilisables (client pont WebSocket/HTTP `easyeda_client.py`, parsing et schémas [`floorplan.json`](floorplan.json)).
+  - Intégrer l'orchestration du moteur d'auto-routage FreeRouting (mode CLI headless) avec gestion automatique de l'environnement d'exécution sous Windows (ex. binaire autonome ou JRE portable).
+  - Mettre en place le pipeline Specctra DSN / SES : export du fichier `.dsn` depuis EasyEDA Pro, injection des Net Classes et contraintes de routage issues de [`floorplan.json`](floorplan.json), résolution par FreeRouting, et réimport du fichier `.ses` dans EasyEDA Pro.
+  - Implémenter les deux modes opérationnels :
+    - **Mode `--incremental` :** Préservation stricte de toutes les pistes existantes verrouillées (`(fixed ...)` dans le format Specctra DSN, comme les paires différentielles sensibles USB/CAN préalablement routées ou les rails d'alimentation critiques), avec auto-routage ciblé du seul chevelu (*ratsnest*) manquant. Permet les itérations de schéma sans détruire le travail manuel validé.
+    - **Mode `--clean` :** Dépouillement des pistes non protégées et re-routage intégral à blanc de tout le PCB selon les contraintes globales.
+  - Configurer les classes de nets (*Net Classes*) et contraintes dans [`floorplan.json`](floorplan.json) : largeurs pour les rails d'alimentation 12V/5V/3V3 ($\ge 0.6\,\text{mm}$ à $1.0\,\text{mm}$), signaux standards ($0.25\,\text{mm}$), isolements de sécurité ($0.20\,\text{mm}$), et respect absolu de la zone d'exclusion RF de l'antenne ESP32.
+
+### 3.2 Paires différentielles & Signaux critiques
+- [ ] **Paire différentielle USB (`USB_D+` / `USB_D-`) :** Impédance contrôlée 90 Ω, skew < 2 mm, routage direct depuis `J2` à travers `U6`/`U7` vers GPIO19/20, puis verrouillage des pistes.
+- [ ] **Paire différentielle CAN (`CANH` / `CANL`) :** Impédance contrôlée 120 Ω, skew < 5 mm, routage symétrique à 45° entre `U2`, `JP1` et le bornier `J1`, puis verrouillage des pistes.
 - [ ] **Lignes numériques TWAI & UART :** Liaisons TWAI (`TWAI_TX`, `TWAI_RX`) et UART K-Line (`K_RX_IC`, `KLINE_RX`, `K_TX_IC`, `KLINE_TX` via résistances d'amortissement `R1`/`R2`).
 
-### 3.2 Rails d'alimentation de puissance
-- [ ] **Rails 12V d'entrée (`+12V`, `+12V_FUSED`, `+12V_PROT`) :** Pistes larges de 0.8 mm à 1.0 mm depuis la broche 16 OBD jusqu'au convertisseur Buck `U4`.
+### 3.3 Rails d'alimentation de puissance
+- [ ] **Rails 12V d'entrée (`+12V`, `+12V_FUSED`, `+12V_PROT`) :** Pistes larges de 0.8 mm à 1.0 mm depuis le bornier d'entrée jusqu'au convertisseur Buck `U4`.
 - [ ] **Distribution des rails régulés :** Distribution à faible impédance du `+5V` vers `U5` et `U2`, puis du `3.3V` purifié via la perle de ferrite `FB1` vers l'ESP32 et les étages logiques.
 
-### 3.3 Plans de masse, CEM & Dissipation thermique
+### 3.4 Plans de masse, CEM & Dissipation thermique
 - [ ] **Keepout RF d'antenne multicouche :** Définir sur toutes les couches (*All Layers*) la zone d'exclusion stricte (NO_WIRES, NO_FILLS, NO_POURS) sous et autour de l'antenne méandre 2.4 GHz de l'ESP32.
 - [ ] **Plans de masse continus Top et Bottom (GND) :** Coulage des plans de masse avec dégagement conforme (0.254 mm) et élimination des îlots flottants.
 - [ ] **Vias de couture (stitching) :** Maillage régulier tous les 5 à 8 mm, renfort le long du contour de carte et aux condensateurs de découplage.
 - [ ] **Vias thermiques de dissipation :** Matrice de vias thermiques sous le pad de cuivre du LDO `U5` (LDL1117) et sous le pad thermique central de l'ESP32 (`U1`).
 
-### 3.4 Sérigraphie & Contrôles finaux
+### 3.5 Sérigraphie & Contrôles finaux
 - [ ] **Sérigraphie complète [M4] :** Polarités des diodes, repères pin 1 sur tous les circuits intégrés et connecteurs (`J1` OBD-II, `J2` USB-C), texte explicite sur le cavalier `JP1` (*« OPEN = CAR / SHUNT = BENCH »*), identification claire de tous les points de test `TP1` à `TP15`.
 - [ ] **Contrôle DRC physique strict :** Exécuter le DRC PCB sous EasyEDA Pro et valider 0 erreur, 0 avertissement.
 - [ ] **Inspection 3D finale :** Contrôle visuel 3D de l'assemblage complet, du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
