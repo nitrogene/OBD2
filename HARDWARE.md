@@ -382,33 +382,36 @@ flowchart LR
         K_VCC["Pin 8 (VCC 3.3V)"]
     end
 
-    subgraph PULLUP["PULL-UP ISO 9141-2 (500 Ω)"]
+    subgraph PULLUP["PULL-UP ISO 9141-2 (500 Ω) DÉBRAYABLE"]
         R16_R18["R16 // R18 (2 × 1 kΩ 1206)\nvers +12V_PROT"]
+        JP2_BOX["Cavalier JP2 (Sélecteur Pull-Up)\n• Shunt = Banc ECU (500Ω active)\n• Ouvert = Voiture (Haute Impédance)"]
     end
 
     subgraph PROT_K["PROTECTION TRANSITOIRE"]
         D5["TVS D5 (SMF24CA)\n24V Bidirectionnelle"]
     end
 
-    subgraph OBD_CONN["PRISE OBD-II (J1)"]
-        PIN7["Broche 7 (Ligne K 12V)"]
+    subgraph BORNIER_CONN["BORNIER D'ENTRÉE J1"]
+        PIN4["Borne 2 / Pin 4 (Ligne K 12V)"]
     end
 
     MCU_TX --> R2 --> K_TX
     K_RX --> R1 --> MCU_RX
-    R16_R18 --> K_PIN
+    R16_R18 --> JP2_BOX --> K_PIN
     K_PIN <==> D5
     D5 --> GND_K["GND"]
-    D5 <==> PIN7
+    D5 <==> PIN4
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
-* **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) :**
+* **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) & Cavalier Sélecteur `JP2` (`PZ2.54-1*2` — LCSC `C5360898`) :**
   * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de $510\,\Omega \pm 5\%$ pour garantir un temps de montée rapide ($t_r < 2\text{ µs}$) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne $R_{eq} = 500\,\Omega$ (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
-  * *Raccordement sécurisé :* Reliées entre la ligne `K_LINE` et le rail protégé `+12V_PROT` (en aval direct de la protection anti-inversion Q1 et du fusible F1).
-  * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie, la puissance crête totale dissipée sous 14.4 V vaut $P_{tot} = V^2 / R_{eq} = (14.4\text{V})^2 / 500\ \Omega \approx 0.415\text{ W}$. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse $P = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
+  * *Débrayage Bi-Mode par Cavalier `JP2` :*
+    * **En mode Voiture / Scanner :** La norme exige que l'outil de diagnostic présente une haute impédance ($R_{in} \ge 100\,\text{k}\Omega$) pour ne pas surcharger la pull-up interne du calculateur moteur (ECU). **Le cavalier JP2 reste OUVERT (sans shunt)**.
+    * **En mode Banc d'essais / Simulateur ECU :** Sur table, aucun calculateur n'est présent pour alimenter la ligne. **On insère un cavalier standard sur JP2 (avec shunt)** pour connecter la pull-up 500 Ω entre `+12V_PROT` et `K_LINE`.
+  * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie avec le shunt JP2 en place, la puissance crête totale dissipée sous 14.4 V vaut $P_{tot} = V^2 / R_{eq} = (14.4\text{V})^2 / 500\ \Omega \approx 0.415\text{ W}$. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse $P = (14.4\text{V})^2 / 1000\ \Omega \approx 0.207\text{ W}$, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
 * **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C3117728` / `C2843513`) :**
-  * *Rôle frontière :* Connectée directement entre la broche 7 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
+  * *Rôle frontière :* Connectée directement entre la borne 2 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
   * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
 * **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 ($V_{CC}$) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 ($V_{CC}$). La broche 7 ($V_S$) est alimentée depuis le rail protégé `+12V_PROT`. L'entrée non utilisée `LI` (broche 8) est pontée directement sur la broche adjacente 7 ($V_S$), plaçant fermement le comparateur au repos inactif ($V_{LI} = V_S > 0.55\,V_S$), éliminant tout risque d'antenne parasite CEM et annulant le courant de repos permanent ($0\,\mu\text{A}$).
@@ -568,7 +571,8 @@ flowchart TD
 | **`CANL`** | `U2(6)`, `JP1(2)`, `U8(2)`, Bornier `J1` (Borne 6 / Pin 12), `TP8` | Ligne de bus CAN différentielle niveau bas protégée ESD. | Communication / CAN |
 | **`TWAI_TX`** | `U1(8)` (`IO15`), `U2(1)` | Émission TWAI (CAN) 3.3V depuis le SoC vers le transceiver CAN. | Communication / CAN |
 | **`TWAI_RX`** | `U1(9)` (`IO16`), `U2(4)` | Réception TWAI (CAN) 3.3V depuis le transceiver CAN vers le SoC. | Communication / CAN |
-| **`K_LINE`** | `U3(6)`, `D5(1)`, `R16(2)`, Bornier `J1` (Borne 2 / Pin 4), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS et tirée par R16 // R18. | Communication / K-Line |
+| **`K_PULLUP_MID`** | `R16(2)`, `R18(2)`, `JP2(1)` | Nœud série intermédiaire reliant la pull-up 500 Ω au cavalier de sélection JP2. | Communication / K-Line |
+| **`K_LINE`** | `U3(6)`, `D5(1)`, `JP2(2)`, Bornier `J1` (Borne 2 / Pin 4), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS et débrayable par JP2. | Communication / K-Line |
 | **`K_RX_IC`** | `U3(1)`, `R1(1)` | Réception 3.3V du transceiver K-Line avant résistance d'amortissement. | Communication / K-Line |
 | **`KLINE_RX`** | `R1(2)`, `U1(4)` (`IO4`), `TP15` | Signal de réception UART amorti arrivant sur l'ESP32 (K-Line RX). | Communication / K-Line |
 | **`K_TX_IC`** | `U3(4)`, `R2(1)` | Émission vers le transceiver K-Line après résistance d'amortissement. | Communication / K-Line |

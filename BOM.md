@@ -37,6 +37,7 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **J1** | — | `WJ250B-3.5-06P-11-00A` | `C8418` | Extended Part | `CONN-TH_6P-P3.50_WJ250B-3.50-6P` | Bornier à ressort PCB sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex, 250V 8A, broches quinconce) |
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
 | **JP1** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur terminaison CAN 120Ω (Shunt = Banc ; Ouvert = Voiture) |
+| **JP2** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur pull-up K-Line 500Ω (Shunt = Banc ECU ; Ouvert = Voiture) |
 | **L1** | 10uH | `YNR6045-100M` | `C341067` | Extended Part | `SMD,6x6mm` | Inductance blindée 10µH étage Buck U4 |
 | **LED1** | — | `KT-0603R` | `C2286` | **Basic Part** | `0603` | LED d'état rouge (heartbeat/diagnostic) pilotée par la broche IO2 de l'ESP32 |
 | **Q1** | — | `CJ2309A` | `C7433254` | Extended Part | `SOT-23` | P-MOSFET 60V 2A protection contre l'inversion de polarité 12V |
