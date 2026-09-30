@@ -46,7 +46,13 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ### 1.3 Référentiel Technique & Datasheets ICs
 - [x] **Créer le dossier `datasheet/` et le référentiel technique [`DATASHEETS.md`](DATASHEETS.md) :** Centralisation des 6 datasheets officielles (`U1` ESP32-S3, `U2` TJA1051T, `U3` L9637D, `U4` TPS54331, `U5` LDL1117S33R, `U8` NUP2105L), extraction des caractéristiques électriques, limites absolues (*Absolute Maximum Ratings*), règles d'implantation PCB (keepouts, boucles di/dt, thermiques) et matrice d'audit de conformité servant de source de vérité technique.
 
-### 1.4 Validation Schéma
+### 1.4 Architecture Bi-Mode (Banc ECU / Scanner OBD) & Connectique [review003]
+- [ ] **Remplacement du connecteur OBD-II par un bornier PCB à ressort 6 contacts [review003 I2] :** Remplacer le connecteur mâle traversant SAE J1962 16 broches (`J1`, dont 11 broches étaient NC) par un bornier PCB à ressort sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex `WJ250B-3.5-06P-11-00A`, LCSC `C8418`, 250V 8A, –40°C à +105°C, broches quinconce anti-arrachement) câblé selon le brochage : Broche 1 `+12V`, Broche 2 `GND`, Broche 3 `GND_TEST` (masse de référence dédiée pour pince de masse oscilloscope / analyseur de banc), Broche 4 `CANH`, Broche 5 `CANL`, Broche 6 `K_LINE`. Supprime la contrainte mécanique lourde, libère un volume majeur sur le PCB, et permet le raccordement direct d'une alimentation de labo ou d'un câble faisceau OBD-II 5 fils vers véhicule.
+- [ ] **Ajout d'un cavalier de débrayage de la pull-up K-Line [review003 I1] :** Insérer une embase mâle 2 broches au pas 2.54 mm (référence identique au cavalier CAN : `PZ2.54-1*2`, LCSC `C5360898`, réutilisation de ligne BOM existante) en série entre `+12V_PROT` et le bloc de pull-up K-Line (`R16` // `R18`). Configuration : ouvert par défaut pour le cas d'usage nominal voiture et le mode Scanner (haute impédance $R_{in} \ge 100\,\text{k}\Omega$ conforme ISO 9141-2, zéro shunt requis sur véhicule), et fermé par shunt pour le mode Banc d'essais (Simulateur ECU) afin d'activer la pull-up 500 Ω sans saturer le transceiver L9637D en mode miroir.
+- [ ] **Découplage HF sur le rail d'alimentation USB-C VBUS [review003 M1] :** Ajouter un condensateur céramique de découplage de 100 nF 50V X7R 0603 (*Basic Part* `C14663`) en parallèle direct sur `VBUS_5V` au plus près du connecteur USB-C `J2` en complément du condensateur réservoir de 10 µF (`C18`) pour absorber les micro-transitoires lors des branchements à chaud sur PC.
+- [ ] **Revue complète du schéma électronique :** Faire une revue systématique et approfondie de l'intégralité du schéma sous EasyEDA Pro en s'appuyant notamment sur [`DATASHEETS.md`](DATASHEETS.md) (vérification rigoureuse des préconisations constructeurs, alimentations, découplages, broches non connectées, seuils logiques et protections).
+
+### 1.5 Validation Schéma
 - [ ] Exécuter et valider le contrôle ERC sous EasyEDA Pro (0 erreur, 0 avertissement).
 - [ ] Mettre à jour la documentation technique ([`HARDWARE.md`](HARDWARE.md), [`BOM.md`](BOM.md)).
 
@@ -55,8 +61,8 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ## Phase 2 : Préparation & Placement PCB (Floorplanning)
 
 ### 2.1 Synchronisation & Mécanique
-- [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes (`R16`, `C15`, `C16`) et aligner la netlist à 100%.
-- [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'emplacement de `LED1` face au puits de lumière.
+- [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes et aligner la netlist à 100%.
+- [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'implantation du bornier 6P à l'Ouest.
 - [ ] Mettre à jour [`floorplan.json`](floorplan.json) avec la BOM consolidée et injecter le placement initial via le skill `pcb-placer`.
 
 ### 2.2 Agencement des clusters & Règles CEM de proximité (< 2 mm)
