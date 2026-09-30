@@ -1,13 +1,13 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
+Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
 
 ---
 
 ## 1. Tableau Récapitulatif de la Nomenclature Complète
 
 | Désignateur | Valeur (`Value`) | Référence Fabricant (`MPN`) | Code LCSC | Statut JLCPCB | Empreinte (`Package`) | Rôle & Fonction Électrique |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **C1** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation ESP32 (rail 3.3V) |
 | **C2** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation ESP32 (rail 3.3V) |
 | **C3** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage alimentation transceiver CAN U2 (rail 3.3V VIO) |
@@ -74,6 +74,10 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 | **TP9** | VBAT_SENSE | `—` | *—* | — | `—` | Point de test pad cuivre pour la mesure analogique tension batterie (VBAT_SENSE) |
 | **TP10** | IO0 | `—` | *—* | — | `—` | Point de test pad cuivre pour forcer le mode bootloader de secours (IO0) |
 | **TP11** | EN | `—` | *—* | — | `—` | Point de test pad cuivre pour le signal de reset matériel (ESP_EN) |
+| **TP12** | PH_BUCK | `—` | *—* | — | `—` | Point de test pad cuivre pour le nœud de commutation Buck (PH_BUCK / 570 kHz) |
+| **TP13** | COMP_BUCK | `—` | *—* | — | `—` | Point de test pad cuivre pour la broche de compensation Buck U4 (COMP_BUCK) |
+| **TP14** | 3.3V_PRE | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail LDO brut avant perle FB1 (3.3V_PRE) |
+| **TP15** | KLINE_RX | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne logique UART réception K-Line (KLINE_RX) |
 | **U1** | 2.4GHz | `ESP32-S3-WROOM-1-N16R2` | `C2913205` | Extended Part | `SMD,25.5x18mm` | SoC ESP32-S3 Wi-Fi 2.4 GHz + BLE 5.0 (16MB Flash / 2MB PSRAM, –40°C à +85°C) |
 | **U2** | — | `TJA1051T/3/1J` | `C38695` | Extended Part | `SOIC-8-150mil` | Transceiver CAN haute vitesse avec broche VIO (3.3V) |
 | **U3** | — | `E-L9637D013TR` | `C153038` | Extended Part | `SOIC-8` | Transceiver K-Line ISO 9141 / KWP2000 |
@@ -87,7 +91,7 @@ Inventaire exhaustif des **69 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **74 composants** du circuit (dont 11 points de test sans composant physique à poser) :
+Sur les **78 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
 - **Composants physiques à assembler :** 63 composants.
 - **Basic Parts (0 $ de frais de chargement) :** **43 composants** (68.3% des composants assemblés).

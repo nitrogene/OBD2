@@ -49,3 +49,7 @@
   - *États obsolètes :* La revue peut se baser sur un commit antérieur, un document non synchronisé ou une image non à jour (composants déjà implantés, pistes déjà routées, erratum déjà corrigés).
   - *Collisions & doublons :* Vérifier systématiquement si une remarque entre en collision ou redéfinit des choix déjà arbitrés ou en cours de traitement dans `TODO.md`.
   - *Erreurs de référence :* Détecter les confusions de composants ou de variantes matérielles (ex. brochage et périphériques spécifiques à l'ESP32-S3 vs ESP32 classique).
+
+## 6. Séquencement Temporel des Mises à Jour Documentaires
+- **Modification des documents APRÈS validation effective :** La mise à jour des documents du projet (`BOM.md`, `circuit_semantics.json`, `HARDWARE.md`, `floorplan.json`) ainsi que le cochage de la tâche dans `TODO.md` (`- [x]`) doivent être réalisés **strictement APRÈS** que l'utilisateur a confirmé et validé la résolution effective de la tâche (notamment l'implémentation physique dans le schéma ou le PCB sous EasyEDA Pro).
+- **Interdiction formelle d'anticiper la documentation :** L'agent ne doit **jamais** modifier la documentation, les nomenclatures ou les fichiers sémantiques par anticipation avant que l'utilisateur n'ait accompli ou validé l'action sur le schéma. Tant que le schéma physique n'a pas été modifié et validé, les documents de référence doivent refléter exclusivement l'état réel et présent du circuit.

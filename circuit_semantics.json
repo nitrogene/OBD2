@@ -94,7 +94,7 @@
     "test_points": {
       "title": "Points de Test Cuivre (Mires de mesure)",
       "description": "Pads de test pour diagnostic oscilloscope, voltmètre et forçage bootloader.",
-      "components": ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8", "TP9", "TP10", "TP11"]
+      "components": ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8", "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15"]
     }
   },
   "components": {
@@ -965,6 +965,38 @@
       "role": "test_point_en",
       "description": "Mire de test pad cuivre pour le signal de reset matériel (ESP_EN)",
       "value": "EN",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP12": {
+      "block": "test_points",
+      "role": "test_point_ph_buck",
+      "description": "Mire de test pad cuivre pour le nœud de commutation Buck (PH_BUCK / 570 kHz)",
+      "value": "PH_BUCK",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP13": {
+      "block": "test_points",
+      "role": "test_point_comp_buck",
+      "description": "Mire de test pad cuivre pour la broche de compensation Buck U4 (COMP_BUCK)",
+      "value": "COMP_BUCK",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP14": {
+      "block": "test_points",
+      "role": "test_point_3v3_pre",
+      "description": "Mire de test pad cuivre pour le rail LDO brut avant perle FB1 (3.3V_PRE)",
+      "value": "3.3V_PRE",
+      "footprint": "PAD",
+      "substitutability": "locked"
+    },
+    "TP15": {
+      "block": "test_points",
+      "role": "test_point_kline_rx",
+      "description": "Mire de test pad cuivre pour la ligne logique UART réception K-Line (KLINE_RX)",
+      "value": "KLINE_RX",
       "footprint": "PAD",
       "substitutability": "locked"
     },

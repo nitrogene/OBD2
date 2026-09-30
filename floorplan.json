@@ -60,13 +60,13 @@
       "R12", "R13", "C10", "D6", "TP9"
     ],
     "OBD_TRANSCEIVERS": [
-      "U8", "D5", "R16", "U2", "R8", "JP1", "C3", "C15", "TP7", "TP8", "U3", "R1", "R2", "C4", "TP2"
+      "U8", "D5", "R16", "U2", "R8", "JP1", "C3", "C15", "TP7", "TP8", "U3", "R1", "R2", "C4", "TP2", "TP15"
     ],
     "BUCK_CONVERTER": [
-      "U4", "C7", "C14", "D2", "L1", "C8", "C16", "C5", "R9", "R10", "R11", "C9", "C13", "TP4", "TP5"
+      "U4", "C7", "C14", "D2", "L1", "C8", "C16", "C5", "R9", "R10", "R11", "C9", "C13", "TP4", "TP5", "TP12", "TP13"
     ],
     "LDO_REGULATOR": [
-      "U5", "FB1", "C6", "TP6"
+      "U5", "FB1", "C6", "TP6", "TP14"
     ],
     "USB_INTERFACE": [
       "U6", "U7", "R3", "R4", "D4", "TP1"
@@ -234,6 +234,7 @@
     "R2":   { "x": 1200.0, "y": 400.0,  "rot": 0.0,   "layer": 1, "desc": "Amortissement TX K-Line 10R" },
     "C4":   { "x": 1150.0, "y": 325.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VCC U3 (100nF)" },
     "TP2":  { "x": 900.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point K_LINE" },
+    "TP15": { "x": 1300.0, "y": 500.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point KLINE_RX (logique UART 3.3V)" },
 
     "U4":   { "x": 1100.0, "y": 1150.0, "rot": 0.0,   "layer": 1, "desc": "Régulateur Buck TPS54331" },
     "C7":   { "x": 950.0,  "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Réservoir entrée Buck 10uF 50V" },
@@ -250,11 +251,14 @@
     "C13":  { "x": 925.0,  "y": 1025.0, "rot": 0.0,   "layer": 1, "desc": "Filtre HF compensation 220pF" },
     "TP4":  { "x": 850.0,  "y": 1200.0, "rot": 0.0,   "layer": 1, "desc": "Test-point +12V_PROT" },
     "TP5":  { "x": 1600.0, "y": 1275.0, "rot": 0.0,   "layer": 1, "desc": "Test-point +5V" },
+    "TP12": { "x": 1300.0, "y": 1250.0, "rot": 0.0,   "layer": 1, "desc": "Test-point PH_BUCK (découpage 570 kHz)" },
+    "TP13": { "x": 1100.0, "y": 925.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point COMP_BUCK (asservissement)" },
 
     "U5":   { "x": 1750.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "LDO 3.3V LDL1117S33R" },
     "FB1":  { "x": 1900.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "Perle de ferrite BLM18" },
     "C6":   { "x": 2000.0, "y": 1100.0, "rot": 0.0,   "layer": 1, "desc": "Filtrage 3.3V LDO 1uF" },
     "TP6":  { "x": 2075.0, "y": 1200.0, "rot": 0.0,   "layer": 1, "desc": "Test-point 3.3V" },
+    "TP14": { "x": 1850.0, "y": 1175.0, "rot": 0.0,   "layer": 1, "desc": "Test-point 3.3V_PRE (sortie LDO brute)" },
 
     "U6":   { "x": 1500.0, "y": 275.0,  "rot": 0.0,   "layer": 1, "desc": "ESD USB D+ SD05C" },
     "U7":   { "x": 1700.0, "y": 275.0,  "rot": 0.0,   "layer": 1, "desc": "ESD USB D- SD05C" },

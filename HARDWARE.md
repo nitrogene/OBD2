@@ -542,13 +542,13 @@ flowchart TD
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
 | **`VBAT_SENSE`** | `R12(2)`, `R13(1)`, `C10(1)`, `D6(3)` (point milieu), `U1(39)`, `TP9` | Tension batterie atténuée au ratio ~1/9.33 vers le canal ADC1_CH0 (`IO1`) clampée par D6 (`BAV199`). | Mesure Batterie |
 | **`SS_BUCK`** | `U4(4)`, `C17(1)` | Temporisation de démarrage progressif du Buck U4 (Tss = 4.0 ms). | Alimentation / Buck |
-| **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
+| **`PH_BUCK`** | `U4(8)`, `L1(1)`, `D2(1)`, `C5(2)`, `TP12` | Nœud de commutation haute fréquence (570 kHz). | Alimentation / Buck |
 | **`BOOT (U4)`** | `U4(1)`, `C5(1)` | Nœud local de bootstrap rehaussant la tension de commande du MOSFET High-Side. | Alimentation / Buck |
 | **`VSENSE_BUCK`** | `U4(5)`, `R9(1)`, `R10(1)` | Point milieu du feedback asservissant le 5V sur la référence interne 0.8V. | Alimentation / Buck |
-| **`COMP_BUCK`** | `U4(6)`, `R11(1)`, `C13(1)` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation Type II. | Alimentation / Buck |
+| **`COMP_BUCK`** | `U4(6)`, `R11(1)`, `C13(1)`, `TP13` | Sortie de l'amplificateur d'erreur reliée au réseau de compensation Type II. | Alimentation / Buck |
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
-| **`3.3V_PRE`** | `U5(4)`, `FB1(1)` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
+| **`3.3V_PRE`** | `U5(2,4)`, `FB1(1)`, `C6(1)`, `TP14` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
 | **`GND`** | OBD-II `J1` (Pins 4, 5), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `D6(1)` (anode D6a), `TP3` | Potentiel de référence zéro volt (0V) commun reliant les masses châssis et signal du véhicule à la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
@@ -565,7 +565,7 @@ flowchart TD
 | **`TWAI_RX`** | `U1(9)` (`IO16`), `U2(4)` | Réception TWAI (CAN) 3.3V depuis le transceiver CAN vers le SoC. | Communication / CAN |
 | **`K_LINE`** | `U3(6)`, `D5(1)`, `R16(2)`, OBD-II (Pin 7), `TP2` | Ligne de communication bidirectionnelle automobile 12V protégée TVS et tirée par R16. | Communication / K-Line |
 | **`K_RX_IC`** | `U3(1)`, `R1(1)` | Réception 3.3V du transceiver K-Line avant résistance d'amortissement. | Communication / K-Line |
-| **`KLINE_RX`** | `R1(2)`, `U1(4)` (`IO4`) | Signal de réception UART amorti arrivant sur l'ESP32 (K-Line RX). | Communication / K-Line |
+| **`KLINE_RX`** | `R1(2)`, `U1(4)` (`IO4`), `TP15` | Signal de réception UART amorti arrivant sur l'ESP32 (K-Line RX). | Communication / K-Line |
 | **`K_TX_IC`** | `U3(4)`, `R2(1)` | Émission vers le transceiver K-Line après résistance d'amortissement. | Communication / K-Line |
 | **`KLINE_TX`** | `R2(2)`, `U1(5)` (`IO5`) | Émission UART issue de l'ESP32 vers la résistance d'amortissement (K-Line TX). | Communication / K-Line |
 | **`ESP_EN`** | `U1(3)`, `R15(2)`, `C12(1)`, `SW1(1,2)`, `TP11` | Signal de reset matériel et mise sous tension de l'ESP32. | Contrôle / Reset |
@@ -573,7 +573,7 @@ flowchart TD
 
 ---
 
-## 6. Répertoire Consolidé des Points de Test (TP1 à TP11)
+## 6. Répertoire Consolidé des Points de Test (TP1 à TP15)
 
 | Désignateur | Net Associé | Domaine Fonctionnel | Coordonnées Schéma | Tension / Signal Attendu | Rôle & Condition de Test |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -588,6 +588,10 @@ flowchart TD
 | **`TP9`** | **`VBAT_SENSE`** | Mesure Analogique ADC | (X=400, Y=755) | ~ 1.29 V (pour 12V bat, ratio ~1/9.33) | Étalonnage ADC et contrôle du filtrage passe-bas 148 Hz (C10) et clamp D6. |
 | **`TP10`** | **`IO0`** | Bootloader Secours | (X=1060, Y=570) | 3.3 V repos / 0 V pour forcer ROM | Mise à la masse pour forcer le téléchargement ROM si firmware bloqué. |
 | **`TP11`** | **`ESP_EN`** | Contrôle Reset | (X=650, Y=295) | 3.3 V repos / 0 V appui reset | Mesure directe de la rampe de charge RC de Power-On-Reset (10 ms). |
+| **`TP12`** | **`PH_BUCK`** | Nœud Découpage Buck | (X=510, Y=640) | Carré 0V / ~12V (570 kHz) | Contrôle du rapport cyclique, fronts raides et absence de ringing destructeur. |
+| **`TP13`** | **`COMP_BUCK`** | Asservissement Buck | (X=355, Y=530) | 0.5 V à 2.0 V analogique | Mesure consigne PWM et injection petit-signal pour audit de stabilité (Bode). |
+| **`TP14`** | **`3.3V_PRE`** | Régulation LDO Brute | (X=815, Y=740) | +3.30 V DC (± 1.5%) | Contrôle stabilité LDO avec C6 et mesure de la chute dynamique dans FB1. |
+| **`TP15`** | **`KLINE_RX`** | Diagnostic UART K-Line | (X=640, Y=615) | 3.3 V repos / 0 V actif | Décodage trames UART K-Line 3.3V et analyse logique à l'oscilloscope. |
 
 ---
 
@@ -601,7 +605,7 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
 * **Découplage Transceiver CAN `C15` (100 nF 50V) et `C3` (100 nF) :** `C15` implanté à **moins de 2 mm** de la broche 3 (`VCC` 5V) de `U2` pour fournir les pointes de commutation différentielle. `C3` à **moins de 2 mm** de la broche 5 (`VIO` 3.3V).
 * **Découplage Entrée Buck `C14` (100 nF 50V) et `C7` (10 µF 50V) :** `C14` implanté **collé à la broche 2 (`VIN`) de `U4` (< 1.5 mm)**, en amont immédiat de `C7`, avec une boucle de retour masse minimale vers la broche 9 (pad thermique GND) pour court-circuiter les harmoniques > 20 MHz.
 * **Découplage K-Line `C4` (100 nF) :** Implanté à **moins de 2 mm** de la broche 3 (`VCC`) de `U3`.
-* **Filtrage LDO `C6` (1 µF) :** Raccordé au plus près de la perle de ferrite `FB1` et de la sortie de `U5`.
+* **Filtrage LDO `C6` (10 µF) :** Raccordé au plus près de la sortie de `U5` sur `3.3V_PRE` en amont de `FB1`.
 
 ### 7.2 Étage Buck & Boucle de Commutation Haute Fréquence (570 kHz)
 * **Boucle de puissance critique ultra-compacte :** La maille formée par la broche 8 (`PH`) de `U4`, l'inductance blindée `L1`, la diode Schottky `D2` et le retour vers les condensateurs d'entrée `C7`/`C14` doit présenter une surface géométrique minimale pour réduire le rayonnement magnétique parasite ($e = -d\Phi/dt$). Pistes courtes et larges (0.8 mm à 1.0 mm).
