@@ -49,8 +49,8 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **R6** | 100Ω | `0805W8F1000T5E` | `C17408` | **Basic Part** | `0805` | Résistance de limitation courant LED1 (100 Ω, 13.0 mA visibilité habitacle) |
 | **R7** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de maintien pull-up grille P-MOSFET Q1 (10 kΩ) |
 | **R8** | 120Ω | `1206W4F1200T5E` | `C17909` | **Basic Part** | `1206` | Résistance de terminaison de bus différentiel CAN (120 Ω, 1/4 W) |
-| **R9** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance haute pont diviseur feedback Buck U4 (rail 5V vers VSENSE, 10 kΩ) |
-| **R10** | 1.91kΩ | `0805W8F1911T5E` | `C17401` | Extended Part | `0805` | Résistance basse pont diviseur feedback Buck U4 (VSENSE vers GND, 1.91 kΩ) |
+| **R9** | 27kΩ | `0805W8F2702T5E` | `C17593` | **Basic Part** | `0805` | Résistance haute pont diviseur feedback Buck U4 (rail 5V vers VSENSE, 27 kΩ) |
+| **R10** | 5.1kΩ | `0805W8F5101T5E` | `C27834` | **Basic Part** | `0805` | Résistance basse pont diviseur feedback Buck U4 (VSENSE vers GND, 5.1 kΩ) |
 | **R11** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance série compensation de boucle Buck U4 (broche COMP, 10 kΩ) |
 | **R12** | 100kΩ | `0805W8F1003T5E` | `C149504` | **Basic Part** | `0805` | Résistance haute pont diviseur monitoring tension batterie (100 kΩ) |
 | **R13** | 12kΩ | `0805W8F1202T5E` | `C17444` | **Basic Part** | `0805` | Résistance basse pont diviseur monitoring tension batterie (12 kΩ) |
@@ -94,8 +94,8 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 Sur les **78 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
 - **Composants physiques à assembler :** 63 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **44 composants** (69.8% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **19 composants** (strict minimum technique).
+- **Basic Parts (0 $ de frais de chargement) :** **45 composants** (71.4% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **18 composants** (strict minimum technique).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
@@ -112,10 +112,11 @@ Sur les **78 composants** du circuit (dont 15 points de test sans composant phys
 * **`LED1`** (—, `0603`) : `KT-0603R` — LCSC `C2286` (**Basic Part**)
 * **`Q2`** (—, `SOT-23`) : `2N7002` — LCSC `C8545` (**Basic Part**)
 * **`R1`, `R2`** (10Ω, `0805`) : `0805W8F100JT5E` — LCSC `C17415` (**Basic Part**)
-* **`R3`, `R4`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
-* **`R5`, `R7`, `R9`, `R11`, `R14`, `R15`, `R17`, `R21`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
+* **`R3`, `R4`, `R10`** (5.1kΩ, `0805`) : `0805W8F5101T5E` — LCSC `C27834` (**Basic Part**)
+* **`R5`, `R7`, `R11`, `R14`, `R15`, `R17`, `R21`** (10kΩ, `0805`) : `0805W8F1002T5E` — LCSC `C17414` (**Basic Part**)
 * **`R6`** (100Ω, `0805`) : `0805W8F1000T5E` — LCSC `C17408` (**Basic Part**)
 * **`R8`** (120Ω, `1206`) : `1206W4F1200T5E` — LCSC `C17909` (**Basic Part**)
+* **`R9`** (27kΩ, `0805`) : `0805W8F2702T5E` — LCSC `C17593` (**Basic Part**)
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
 * **`R16`, `R18`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
@@ -129,6 +130,6 @@ Toutes les opportunités d'optimisation directe vers le catalogue Basic Parts so
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs, voyants, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (15 composants basculés au total, soit **~45 $ d'économie de frais de bobines** sur chaque série). Les 19 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, précision E96 de `R10`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, voyants, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (16 composants basculés au total, soit **~48 $ d'économie de frais de bobines** sur chaque série). Les 18 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, protections transitoires et circuits intégrés dédiés).
 
 

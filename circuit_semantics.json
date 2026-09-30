@@ -663,13 +663,13 @@
     "R9": {
       "block": "buck_5v",
       "role": "feedback_divider_top",
-      "description": "Résistance haute du pont diviseur de feedback Buck (rail 5V vers VSENSE)",
-      "value": "10kΩ",
+      "description": "Résistance haute du pont diviseur de feedback Buck (rail 5V vers VSENSE, 27 kΩ)",
+      "value": "27kΩ",
       "footprint": "0805",
       "substitutability": "ratio_pair_recalc",
       "coupled_with": "R10",
       "constraints": {
-        "value_ohm": 10000.0,
+        "value_ohm": 27000.0,
         "tolerance": "1%",
         "footprint": "0805"
       },
@@ -682,13 +682,13 @@
     "R10": {
       "block": "buck_5v",
       "role": "feedback_divider_bottom",
-      "description": "Résistance basse du pont diviseur de feedback Buck (VSENSE vers GND)",
-      "value": "1.91kΩ",
+      "description": "Résistance basse du pont diviseur de feedback Buck (VSENSE vers GND, 5.1 kΩ)",
+      "value": "5.1kΩ",
       "footprint": "0805",
       "substitutability": "ratio_pair_recalc",
       "coupled_with": "R9",
       "constraints": {
-        "value_ohm": 1910.0,
+        "value_ohm": 5100.0,
         "tolerance": "1%",
         "footprint": "0805"
       },
