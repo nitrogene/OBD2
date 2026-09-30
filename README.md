@@ -189,12 +189,12 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | 📑 **[DATASHEETS.md](DATASHEETS.md)** | **Référentiel constructeur & Audit de conformité des ICs** : synthèse des 6 datasheets officielles (`datasheet/`), caractéristiques électriques, limites absolues, règles d'implantation PCB et matrice de conformité. |
 | 📐 **[floorplan.json](floorplan.json)** | **Configuration formelle du layout machine-readable** : source unique de vérité physique (dimensions, keepout RF, clusters CEM, règles de proximité et coordonnées d'implantation 2D) pilotant le skill `pcb-placer`. |
 | 🧠 **[circuit_semantics.json](circuit_semantics.json)** | **Référentiel sémantique & intention de schéma machine-readable** : source unique de vérité électrique (rôles fonctionnels des composants, contraintes critiques, tolérances, tensions de service et politiques de substituabilité) pilotant les skills `stingy-schematics`, `review` et `pcb-placer`. |
-| 🔬 **[HARDWARE.md](HARDWARE.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP11`) et règles de layout. |
+| 🔬 **[HARDWARE.md](HARDWARE.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP15`) et règles de layout. |
 | 🤖 **[AUTOMATION.md](AUTOMATION.md)** | **Automatisation IA via EasyEDA Pro** : architecture du pont Node.js, extension `.eext`, configuration des hooks de cycle de vie Antigravity et règles de routage IA. |
 | 💡 **[LEARNINGS.md](LEARNINGS.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
 | 📜 **[AGENTS.md](AGENTS.md)** | **Règles de gouvernance IA** : découplage strict des skills (règle 0), exécution obligatoire sous `uv`, sécurité du pont et protocole de dépouillement. |
 | 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `TODO.md`. |
-| 📁 **`OBD2.eprj2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
+| 📁 **`easyeda/OBD2.epro2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
 
 ---
 
@@ -214,7 +214,7 @@ Le projet intègre et exploite 5 compétences logicielles dédiées (*Skills*) p
 
 ## 7. Démarrage Rapide
 
-1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `OBD2.eprj2`.
+1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `easyeda/OBD2.epro2`.
 2. **Contrôle d'intégrité :**
    - Schéma : Menu `Design` → `Check ERC` (doit retourner 0 erreur, 0 avertissement).
    - PCB : Menu `Design` → `Check DRC` (doit retourner 0 erreur).

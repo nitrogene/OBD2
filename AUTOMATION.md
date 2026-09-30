@@ -62,7 +62,7 @@ npm run server       # Démarre le pont WebSocket/HTTP (port 49620-49629)
 1. Télécharger `run-api-gateway.eext` depuis <https://jlc-ext.com/item/oshwhub/run-api-gateway>.
 2. Dans EasyEDA Pro : **Settings → Extensions → Extension Manager → Import Extension**.
 3. Sélectionner le fichier et vérifier que **"Allow External Interaction"** reste activé.
-4. Ouvrir `OBD2-Scanner.eprj2` : l'extension se connecte automatiquement au serveur en validant le handshake (`service: "easyeda-bridge"`).
+4. Ouvrir `easyeda/OBD2.epro2` : l'extension se connecte automatiquement au serveur en validant le handshake (`service: "easyeda-bridge"`).
 
 ---
 
@@ -122,7 +122,7 @@ asyncPrim.done();
 1. **Pas d'auto-routeur en aveugle :** L'auto-routeur intégré d'EasyEDA ne respecte pas les contraintes d'intégrité RF, différentielles ou thermiques. L'IA doit raisonner piste par piste.
 2. **Relire les positions réelles des pastilles :** Toujours interroger l'API (`pcb_PrimitivePad.get(...)`) plutôt que de se fier à des coordonnées théoriques.
 3. **DRC systématique après chaque lot :** Lancer `pcb_Drc` après chaque groupe de pistes tracées pour intercepter les anomalies immédiatement.
-4. **Sauvegarde préalable :** Toujours versionner ou sauvegarder `OBD2-Scanner.eprj2` avant un lot de modifications en masse.
+4. **Sauvegarde préalable :** Toujours versionner ou sauvegarder `easyeda/OBD2.epro2` avant un lot de modifications en masse.
 5. **Ordre rigoureux de routage :** Paires différentielles USB/CAN d'abord, signaux logiques sensibles ensuite, rails de puissance (12V, 5V, 3.3V) avec largeurs spécifiées enfin.
 6. **Exécution Python obligatoire via `uv` :** Tout script ou outil Python du projet doit impérativement être lancé avec `uv` (ex. `uv run python ...` ou `uv run <script>.py`). Ne jamais appeler `python` nu directement.
 7. **Découplage strict Données vs Moteur :** Les skills d'automatisation sous `.agents/skills/` ne contiennent aucune valeur ou composant en dur (règle `## 0.` d'[`AGENTS.md`](AGENTS.md)). Les données proviennent exclusivement de fichiers de configuration du projet (ex: [`floorplan.json`](floorplan.json)) passés en argument obligatoire (`--config`).

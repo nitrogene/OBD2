@@ -170,9 +170,9 @@ class EasyEDAClient:
         """
         Applique par lot de nouvelles coordonnées et rotations aux composants du PCB.
         Format attendu pour chaque élément de adjustments :
-          {"designator": "C1", "x": 1200.0, "y": 800.0, "rotation": 90.0}
+          {"designator": "<DESIGNATOR>", "x": <X_COORD>, "y": <Y_COORD>, "rotation": <ROT_DEG>}
           ou
-          {"id": "...", "x": 1200.0, "y": 800.0, "rotation": 90.0}
+          {"id": "<PRIMITIVE_ID>", "x": <X_COORD>, "y": <Y_COORD>, "rotation": <ROT_DEG>}
         """
         payload_json = json.dumps(adjustments)
         code = f"""

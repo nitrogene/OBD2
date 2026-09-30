@@ -310,6 +310,7 @@ def main():
     parser.add_argument("--cz", type=float, default=3.3e-9, help="Cz a evaluer (F)")
     parser.add_argument("--cp", type=float, default=220.0e-12, help="Cp a evaluer (F)")
     parser.add_argument("--json", action="store_true", help="Sortie au format JSON machine")
+    parser.add_argument("--designator", type=str, default="", help="Designateur optionnel du circuit cible (ex: U4)")
 
     args = parser.parse_args()
 
@@ -373,18 +374,19 @@ def main():
     if args.json:
         print(json.dumps(asdict(cf), indent=2))
     else:
-        print("=== Calcul du Reseau de Compensation Type II - TPS54331 (U4) ===")
+        des_tag = f" ({args.designator})" if args.designator else ""
+        print(f"=== Calcul du Reseau de Compensation Type II - TPS54331{des_tag} ===")
         print(f"Fco visee       : {cf.fco_target/1e3:.1f} kHz")
         print(f"Perte de phase  : {cf.phase_loss_deg:.1f} deg")
         print(f"Boost requis    : {cf.phase_boost_deg:.1f} deg")
         print(f"Fz1 / Fp1       : {cf.fz1:.0f} Hz / {cf.fp1:.0f} Hz")
         print()
-        print(f"Rz calcule      : {cf.rz_ideal:.0f} Ohm  -> Standard E96 : {cf.rz_e96:.0f} Ohm (Basic Part dispo: 10 kOhm)")
-        print(f"Cz calcule      : {cf.cz_ideal*1e9:.2f} nF -> Standard E96 : {cf.cz_e96*1e9:.2f} nF (Basic Part dispo: 3.3 nF)")
-        print(f"Cp calcule      : {cf.cp_ideal*1e12:.0f} pF -> Standard E96 : {cf.cp_e96*1e12:.0f} pF (Basic Part dispo: 220 pF)")
+        print(f"Rz calcule      : {cf.rz_ideal:.0f} Ohm  -> Standard E96 : {cf.rz_e96:.0f} Ohm")
+        print(f"Cz calcule      : {cf.cz_ideal*1e9:.2f} nF -> Standard E96 : {cf.cz_e96*1e9:.2f} nF")
+        print(f"Cp calcule      : {cf.cp_ideal*1e12:.0f} pF -> Standard E96 : {cf.cp_e96*1e12:.0f} pF")
         print("\nPour optimiser ou tester l'enveloppe complete :")
-        print("  python tps54331_compensation.py --optimize")
-        print("  python tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12")
+        print("  uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --optimize")
+        print("  uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12")
 
 
 if __name__ == "__main__":

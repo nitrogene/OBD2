@@ -38,9 +38,9 @@ La famille TPS54331 utilise une architecture **Peak Current-Mode Control** à fr
 ## 2. Topologie du Réseau de Compensation Type II
 
 Le réseau est connecté entre la broche `COMP` et la masse (`GND`) :
-1. **Branche série Zéro / Pôle bas :** Résistance Rz (`R11`) en série avec le condensateur Cz (`C9`).
+1. **Branche série Zéro / Pôle bas :** Résistance Rz en série avec le condensateur Cz.
    * Zéro de boucle : `fz1 = 1 / (2π · Rz · Cz)`
-2. **Condensateur parallèle Haute Fréquence :** Condensateur Cp (`C13`) en parallèle de la branche Rz + Cz.
+2. **Condensateur parallèle Haute Fréquence :** Condensateur Cp en parallèle de la branche Rz + Cz.
    * Pôle haute fréquence : `fp1 ≈ 1 / (2π · Rz · Cp)` (avec Cz >> Cp)
    * Rôle : filtrage des bruits de commutation (570 kHz) sur la broche haute impédance `COMP`.
 
@@ -53,14 +53,14 @@ Le script est situé dans `scripts/tps54331_compensation.py`.
 ### A. Calcul nominal (Équations fermées TI 16-28)
 Calcul déterministe pour une fréquence de coupure Fco et une marge de phase cibles :
 ```bash
-python .agents/skills/buck-compensation/scripts/tps54331_compensation.py
+uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py
 ```
-*Arguments optionnels :* `--vout 5.0 --cout 15e-6 --iomax 0.6 --fco 20e3 --pm 65.0`
+*Arguments optionnels :* `--vout 5.0 --cout 15e-6 --iomax 0.6 --fco 20e3 --pm 65.0 --designator U4`
 
 ### B. Évaluation précise d'un triplet existant (`--eval`)
 Analyse petit-signal exacte par résolution de la fonction de transfert en boucle ouverte T(s) :
 ```bash
-python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12
+uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12
 ```
 *Résultats fournis :*
 * Fréquence de coupure exacte Fco (gain = 0 dB)
@@ -71,12 +71,12 @@ python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval 
 ### C. Optimisation paramétrique sur le catalogue JLCPCB (`--optimize`)
 Scanne les combinaisons de passifs standards disponibles en **Basic Parts** et classe les meilleures solutions par score de stabilité :
 ```bash
-python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --optimize
+uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --optimize
 ```
 
 ### D. Sortie formatée JSON pour intégration automatique par un agent (`--json`)
 ```bash
-python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12 --json
+uv run python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval --rz 10000 --cz 3.3e-9 --cp 220e-12 --json
 ```
 
 ---
@@ -84,7 +84,7 @@ python .agents/skills/buck-compensation/scripts/tps54331_compensation.py --eval 
 ## 4. Règles de Déclenchement Automatique
 
 L'agent doit ré-exécuter ce script dès que l'un des événements suivants survient :
-1. Modification du condensateur de sortie `C8` (valeur nominale, technologie ou tension nominale modifiant le dérating DC-bias).
-2. Modification de l'inductance de puissance `L1`.
+1. Modification du condensateur de sortie `Cout` (valeur nominale, technologie ou tension nominale modifiant le dérating DC-bias).
+2. Modification de l'inductance de puissance `L` (valeur nominale ou courant de saturation).
 3. Réévaluation de la consommation maximale du montage (ex. activation conjointe Wi-Fi + BLE + transceivers).
 4. Détection d'un écart supérieur à **15%** entre les valeurs posées sur le schéma et le calcul optimal.

@@ -122,7 +122,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 | Paramètre | Symbole | Min | Typique | Max | Unité | Remarques constructeur |
 | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **Tension d'alimentation batterie** | VS (Pin 7) | 4.5 | 12.0 | 36.0 | V | Fonctionnement nominal sous 12V habitacle. |
-| **Alimentation logique** | VCC (Pin 8) | **3.0** | **3.3 / 5.0** | **7.0** | V | Plage de service logique (Table 5). 3.3V pleinement supporté. |
+| **Alimentation logique** | VCC (Pin 3) | **3.0** | **3.3 / 5.0** | **7.0** | V | Plage de service logique (Table 5). Note 1 : "Specs tested at 5V only, compliance on Vcc full range guaranteed by design". 3.3V pleinement supporté. |
 | **Limite absolue batterie VS** | VS_max | -24.0 | — | +40.0 | V | Protection intégrée contre l'inversion jusqu'à -24V. |
 | **Transitoires batterie VS** | VS_transient | -100 | — | +100 | V | Impulsions transitoires ISO 7637-1. |
 | **Limite absolue broche K (Pin 6)** | VK_max | -24.0 | — | VS + 0.3 | V | Borne supérieure plafonnée par VS (max 40V). |
@@ -141,7 +141,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
    * **Pin 7 : `VS`** (Alimentation haute tension batterie 12V issue de `+12V_PROT`).
    * **Pin 8 : `LI`** (Loop Input - non utilisé, ponté directement sur la broche adjacente 7 `VS`).
 2. **Conformité & Sécurité de l'Alimentation Logique VCC (Pin 3) :**
-   * *Spécification ST officielle (Table 5 & 6) :* La plage de fonctionnement de $V_{CC}$ s'étend de **3.0 V à 7.0 V** (le minimum de 4.5V de la datasheet concerne uniquement la tension batterie $V_S$). Un fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme.
+   * *Spécification ST officielle (Table 5, note 1) :* La plage de service recommandée de $V_{CC}$ s'étend de **3.0 V à 7.0 V** (Table 5 : Min 3.0 V, Typ 5.0 V, Max 7.0 V ; le seuil de 4.5 V concerne uniquement la tension batterie $V_S$). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Le fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme et garanti par conception constructeur.
    * *Structure interne de RX et danger du 5V :* La broche 1 (`RX`) possède une résistance de pull-up interne active reliée à $V_{CC}$ ($R_{RX} \approx 10\,\text{k}\Omega$). Elle n'est PAS un collecteur ouvert pur.
    * *Protection vitale de l'ESP32-S3 :* Les GPIOs de l'ESP32-S3 ne sont **pas tolérants 5V** (limite absolue à $3.6\,\text{V}$). Si $V_{CC}$ était alimenté en 5V, RX délivrerait ~4.9V dans le GPIO4, entraînant sa destruction immédiate.
    * *Décision de conception :* **VCC doit impérativement rester raccordé au rail `3.3V`** avec son condensateur de découplage de 100 nF (`C4`).
@@ -201,7 +201,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 3. **Diode Schottky de Roue Libre (`D2`) :**
    * Doit être une diode Schottky ultra-rapide (faible VF < 0.5V), tenue en tension inverse >= 40 V et courant moyen assigné >= 3 A. La référence `SS34` (40V, 3A, boîtier SMA) est conforme aux préconisations TI.
 4. **Condensateur de Bootstrap (`C5`) :**
-   * Céramique de **0.1 µF à 1 µF** connecté entre `BOOT` (pin 1) et `PH` (pin 8). Un modèle 1 µF 50V X5R (`C15849`) est implémenté.
+   * Condensateur céramique impératif de **0.1 µF (100 nF)** connecté entre `BOOT` (pin 1) et `PH` (pin 8) pour alimenter le driver de grille du MOSFET high-side interne (TI TPS54331 §8.2.2.8). Le schéma implémente **`C5` = 100 nF 50V X7R 0603** (`CC0603KRX7R9BB104`, LCSC `C14663`, *Basic Part*).
 5. **Inductance de Puissance (`L1`) :**
    * Valeur nominale calculée : 10 µH pour un ripple de courant compris entre 20% et 40%.
    * Courant de saturation : Isat >= 3.0 A. Le composant blindé `YNR6045-100M` (Isat = 3.6 A) garantit qu'aucune saturation magnétique n'intervient.
@@ -254,9 +254,9 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 2. **Condensateur de Sortie (COUT) — Règle de Stabilité Inconditionnelle :**
    * *Avertissement constructeur ST :* Le régulateur `LDL1117` intègre une boucle interne rapide qui exige un condensateur de sortie COUT >= 4.7 µF avec une résistance série équivalente (ESR) comprise entre 10 mΩ et 2 Ω pour garantir sa marge de phase.
    * *Audit de notre circuit :*
-     * Dans notre schéma actuel, `C6` (immédiatement en sortie de U5 sur le net `3.3V_PRE`) a une valeur de **1 µF** (`C15849`).
-     * Le condensateur réservoir Bulk `C11` (**10 µF**) se situe juste après la perle de ferrite `FB1` sur le net `3.3V`.
-     * **Préconisation d'amélioration :** Porter `C6` à **4.7 µF** ou **10 µF 50V 1206 (`C13585` - Basic Part)** directement sur `3.3V_PRE` avant `FB1` sécurise à 100% la marge de phase intrinsèque du LDO selon la courbe de stabilité de la datasheet ST.
+     * `C6` (immédiatement en sortie de U5 sur le net `3.3V_PRE` en amont de `FB1`) est dimensionné à **10 µF 50V 1206** (`CL31A106KBHNNNE`, LCSC `C13585`, *Basic Part*).
+     * Le condensateur réservoir Bulk `C11` (**10 µF**) complète le filtrage après la perle de ferrite `FB1` sur le net `3.3V`.
+     * **Conformité assurée :** Avec $C_6 = 10\,\mu\text{F} \ge 4.7\,\mu\text{F}$ directement sur `3.3V_PRE` avant `FB1`, la marge de phase intrinsèque du LDO est 100% garantie selon la courbe de stabilité de la datasheet ST.
 
 #### C. Préconisations Constructeur — Implantation & Thermique
 * **Bilan Thermique :**
@@ -271,7 +271,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 #### D. Confrontation avec le Schéma Actuel
 * [x] **Conforme :** Tension d'entrée 5V et différentiel de 1.7V assurant un fonctionnement très au-dessus du dropout (350 mV).
 * [x] **Conforme :** Perle de ferrite `FB1` (120 Ω @ 100 MHz) associée pour créer un filtre en Pi avec découplages.
-* [!] **Point d'attention (Stabilité) :** Remplacer ou compléter `C6` (1 µF) par une capacité >= 4.7 µF (ex. 10 µF `C13585` Basic Part) avant `FB1` pour respecter scrupuleusement la préconisation constructeur ST.
+* [x] **[CONFORME] Stabilité LDO :** Condensateur `C6` porté à 10 µF 50V 1206 (*Basic Part* `C13585`) directement sur `3.3V_PRE` avant `FB1`, satisfaisant rigoureusement la préconisation constructeur ST ($C_{OUT} \ge 4.7\,\mu\text{F}$).
 
 ---
 
@@ -331,7 +331,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 | **`U2`** (TJA1051T) | Adaptation I/O VIO = 3.3 V pour MCU 3.3V | Rail 3.3V (LDO) avec C3 = 100 nF | **CONFORME** | Aucune. |
 | **`U2`** (TJA1051T) | Broche 8 (`S`) tirée à GND pour mode actif | Raccordée en direct au net GND | **CONFORME** | Aucune. |
 | **`U2`** (TJA1051T) | Protection transitoire différentielle CAN | Double TVS U8 (NUP2105L 24V) | **CONFORME** | Aucune. |
-| **`U3`** (L9637D) | Alimentation logique VCC entre 3.0V et 7.0V | Raccordé au rail régulé 3.3V (C4 = 100 nF) | **CONFORME** | Aucune (VCC = 3.3V protège le GPIO4 de l'ESP32-S3 non tolérant 5V). |
+| **`U3`** (L9637D) | Alimentation logique VCC entre 3.0V et 7.0V | Raccordé au rail régulé 3.3V (C4 = 100 nF) | **CONFORME** | Table 5 Note 1 (garanti par conception). VCC = 3.3V protège le GPIO4 de l'ESP32-S3 non tolérant 5V. |
 | **`U3`** (L9637D) | Alimentation batterie VS sur rail sécurisé | Pin 7 reliée à `+12V_PROT` (après Q1/F1) | **CONFORME** | Protégé contre les inversions et transitoires. |
 | **`U3`** (L9637D) | Pull-up normalisée ISO 9141-2 (500 Ω) | R16 // R18 = 2 × 1 kΩ en boîtier 1206 (2 × 250 mW) | **CONFORME** | Répond à l'exigence 510 Ω ±5% avec tenue 415 mW. |
 | **`U3`** (L9637D) | Entrée non utilisée LI au repos inactif | Pin 8 pontée directement sur Pin 7 (VS) | **CONFORME** | Comparateur L verrouillé au repos, 0 µA, immunité CEM totale. |
@@ -349,4 +349,4 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 1. **Priorité 1 — Boucle Buck U4 (SW / PH) :** Implanter `C14`, `C7`, `U4`, `D2` et `L1` en cluster ultra-compact à l'Ouest. Eloigner formellement le réseau COMP (`R11`, `C9`, `C13`) de la broche 8 (PH).
 2. **Priorité 2 — Frontière d'Entrée & ESD :** Les composants de clamp (`D1`, `D5`, `U8`, `U6`, `U7`) doivent intercepter physiquement les signaux directement au ras des broches des connecteurs (`J1` OBD-II et `J2` USB-C) avant toute entrée dans les transceivers ou le microcontrôleur.
 3. **Priorité 3 — Zone Radio ESP32 :** Maintenir la zone d'exclusion RF absolue sous l'antenne méandre, implanter `C11` (10 µF) et le réseau de reset `C12`/`R15` au plus près des broches 1, 2 et 3.
-4. **Priorité 4 — Dissipation Thermique :** Prévoir des surfaces de cuivre généreuses et des réseaux de vias thermiques pour le P-MOS `Q1` (60V), le LDO `U5` (SOT-223), la résistance de pull-up K-Line `R16` (1206) et le pad central de l'ESP32 `U1`.
+4. **Priorité 4 — Dissipation Thermique :** Prévoir des surfaces de cuivre généreuses et des réseaux de vias thermiques pour le P-MOS `Q1` (60V), le LDO `U5` (SOT-223), les résistances de pull-up K-Line `R16` // `R18` (2 × 1206) et le pad central de l'ESP32 `U1`.
