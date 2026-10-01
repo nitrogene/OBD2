@@ -25,7 +25,7 @@
       "y": 700.0,
       "rot": 270.0,
       "fixed": true,
-      "description": "Bornier à ressort sans vis 6 contacts au pas 3.5 mm centré sur la face Ouest"
+      "description": "Bornier à ressort sans vis 5 contacts au pas 3.5 mm centré sur la face Ouest"
     },
     "J2": {
       "x": 1600.0,
@@ -60,7 +60,7 @@
       "R12", "R13", "C10", "D6", "TP9"
     ],
     "OBD_TRANSCEIVERS": [
-      "U8", "D5", "R16", "U2", "R8", "JP1", "C3", "C15", "TP7", "TP8", "U3", "R1", "R2", "C4", "TP2", "TP15"
+      "U8", "D5", "R16", "R18", "JP2", "U2", "R8", "JP1", "H2", "C3", "C15", "TP7", "TP8", "U3", "R1", "R2", "H1", "C4", "TP2", "TP15"
     ],
     "BUCK_CONVERTER": [
       "U4", "C7", "C14", "D2", "L1", "C8", "C16", "C5", "R9", "R10", "R11", "C9", "C13", "TP4", "TP5", "TP12", "TP13"
@@ -200,7 +200,7 @@
     }
   ],
   "components": {
-    "J1":   { "x": 200.0,  "y": 700.0,  "rot": 270.0, "layer": 1, "desc": "Connecteur OBD-II 16 broches (Ouest)" },
+    "J1":   { "x": 200.0,  "y": 700.0,  "rot": 270.0, "layer": 1, "desc": "Bornier à ressort sans vis 5 contacts (Ouest)" },
     "J2":   { "x": 1600.0, "y": 150.0,  "rot": 0.0,   "layer": 1, "desc": "Prise USB-C affleurante (Sud)" },
     "U1":   { "x": 2550.0, "y": 700.0,  "rot": 0.0,   "layer": 1, "desc": "ESP32-S3 (Est, antenne dégagée)" },
 
@@ -221,10 +221,13 @@
 
     "U8":   { "x": 500.0,  "y": 600.0,  "rot": 0.0,   "layer": 1, "desc": "TVS double CAN NUP2105L" },
     "D5":   { "x": 500.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "TVS K-Line SMF24CA" },
-    "R16":  { "x": 650.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-up K-Line 1k 1206" },
+    "R16":  { "x": 650.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-up K-Line 1k 1206 (1/2)" },
+    "R18":  { "x": 650.0,  "y": 375.0,  "rot": 0.0,   "layer": 1, "desc": "Pull-up K-Line 1k 1206 (2/2)" },
+    "JP2":  { "x": 750.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Cavalier pull-up K-Line 500R" },
     "U2":   { "x": 1050.0, "y": 800.0,  "rot": 0.0,   "layer": 1, "desc": "Transceiver CAN TJA1051T" },
     "R8":   { "x": 900.0,  "y": 850.0,  "rot": 0.0,   "layer": 1, "desc": "Terminaison CAN 120R 1206" },
     "JP1":  { "x": 900.0,  "y": 950.0,  "rot": 0.0,   "layer": 1, "desc": "Cavalier terminaison CAN" },
+    "H2":   { "x": 1150.0, "y": 800.0,  "rot": 0.0,   "layer": 1, "desc": "Header 1x3 CAN TWAI diagnostic (TWAI_RX, TWAI_TX, GND)" },
     "C3":   { "x": 1150.0, "y": 925.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VIO U2 (100nF)" },
     "C15":  { "x": 1050.0, "y": 925.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VCC U2 (100nF)" },
     "TP7":  { "x": 900.0,  "y": 750.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point CANH" },
@@ -232,6 +235,7 @@
     "U3":   { "x": 1050.0, "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Transceiver K-Line L9637D" },
     "R1":   { "x": 1200.0, "y": 500.0,  "rot": 0.0,   "layer": 1, "desc": "Amortissement RX K-Line 10R" },
     "R2":   { "x": 1200.0, "y": 400.0,  "rot": 0.0,   "layer": 1, "desc": "Amortissement TX K-Line 10R" },
+    "H1":   { "x": 1300.0, "y": 400.0,  "rot": 0.0,   "layer": 1, "desc": "Header 1x3 K-Line diagnostic (KLINE_RX, KLINE_TX, GND)" },
     "C4":   { "x": 1150.0, "y": 325.0,  "rot": 0.0,   "layer": 1, "desc": "Découplage VCC U3 (100nF)" },
     "TP2":  { "x": 900.0,  "y": 450.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point K_LINE" },
     "TP15": { "x": 1300.0, "y": 500.0,  "rot": 0.0,   "layer": 1, "desc": "Test-point KLINE_RX (logique UART 3.3V)" },

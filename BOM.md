@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
+Inventaire exhaustif des **81 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
 
 ---
 
@@ -34,7 +34,9 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 | **D6** | — | `BAV199,215` | `C40919` | Extended Part | `SOT-23` | Diode double silicium ultra-faible fuite (< 5 nA à chaud) clamp rail-to-rail ADC1 VBAT_SENSE (Nexperia) |
 | **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
 | **FB1** | — | `BLM18PG121SN1D` | `C14709` | **Basic Part** | `0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
-| **J1** | — | `WJ250B-3.5-06P-11-00A` | `C8418` | Extended Part | `CONN-TH_6P-P3.50_WJ250B-3.50-6P` | Bornier à ressort PCB sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex, 250V 8A, broches quinconce) |
+| **H1** | 2.54-1*3P | `2.54-1*3P针` | `C49257` | Extended Part | `插件,P=2.54mm` | Connecteur mâle 1×3 pas 2.54 mm pour analyseur logique USB K-Line (KLINE_RX, KLINE_TX, GND) |
+| **H2** | 2.54-1*3P | `2.54-1*3P针` | `C49257` | Extended Part | `插件,P=2.54mm` | Connecteur mâle 1×3 pas 2.54 mm pour analyseur logique USB CAN TWAI (TWAI_RX, TWAI_TX, GND) |
+| **J1** | — | `WJ250B-3.5-05P-11-00A` | `C8453` | Extended Part | `CONN-TH_5P-P3.50_WJ250B-3.50-5P` | Bornier à ressort PCB sans vis 5 contacts au pas 3.5 mm (Ningbo Kangnex, 250V 8A, broches quinconce) |
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
 | **JP1** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur terminaison CAN 120Ω (Shunt = Banc ; Ouvert = Voiture) |
 | **JP2** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur pull-up K-Line 500Ω (Shunt = Banc ECU ; Ouvert = Voiture) |
@@ -92,11 +94,11 @@ Inventaire exhaustif des **78 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **78 composants** du circuit (dont 15 points de test sans composant physique à poser) :
+Sur les **81 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 63 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **45 composants** (71.4% des composants assemblés).
-- **Extended Parts (~3 $ par bobine changée) :** **18 composants** (strict minimum technique).
+- **Composants physiques à assembler :** 66 composants.
+- **Basic Parts (0 $ de frais de chargement) :** **45 composants** (68.2% des composants assemblés).
+- **Extended Parts (~3 $ par bobine changée) :** **21 composants** (dont H1 et H2 partagent la même référence `C49257`, et JP1/JP2 partagent `C5360898`, soit 19 références uniques approvisionnées).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
@@ -131,6 +133,6 @@ Toutes les opportunités d'optimisation directe vers le catalogue Basic Parts so
 
 ### C. Synthèse de l'Optimisation des Coûts
 
-L'ensemble des composants passifs, voyants, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (16 composants basculés au total, soit **~48 $ d'économie de frais de bobines** sur chaque série). Les 18 autres composants restants sont strictement justifiés par l'architecture automobile (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, protections transitoires et circuits intégrés dédiés).
+L'ensemble des composants passifs, voyants, boutons et semi-conducteurs standards éligibles à une correspondance parfaite sont désormais basculés en **Basic Part** (16 composants basculés au total, soit **~48 $ d'économie de frais de bobines** sur chaque série). Les 21 autres composants restants sont strictement justifiés par l'architecture automobile et le diagnostic banc (tenue 60V de `Q1`, LDO ultra-faible chute `U5`, transceivers dédiés, protections transitoires et embases de test/configuration `JP1`, `JP2`, `H1`, `H2`).
 
 

@@ -8,7 +8,7 @@
     "+12V": {
       "nominal_v": 12.0,
       "max_v": 16.0,
-      "source": "J1.1",
+      "source": "J1.4",
       "type": "battery_raw"
     },
     "+12V_FUSED": {
@@ -464,12 +464,34 @@
         "footprint": "0603"
       }
     },
+    "H1": {
+      "block": "kline_transceiver",
+      "role": "kline_logic_analyzer_header",
+      "description": "Embase mâle 1x3 au pas 2.54 mm pour analyseur logique USB K-Line (KLINE_RX, KLINE_TX, GND)",
+      "value": "2.54-1*3P",
+      "footprint": "插件,P=2.54mm",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
+    "H2": {
+      "block": "can_transceiver",
+      "role": "can_logic_analyzer_header",
+      "description": "Embase mâle 1x3 au pas 2.54 mm pour analyseur logique USB CAN TWAI (TWAI_RX, TWAI_TX, GND)",
+      "value": "2.54-1*3P",
+      "footprint": "插件,P=2.54mm",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
     "J1": {
       "block": "protection_12v",
       "role": "main_terminal_block",
-      "description": "Bornier à ressort PCB sans vis 6 contacts au pas 3.5 mm (WJ250B-3.5-06P-11-00A) pour alimentation 12V labo et bus diagnostic",
-      "value": "WJ250B-3.5-06P-11-00A",
-      "footprint": "CONN-TH_6P-P3.50_WJ250B-3.50-6P",
+      "description": "Bornier à ressort PCB sans vis 5 contacts au pas 3.5 mm (WJ250B-3.5-05P-11-00A) pour alimentation 12V labo et bus diagnostic",
+      "value": "WJ250B-3.5-05P-11-00A",
+      "footprint": "CONN-TH_5P-P3.50_WJ250B-3.50-5P",
       "substitutability": "locked",
       "constraints": {
         "mechanical": true

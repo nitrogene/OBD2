@@ -72,7 +72,7 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 
 | Domaine | Norme / Standard | Titre & Périmètre Couvert | Statut | Justification Matérielle & Choix de Conception | Limite / Condition d'Usage |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **Connectique** | **SAE J1962 / ISO 15031-3** | Connecteur de diagnostic OBD-II | 🟢 **100%** | • Embase mâle 16 broches traversante coudée Format **Type A** (détrompeur central 12V).<br>• Brochage rigoureusement standard (16 = +12V, 4/5 = GND, 6/14 = CAN, 7 = K-Line).<br>• Broches constructeurs non utilisées laissées isolées (NC). | Respect de l'enveloppe mécanique d'enfichage. |
+| **Connectique** | **SAE J1962 / ISO 15031-3** | Bornier de diagnostic & banc | 🟢 **100%** | • Bornier PCB à ressort sans vis 5 contacts au pas 3.5 mm (`WJ250B-3.5-05P-11-00A`, 250V 8A) pour raccordement faisceau véhicule pigtail ou banc d'essais.<br>• Brochage direct : 4 (+12V), 8 (GND), 1 (K_LINE), 5 (CANH), 9 (CANL). | Raccordement direct par fils dénudés ou nappe. |
 | **Bus CAN** | **ISO 11898-2** | Couche physique différentielle CAN High-Speed | 🟢 **100%** | • Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique `VIO` (3.3V).<br>• Paires différentielles symétriques 120 Ω.<br>• Terminaison 120 Ω (`R8`) commutable par cavalier `JP1` (obligatoire). | Cavalier `JP1` impérativement **ouvert** sur véhicule. |
 | **Bus K-Line** | **ISO 9141-2 & ISO 14230 (KWP2000)** | Ligne K-Line mono-fil bidirectionnelle 12V | 🟢 **100%** | • Transceiver dédié STMicroelectronics **L9637D** conforme ISO 9141.<br>• Pull-up normalisée à 500 Ω ($R_{16} // R_{19}$ boîtiers 1206) garantissant $t_r < 2\,\mu\text{s}$ sur 2 nF.<br>• Compatible init lente 5-baud et *Fast-Init* 25 ms. | Débit limité à 10.4 kbps (spécification ISO). |
 | **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Dépend de l'implémentation de la pile logicielle FreeRTOS. |
@@ -173,8 +173,8 @@ flowchart TD
 ## 4. État Actuel (work in progress) & Prochaine Étape
 
 * **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 60 composants au total avec intégration des protections transitoires/ESD `U8` (CAN) et `D5` (K-Line), résistance `R6` ajustée à 100 Ω pour visibilité LED plein jour, ERC strict = 0 sous EasyEDA Pro.
-* **Placement PCB :** Placement 2D validé pour l'ensemble des composants avec connecteur OBD-II `J1` coudé à 90°, prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm), DRC = 0.
-* **Prochaine étape immédiate :** Synchroniser le layout PCB depuis le schéma (`Design > Update PCB`) pour instancier les empreintes de `U8` (SOT-23) et `D5` (SOD-123FL), finaliser le placement au plus près de `J1`, puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
+* **Placement PCB :** Placement 2D pour l'ensemble des composants avec bornier d'entrée `J1` 5 contacts (`WJ250B-3.5-05P`), prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm).
+* **Prochaine étape immédiate :** Synchroniser le layout PCB depuis le schéma (`Design > Update PCB`) pour instancier les empreintes des nouveaux composants (`U8`, `D5`, `JP1`, `JP2`, `H1`, `H2`, `R18`, et `J1` 5P), finaliser le placement, puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
 
 ---
 

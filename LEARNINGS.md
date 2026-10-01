@@ -45,6 +45,7 @@ Pour maintenir un projet propre, modulaire et directement exploitable par les ag
 | **Stubs vides de `createNetLabel`** | `eda.sch_PrimitiveAttribute.createNetLabel()` est un stub vide dans le runtime actuel. | **Utiliser des NetPorts :** `eda.sch_PrimitiveComponent.createNetPort(...)`, qui connecte instantanément tout fil superposé. |
 | **Instanciation de composants en script** | Passer un objet allégé `{ libraryUuid, uuid }` bloque avec timeout de 30s. | **Résoudre d'abord le Device complet** via `eda.lib_Device.search(...)` avant d'appeler `sch_PrimitiveComponent.create(devs[0], ...)`. |
 | **Orientation de l'axe Y schématique** | Sur une feuille de schéma (`documentType: 1`), **l'axe Y est orienté vers le HAUT** (inversé par rapport au canvas PCB). | Vérifier les coordonnées : `y = 0` est en bas de page A4, `y = 825` est en haut. |
+| **Énumération multi-feuilles (`sch_PrimitiveComponent.getAll`)** | `eda.sch_PrimitiveComponent.getAll(undefined, true)` peut omettre des composants si les feuilles associées n'ont pas encore été ouvertes dans l'éditeur (non chargées en mémoire). | **Itérer sur les feuilles via `eda.dmt_Schematic.getAllSchematicPagesInfo()`**, activer chaque onglet avec `eda.dmt_EditorControl.openDocument(page.uuid)`, puis exécuter `getAll()` feuille par feuille. |
 
 ### B. Layout PCB & Primitives (`eda.pcb_*`)
 

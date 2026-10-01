@@ -47,9 +47,11 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [x] **Créer le dossier `datasheet/` et le référentiel technique [`DATASHEETS.md`](DATASHEETS.md) :** Centralisation des 6 datasheets officielles (`U1` ESP32-S3, `U2` TJA1051T, `U3` L9637D, `U4` TPS54331, `U5` LDL1117S33R, `U8` NUP2105L), extraction des caractéristiques électriques, limites absolues (*Absolute Maximum Ratings*), règles d'implantation PCB (keepouts, boucles di/dt, thermiques) et matrice d'audit de conformité servant de source de vérité technique.
 
 ### 1.4 Architecture Bi-Mode (Banc ECU / Scanner OBD) & Connectique [review003]
-- [x] **[CONFORME / VALIDÉ] Remplacement du connecteur OBD-II par un bornier PCB à ressort 6 contacts [review003 I2] :** Connecteur SAE J1962 16 broches traversant remplacé par le bornier PCB à ressort sans vis 6 contacts au pas 3.5 mm (Ningbo Kangnex `WJ250B-3.5-06P-11-00A`, LCSC `C8418`, 250V 8A, broches quinconce anti-arrachement). Implémentation physique validée sur la page 1 du schéma (`easyeda/OBD2.epro2` et planche HD `SCH_Alimentation.png`), contrôle ERC = 0 validé via API, ordre physique des 6 bornes de gauche à droite acté : Borne 1 `+12V` (Pin 1), Borne 2 `K_LINE` (Pin 4), Borne 3 `GND` sonde `GND_TEST` (Pin 5), Borne 4 `CANH` (Pin 8), Borne 5 `GND` alim (Pin 9), Borne 6 `CANL` (Pin 12). `BOM.md`, `circuit_semantics.json`, `floorplan.json` et `HARDWARE.md` 100% synchronisés.
+- [x] **[CONFORME / VALIDÉ] Remplacement du connecteur OBD-II par un bornier PCB à ressort 5 contacts [review003 I2] :** Bornier PCB à ressort sans vis 5 contacts au pas 3.5 mm (Ningbo Kangnex `WJ250B-3.5-05P-11-00A`, LCSC `C8453`, 250V 8A, broches quinconce anti-arrachement, empreinte `CONN-TH_5P-P3.50_WJ250B-3.50-5P`). Implémentation physique validée sur la page 1 du schéma, contrôle ERC = 0 validé via API, affectation des 5 broches : Broche 4 `+12V`, Broche 8 `GND`, Broche 1 `K_LINE`, Broche 5 `CANH`, Broche 9 `CANL`. `BOM.md`, `circuit_semantics.json`, `floorplan.json` et `HARDWARE.md` 100% synchronisés.
 - [x] **[CONFORME / VALIDÉ] Ajout d'un cavalier de débrayage de la pull-up K-Line [review003 I1] :** Embase mâle 1×2 broches au pas 2.54 mm (`JP2` : `PZ2.54-1*2`, LCSC `C5360898`) insérée en série stricte entre la pull-up 500 Ω (`R16` // `R18`) et la ligne `K_LINE` sur la page 3 du schéma (`easyeda/OBD2.epro2` et planche HD `SCH_Transceiver K-Line.png`). Contrôle ERC = 0 validé via API. Configuration bi-mode : ouvert par défaut en mode Voiture/Scanner ($R_{in} \ge 100\,\text{k}\Omega$ ISO 9141-2 sans shunt), fermé par shunt en mode Banc simulateur ECU (pull-up 500 Ω active). `BOM.md`, `circuit_semantics.json`, `HARDWARE.md` 100% synchronisés.
 - [ ] **Découplage HF sur le rail d'alimentation USB-C VBUS [review003 M1] :** Ajouter un condensateur céramique de découplage de 100 nF 50V X7R 0603 (*Basic Part* `C14663`) en parallèle direct sur `VBUS_5V` au plus près du connecteur USB-C `J2` en complément du condensateur réservoir de 10 µF (`C18`) pour absorber les micro-transitoires lors des branchements à chaud sur PC.
+- [x] **[CONFORME / VALIDÉ] Connecteurs de diagnostic & debug pour analyseur logique USB (`H1` et `H2`) :** Deux embases mâles 1×3 broches au pas 2.54 mm traversantes (`2.54-1*3P针`, LCSC `C49257`, empreinte `HDR-TH_3P-P2.54-V-M`) implantées sur le schéma : `H1` sur la page 3 (K-Line : broche 1 `KLINE_RX`, broche 2 `KLINE_TX`, broche 3 `GND`) et `H2` sur la page 2 (CAN : broche 1 `TWAI_RX`, broche 2 `TWAI_TX`, broche 3 `GND`), permettant le raccordement direct par câbles Dupont femelles d'un analyseur logique USB 24 MHz 8 voies pour espionnage et décodage simultané des protocoles. Planches HD exportées, `BOM.md`, `circuit_semantics.json`, `HARDWARE.md` et `floorplan.json` 100% synchronisés.
+- [ ] **Vérification et alignement des codes LCSC pour `R18`, `R19` et `R20` (Basic Parts JLCPCB) :** Vérifier et réassigner dans le schéma EasyEDA Pro les codes LCSC des 3 résistances actuellement renseignées en Extended Parts (`R18` 1 kΩ 1206 en `C52199` au lieu de `C4410` commun avec `R16` ; `R19` 510 kΩ 0805 en `C17733` au lieu de `C17596` ; `R20` 91 kΩ 0805 en `C17866` au lieu de `C17604`) afin de garantir le statut *Basic Part* (0 $ de frais de chargement de bobine sur chaque référence) en conformité avec [`BOM.md`](BOM.md).
 - [ ] **Documentation formelle des 3 cas d'usage cibles (`README.md`, `HARDWARE.md`) :** Rédiger les fiches d'architecture, schémas de câblage et tableaux d'état des cavaliers (cavalier CAN 120Ω et cavalier K-Line 500Ω) pour les 3 profils opérationnels : Cas 1 (Banc d'essais bi-cartes miroir avec alim de labo 12V et double USB-C), Cas 2 (Nominal véhicule via faisceau pigtail OBD-II), et Cas 3 (Nominal + Debug in situ avec PC sur batterie et règles d'isolation de masse).
 - [ ] **Revue complète du schéma électronique :** Faire une revue systématique et approfondie de l'intégralité du schéma sous EasyEDA Pro en s'appuyant notamment sur [`DATASHEETS.md`](DATASHEETS.md) (vérification rigoureuse des préconisations constructeurs, alimentations, découplages, broches non connectées, seuils logiques et protections).
 
@@ -63,7 +65,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 
 ### 2.1 Synchronisation & Mécanique
 - [ ] Synchroniser le schéma vers le PCB (*« Update PCB from Schematic »* dans EasyEDA Pro) pour importer les nouvelles empreintes et aligner la netlist à 100%.
-- [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'implantation du bornier 6P à l'Ouest.
+- [ ] Valider le contour mécanique (81.28 × 35.56 mm / 3200 × 1400 mil), l'affleurement de `J2` (USB-C) au Sud pour la coque et l'implantation du bornier 5P à l'Ouest.
 - [ ] Mettre à jour [`floorplan.json`](floorplan.json) avec la BOM consolidée et injecter le placement initial (script de placement direct réutilisant le client pont d'API).
 
 ### 2.2 Agencement des clusters & Règles CEM de proximité (< 2 mm)
@@ -108,7 +110,14 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 
 ---
 
-## Phase 4 : Dossier de Fabrication (JLCPCB)
+## Phase 4 : Conception du boitier
+
+- [ ] S'assurer que le boitier va maintenir en place le câble OBD2.
+
+---
+
+
+## Phase 5 : Dossier de Fabrication (JLCPCB)
 
 - [ ] Générer et valider les fichiers de fabrication Gerber & Drill (standard 2 couches JLCPCB).
 - [ ] Exporter la nomenclature BOM consolidée au format JLCPCB SMT ([`BOM.md`](BOM.md)).
@@ -116,9 +125,9 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 
 ---
 
-## Phase 5 : Firmware & Logiciel Embarqué
+## Phase 6 : Firmware & Logiciel Embarqué
 
-### 5.1 Architecture FreeRTOS & Drivers matériels
+### 6.1 Architecture FreeRTOS & Drivers matériels
 - [ ] **Driver TWAI CAN :** Implémentation du protocole ISO 15765-4 avec machine d'état de détection automatique (500 kbps puis 250 kbps).
 - [ ] **Driver UART K-Line :** Gestion de l'initialisation ISO 9141-2 (init 5-baud) et du protocole rapide KWP2000 (*fast-init*).
 - [ ] **Couche Protocolaire Constructeur GM-Daewoo (K-Line / Kalos T200) :**
@@ -126,6 +135,6 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
   - Intégration des services de diagnostic propriétaires GM-Daewoo / DST (*Daewoo Specific Tools*) : Service `0x21` / `0x22` (*Read Data By Identifier / Local ID* pour lecture des capteurs et PIDs constructeurs hors-OBD2), décodage des codes défauts propriétaires (`P1xxx`, `Bxxxx`, `Cxxxx`) et routines de tests d'actionneurs.
 - [ ] **Surveillance système & Télémétrie :** Détection brownout matérielle ESP32, watchdog FreeRTOS, mesure continue et étalonnage ADC1 de la tension batterie (`VBAT_SENSE`).
 
-### 5.2 Connectivité & Interface utilisateur
+### 6.2 Connectivité & Interface utilisateur
 - [ ] **Pile réseau :** Serveur WebSocket et/ou service BLE GATT pour communication avec l'application mobile / tablette / PC.
 - [ ] **Gestion de la LED témoin `LED1` :** Machine d'état des séquences lumineuses (démarrage, recherche protocole, bus actif, erreur alimentation).
