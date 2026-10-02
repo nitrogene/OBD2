@@ -152,7 +152,7 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
 }}%%
 flowchart LR
     VIN["VIN (+12V_PROT)"] --> C14["C14 (100 nF HF) // C7 (10 µF)"]
-    VIN --> UVLO["Diviseur UVLO :\nR19 (510k) // R20 (91k)"] --> U4_EN["U4 Broche EN (Pin 3)\nSeuils 8.8V Start / 7.3V Stop"]
+    VIN --> UVLO["Diviseur UVLO :\nR19 (470k) // R20 (68k)"] --> U4_EN["U4 Broche EN (Pin 3)\nSeuils 9.42V Start / 8.01V Stop"]
     C14 --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
     U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
@@ -163,7 +163,7 @@ flowchart LR
 
 * **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée. Courant de saturation Isat = 3.6A offrant une marge de sécurité de 4.5× face au pic inductif maximal (~0.79A).
 * **Diode Schottky de Roue Libre `D2` (3A / 40V - `SS34`) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
-* **Pont Diviseur UVLO de Coupure Sous-Tension `R19` (510 kΩ) et `R20` (91 kΩ) (0805 Basic Parts `C17596` / `C17604`) :** Raccordé entre le rail `+12V_PROT`, la broche 3 (`EN`) de `U4` et la masse `GND`. Il calibre un seuil d'enclenchement net à $V_{START} \approx 8.8\,\text{V}$ ($I_1 = 1.25\,\mu\text{A}$) et un seuil de coupure franche à $V_{STOP} \approx 7.3\,\text{V}$ ($I_{hyst} = 3\,\mu\text{A}$), évitant tout régime transitoire instable ou redémarrages en boucle lors des creux de tension au démarrage moteur (*cranking*) et préservant l'intégrité de la mémoire Flash NVS de l'ESP32.
+* **Pont Diviseur UVLO de Coupure Sous-Tension `R19` (470 kΩ) et `R20` (68 kΩ) (0805 Basic Parts `C17709` / `C17801`) :** Raccordé entre le rail `+12V_PROT`, la broche 3 (`EN`) de `U4` et la masse `GND`. Il calibre un seuil d'enclenchement net à $V_{START} \approx 9.42\,\text{V}$ et un seuil de coupure franche à $V_{STOP} \approx 8.01\,\text{V}$ avec une hystérésis robuste de $1.41\,\text{V}$ ($\Delta V_{HYS} = 3\,\mu\text{A} \times R_{19}$), évitant tout régime transitoire instable ou redémarrages en boucle lors des creux de tension au démarrage moteur (*cranking*) ainsi que tout pompage lors des pics de consommation Wi-Fi de l'ESP32, préservant l'intégrité de la mémoire Flash NVS.
 * **Condensateur de Bootstrap `C5` (100 nF céramique 50V X7R - `0603` / LCSC `C14663` Basic Part) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne. La valeur unique de 100 nF est impérativement requise par TI (SLVS839H Table 5-1 & §8.2.2.8) pour assurer la recharge correcte de la pompe de charge en toutes conditions de charge et de démarrage à froid.
 * **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
 * **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.

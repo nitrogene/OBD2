@@ -854,38 +854,38 @@
     "R19": {
       "block": "buck_5v",
       "role": "uvlo_divider_top",
-      "description": "Résistance haute du pont diviseur UVLO (+12V_PROT vers EN de U4)",
-      "value": "510kΩ",
+      "description": "Résistance haute du pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 8.01V / reprise 9.42V)",
+      "value": "470kΩ",
       "footprint": "0805",
       "substitutability": "ratio_pair_recalc",
       "coupled_with": "R20",
       "constraints": {
-        "value_ohm": 510000.0,
+        "value_ohm": 470000.0,
         "tolerance": "1%",
         "footprint": "0805"
       },
       "validation_criteria": {
-        "v_start_v": 8.8,
-        "v_stop_v": 7.3,
+        "v_start_v": 9.42,
+        "v_stop_v": 8.01,
         "max_error_pct": 5.0
       }
     },
     "R20": {
       "block": "buck_5v",
       "role": "uvlo_divider_bottom",
-      "description": "Résistance basse du pont diviseur UVLO (EN de U4 vers GND)",
-      "value": "91kΩ",
+      "description": "Résistance basse du pont diviseur UVLO (EN de U4 vers GND, 68 kΩ)",
+      "value": "68kΩ",
       "footprint": "0805",
       "substitutability": "ratio_pair_recalc",
       "coupled_with": "R19",
       "constraints": {
-        "value_ohm": 91000.0,
+        "value_ohm": 68000.0,
         "tolerance": "1%",
         "footprint": "0805"
       },
       "validation_criteria": {
-        "v_start_v": 8.8,
-        "v_stop_v": 7.3,
+        "v_start_v": 9.42,
+        "v_stop_v": 8.01,
         "max_error_pct": 5.0
       }
     },

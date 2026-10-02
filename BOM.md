@@ -62,8 +62,8 @@ Inventaire exhaustif des **81 composants** du projet **Scanner OBD-II ESP32**, s
 | **R16** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 1/2 (+12V_PROT vers K_LINE, 1 kΩ 1206 en parallèle avec R18) |
 | **R17** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance basse pont diviseur grille N-MOS Q2 (10 kΩ, protection claquage Vgs) |
 | **R18** | 1kΩ | `1206W4F1001T5E` | `C4410` | **Basic Part** | `1206` | Résistance de pull-up normalisée ISO 9141-2 2/2 (+12V_PROT vers K_LINE, 1 kΩ 1206 en parallèle avec R16) |
-| **R19** | 510kΩ | `0805W8F5103T5E` | `C17596` | **Basic Part** | `0805` | Résistance haute pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 7.3V / reprise 8.8V) |
-| **R20** | 91kΩ | `0805W8F9102T5E` | `C17604` | **Basic Part** | `0805` | Résistance basse pont diviseur UVLO (EN de U4 vers GND, 91 kΩ) |
+| **R19** | 470kΩ | `0805W8F4703T5E` | `C17709` | **Basic Part** | `0805` | Résistance haute pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 8.01V / reprise 9.42V) |
+| **R20** | 68kΩ | `0805W8F6802T5E` | `C17801` | **Basic Part** | `0805` | Résistance basse pont diviseur UVLO (EN de U4 vers GND, 68 kΩ) |
 | **R21** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche strapping IO0 vers rail 3.3V (10 kΩ) |
 | **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
@@ -123,8 +123,8 @@ Sur les **81 composants** du circuit (dont 15 points de test sans composant phys
 * **`R12`** (100kΩ, `0805`) : `0805W8F1003T5E` — LCSC `C149504` (**Basic Part**)
 * **`R13`** (12kΩ, `0805`) : `0805W8F1202T5E` — LCSC `C17444` (**Basic Part**)
 * **`R16`, `R18`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
-* **`R19`** (510kΩ, `0805`) : `0805W8F5103T5E` — LCSC `C17596` (**Basic Part**)
-* **`R20`** (91kΩ, `0805`) : `0805W8F9102T5E` — LCSC `C17604` (**Basic Part**)
+* **`R19`** (470kΩ, `0805`) : `0805W8F4703T5E` — LCSC `C17709` (**Basic Part**)
+* **`R20`** (68kΩ, `0805`) : `0805W8F6802T5E` — LCSC `C17801` (**Basic Part**)
 * **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
 
 ### B. Statut des Optimisations Basic Parts
