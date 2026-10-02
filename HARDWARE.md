@@ -17,7 +17,7 @@ Le circuit imprimé est découpé en **10 blocs fonctionnels interconnectés**, 
 
 > [!NOTE]
 > **Modélisation formelle & Intention de Schéma (`circuit_semantics.json`) :**
-> L'ensemble des 67 composants physiques du projet (82 composants avec les mires de test TP), leurs rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation, diélectrique) et politiques de substitution sont formellement modélisés sous format machine-readable dans le fichier racine [`circuit_semantics.json`](circuit_semantics.json). Ce fichier sert de contrat sémantique vérifié à chaque évolution du schéma par l'outil de synchronisation (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
+> L'ensemble des 69 composants physiques du projet (84 composants avec les mires de test TP), leurs rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation, diélectrique) et politiques de substitution sont formellement modélisés sous format machine-readable dans le fichier racine [`circuit_semantics.json`](circuit_semantics.json). Ce fichier sert de contrat sémantique vérifié à chaque évolution du schéma par l'outil de synchronisation (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
 
 ---
 
@@ -208,7 +208,7 @@ flowchart LR
 
 ---
 
-### Bloc 4 : USB-C, Alimentation Banc & Protections ESD (`J2`, `D4`, `U6`, `U7`, `R3`, `R4`)
+### Bloc 4 : USB-C, Alimentation Banc, Amortissement & Protections ESD (`J2`, `D4`, `U6`, `U7`, `R3`, `R4`, `R22`, `R23`)
 
 ```mermaid
 %%{init: {
@@ -239,13 +239,18 @@ flowchart LR
         D4["Diode Schottky D4 (B5819W SL)\n1A 40V SOD-123 Basic Part"]
     end
 
+    subgraph DAMP_USB["AMORTISSEMENT SÉRIE"]
+        R23["R23 (22 Ω 0603)\nBasic Part"]
+        R22["R22 (22 Ω 0603)\nBasic Part"]
+    end
+
     subgraph MCU["ESP32-S3 (U1)"]
         IO20["IO20 (USB D+)"]
         IO19["IO19 (USB D-)"]
     end
 
-    DP --> U6 --> IO20
-    DM --> U7 --> IO19
+    DP --> U6 --> R23 --> IO20
+    DM --> U7 --> R22 --> IO19
     CC1 --> R3 --> GND1["GND"]
     CC2 --> R4 --> GND2["GND"]
     VBUS --> C18_C19["C18 (10 µF Bulk) // C19 (100 nF HF)\nFiltrage Entrée USB"] --> GND3["GND"]
@@ -253,13 +258,14 @@ flowchart LR
     VBUS --> TP1["Pad Test TP1 (VBUS_5V)"]
 ```
 
-* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 - `CL31A106KBHNNNE` - *Basic Part*) & Découplage HF `C19` (100 nF 50V 0603 - `CC0603KRX7R9BB104` - *Basic Part*) :** Montés en dérivation directe sur le rail `VBUS_5V` à l'entrée immédiate du connecteur `J2`. Le réservoir `C18` absorbe les rebonds de contact mécanique et amortit le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement, tandis que `C19` court-circuite localement les fronts raides de commutation et les parasites HF (> 20 MHz) à la masse.
-* **Diode Schottky de Puissance `D4` (`B5819W SL` - SOD-123 / LCSC `C8598` - *Basic Part*) :**
+* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 — `CL31A106KBHNNNE` — *Basic Part*) & Découplage HF `C19` (100 nF 50V 0603 — `CC0603KRX7R9BB104` — *Basic Part*) :** Montés en dérivation directe sur le rail `VBUS_5V` à l'entrée immédiate du connecteur `J2`. Le réservoir `C18` absorbe les rebonds de contact mécanique et amortit le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement, tandis que `C19` court-circuite localement les fronts raides de commutation et les parasites HF (> 20 MHz) à la masse.
+* **Diode Schottky de Puissance `D4` (`B5819W SL` — SOD-123 / LCSC `C8598` — *Basic Part*) :**
   * *Alimentation autonome sur table :* Permet d'alimenter toute la logique (LDO 3.3V, ESP32, transceiver CAN) via le port USB-C sans source 12V OBD.
   * *Protection anti-retour absolue :* Dès que la carte est connectée sur véhicule (12V présent, Buck actif), la cathode est portée à 5V, polarisant la diode en inverse et interdisant tout refoulement de courant vers le port USB de l'ordinateur.
   * *Tenue en courant et faible chute de tension :* Calibrée à **IF = 1.0 A continu** (tenue aux surintensités IFSM = 9 A) et tension inverse VR = 40 V, elle encaisse les pics de consommation radio Wi-Fi (~500 mA) avec une chute de tension minime (VF ≈ 0.45 V), éliminant tout risque de surchauffe ou de brownout MCU lors des sessions de flash et de test sur banc.
-* **Résistances de Configuration `R3` et `R4` (5.1 kΩ pull-down - `R0805`) :** Indispensables en USB-C pour que la source délivre le 5V (négociation en appareil récepteur / *Sink*).
-* **Diodes de Protection Antistatique ESD `U6` et `U7` (`SD05C` - SOD-323) :** TVS bidirectionnelles canalisant les décharges jusqu'à ±30 kV en < 1 ns avec une capacité parasite infime (< 3 pF).
+* **Résistances de Configuration `R3` et `R4` (5.1 kΩ pull-down — `R0805`) :** Indispensables en USB-C pour que la source délivre le 5V (négociation en appareil récepteur / *Sink*).
+* **Diodes de Protection Antistatique ESD `U6` et `U7` (`SD05C` — SOD-323) :** TVS bidirectionnelles canalisant les décharges jusqu'à ±30 kV en < 1 ns avec une capacité parasite infime (< 3 pF).
+* **Résistances d'Amortissement Série `R22` et `R23` (22 Ω 0603 1% — Basic Part JLCPCB `0603WAF220JT5E` / LCSC `C23345`) :** Insérées en série stricte sur les lignes de données USB entre les diodes TVS (`U6`/`U7`) et le SoC ESP32-S3 (`R22` sur `USB_D-` vers IO19, `R23` sur `USB_D+` vers IO20). Conformes aux directives d'intégration matérielle d'Espressif, elles adaptent l'impédance différentielle à 90 Ω, amortissent les réflexions de fronts d'onde HF et éliminent les sonneries de commutation (*ringing*) induites par l'inductance parasite des câbles USB hôtes.
 
 ---
 
@@ -398,11 +404,11 @@ flowchart LR
 
     subgraph PULLUP["PULL-UP ISO 9141-2 (500 Ω) DÉBRAYABLE"]
         R16_R18["R16 // R18 (2 × 1 kΩ 1206)\nvers +12V_PROT"]
-        JP2_BOX["Cavalier JP2 (Sélecteur Pull-Up)\n• Shunt = Banc ECU (500Ω active)\n• Ouvert = Voiture (Haute Impédance)"]
+        JP2_BOX["Cavalier JP2 (Sélecteur Pull-Up)\n• Shunt = Voiture / Tester (500Ω active ISO 9141-2)\n• Ouvert = Émulateur ECU (Haute Impédance)"]
     end
 
     subgraph PROT_K["PROTECTION TRANSITOIRE"]
-        D5["TVS D5 (SMF24CA)\n24V Bidirectionnelle"]
+        D5["TVS D5 (SMF24A)\n24V Unidirectionnelle"]
     end
 
     subgraph BORNIER_CONN["BORNIER D'ENTRÉE J1"]
@@ -422,14 +428,14 @@ flowchart LR
 * **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
 * **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) & Cavalier Sélecteur `JP2` (`PZ2.54-1*2` — LCSC `C5360898`) :**
   * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de 510 Ω ±5% pour garantir un temps de montée rapide (tr < 2 µs) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne Req = 500 Ω (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
-  * *Débrayage Bi-Mode par Cavalier `JP2` :*
-    * **En mode Voiture / Scanner :** La norme exige que l'outil de diagnostic présente une haute impédance (Rin >= 100 kΩ) pour ne pas surcharger la pull-up interne du calculateur moteur (ECU). **Le cavalier JP2 reste OUVERT (sans shunt)**.
-    * **En mode Banc d'essais / Simulateur ECU :** Sur table, aucun calculateur n'est présent pour alimenter la ligne. **On insère un cavalier standard sur JP2 (avec shunt)** pour connecter la pull-up 500 Ω entre `+12V_PROT` et `K_LINE`.
+  * *Rôle Normalisé du Diagnostic Tester (ISO 9141-2 / ISO 14230) & Cavalier `JP2` :*
+    * **En mode Voiture / Scanner (Cas 1 et Cas 2) :** La norme ISO 9141-2 (§4.2.1) et la datasheet du L9637D (Fig. 4) stipulent expressément que c'est l'outil de diagnostic (*Diagnostic Tester*, notre scanner) qui doit fournir la résistance de pull-up normalisée de 510 Ω vers le +12V véhicule, l'ECU du véhicule ne disposant que d'une haute impédance (Rin >= 100 kΩ). **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** sur véhicule pour polariser activement la ligne K-Line.
+    * **En mode Banc d'essais bi-cartes (Cas 3) :** Une seule des deux cartes fermera son cavalier `JP2` (la Carte A Scanner), tandis que la Carte B (Simulateur ECU) laissera `JP2` **OUVERT (sans shunt)** pour reproduire fidèlement la haute impédance passive d'un calculateur moteur.
   * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie avec le shunt JP2 en place, la puissance crête totale dissipée sous 14.4 V vaut Ptot = V² / Req = (14.4V)² / 500 Ω ≈ 0.415 W. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse P = (14.4V)² / 1000 Ω ≈ 0.207 W, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
-* **Diode TVS Bidirectionnelle `D5` (`SMF24CA` - SOD-123FL / LCSC `C2891487`) :**
-  * *Rôle frontière :* Connectée directement entre la broche 1 de `J1` (`K_LINE`) et la masse `GND`, elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage ou les commutations de relais moteur.
+* **Diode TVS Unidirectionnelle `D5` (`SMF24A` - SOD-123FL / LCSC `C920178`) :**
+  * *Rôle frontière & Clamping direct :* Connectée entre la broche 1 de `J1` (`K_LINE`) et la masse `GND` (cathode à la ligne K, anode à GND), elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage. Sa caractéristique unidirectionnelle procure un clamping direct immédiat en conduction directe sous –1.0 V lors des transitoires négatifs, protégeant rigoureusement la limite absolue de –24.0 V de la broche 6 (`K`) du transceiver `U3`.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
-  * *Tension d'avalanche VBR = 26.7 V et serrage crête VCL = 38.9 V (200W @ 8/20 µs) :* Borne strictement la surtension sous la limite destructive de la broche 6 du transceiver `U3`.
+  * *Tension d'avalanche VBR = 26.7 V ~ 29.5 V et serrage crête VCL = 38.9 V (200W @ 10/1000 µs) :* Borne strictement la surtension positive sous la limite destructive de la broche 6 du transceiver `U3`.
 * **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 (VCC) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 (VCC). La broche 7 (VS) est alimentée depuis le rail protégé `+12V_PROT`. L'entrée non utilisée `LI` (broche 8) est pontée directement sur la broche adjacente 7 (VS), plaçant fermement le comparateur au repos inactif (VLI = VS > 0.55 VS), éliminant tout risque d'antenne parasite CEM et annulant le courant de repos permanent (0 µA).
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
 * **Embase de Diagnostic Analyseur Logique `H1` (Barrette mâle 1×3 pas 2.54 mm THT / BOOMELE `2.54-1*3P针` / LCSC `C49257`) :**
@@ -586,8 +592,8 @@ flowchart TD
 | **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `C19(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec réservoir Bulk 10 µF (C18) et découplage HF 100 nF (C19). | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)`, `R3(1)` | Ligne de configuration USB-C canal 1 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)`, `R4(1)` | Ligne de configuration USB-C canal 2 (détection Sink 5.1 kΩ). | Interface / USB-C |
-| **`USB_D+`** | `J2(A6,B6)`, `U6(1)`, `U1(14)` (`IO20`) | Ligne de données différentielle USB positive. | Interface / USB-C |
-| **`USB_D-`** | `J2(A7,B7)`, `U7(1)`, `U1(13)` (`IO19`) | Ligne de données différentielle USB négative. | Interface / USB-C |
+| **`USB_D+`** | `J2(A6,B6)`, `U6(1)`, `R23(1)` | Ligne de données différentielle USB positive (amortie vers `U1(14)` / `IO20` via `R23` 22 Ω). | Interface / USB-C |
+| **`USB_D-`** | `J2(A7,B7)`, `U7(1)`, `R22(1)` | Ligne de données différentielle USB négative (amortie vers `U1(13)` / `IO19` via `R22` 22 Ω). | Interface / USB-C |
 | **`CANH`** | `U2(7)`, `R8(1)`, `U8(1)`, Bornier `J1` (Broche 5), `TP7` | Ligne de bus CAN différentielle niveau haut protégée ESD. | Communication / CAN |
 | **`CAN_TERM_MID`** | `R8(2)`, `JP1(1)` | Nœud série entre la terminaison 120 Ω et le cavalier de sélection. | Communication / CAN |
 | **`CANL`** | `U2(6)`, `JP1(2)`, `U8(2)`, Bornier `J1` (Broche 9), `TP8` | Ligne de bus CAN différentielle niveau bas protégée ESD. | Communication / CAN |
@@ -668,10 +674,10 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
 
 ### 7.5 Protections Transitoires Bornier d'Entrée & USB
 * **Double TVS CAN `U8` (`NUP2105L`) :** Positionnée à **moins de 5 mm** des broches 5 (`CANH`) et 9 (`CANL`) du bornier d'entrée `J1`. Le flux d'entrée doit traverser les pastilles de `U8` avant d'atteindre la terminaison `R8`/`JP1` et le transceiver `U2`.
-* **TVS K-Line `D5` (`SMF24CA`) & Pull-Up `R16` :**
+* **TVS K-Line `D5` (`SMF24A`) & Pull-Up `R16` :**
   * `D5` implantée à **moins de 5 mm** de la broche 1 (`K_LINE`) du bornier `J1` pour dériver les transitoires directement à la masse à l'entrée de carte.
   * Résistance de pull-up `R16` (1 kΩ 1206) implantée à proximité immédiate de `D5` et de la broche 1 (< 5 mm), dans une zone aérée pour assurer une bonne dissipation thermique de ses 207 mW crête.
-* **Diodes ESD USB `U6`, `U7` (`SD05C`) :** Alignées côte à côte face aux broches A6/B6 (`USB_D+`) et A7/B7 (`USB_D-`) du port USB-C `J2` pour un clamp immédiat avant d'entrer dans les GPIOs IO20 et IO19 de l'ESP32.
+* **Diodes ESD USB `U6`, `U7` (`SD05C`) & Résistances d'Amortissement `R22`, `R23` (22 Ω) :** Diodes TVS alignées côte à côte face aux broches A6/B6 (`USB_D+`) et A7/B7 (`USB_D-`) du port USB-C `J2` pour un clamp immédiat, suivies immédiatement des résistances d'amortissement série `R22`/`R23` avant d'entrer dans les GPIOs IO20 et IO19 de l'ESP32.
 
 ### 7.6 Gestion Radiofréquence (RF) & Plans de Masse
 * **Zone d'exclusion RF d'antenne (Keepout multicouche) :** Définir une exclusion stricte sur toutes les couches (Top, Bottom, Internes) sous et autour de l'antenne méandre 2.4 GHz de l'ESP32-S3 (`NO_WIRES`, `NO_FILLS`, `NO_POURS`). Aucun plan de cuivre ni piste ne doit se trouver dans cette zone.
@@ -694,9 +700,9 @@ L'intégralité des contraintes physiques du Scanner OBD-II est formalisée dans
    * `J2` : Prise USB-C horizontale CMS affleurante au bord Sud (`x=1600, y=150, rot=0°`).
    * `U1` : Module ESP32-S3 avec son antenne dégagée vers l'Est (`x=2550, y=700, rot=0°`).
 5. **`keepout_zones` :** Définition géométrique des zones d'exclusion multicouches strictes (`RF_ANTENNA_KEEPOUT` de x=2900 à 3200 mil et y=300 à 1100 mil).
-6. **`functional_clusters` :** Découpage des 67 composants physiques en 8 îlots fonctionnels étanches (Protections 12V, Diviseur batterie, Transceivers OBD, Régulateur Buck, LDO 3.3V, Interface USB, Cœur MCU, Témoin LED).
+6. **`functional_clusters` :** Découpage des 69 composants physiques en 8 îlots fonctionnels étanches (Protections 12V, Diviseur batterie, Transceivers OBD, Régulateur Buck, LDO 3.3V, Interface USB, Cœur MCU, Témoin LED).
 7. **`proximity_rules` :** Règles relationnelles de proximité physique associant chaque composant critique à son circuit cible et son équipotentielle (découplage direct, mailles courtes, diodes TVS frontalières).
-8. **`components` :** Coordonnées 2D déterministes (X, Y, rotation, couche) de l'ensemble des 67 composants physiques et 15 points de test, permettant au moteur d'injection d'ordonnancer le placement en une passe sans collision.
+8. **`components` :** Coordonnées 2D déterministes (X, Y, rotation, couche) de l'ensemble des 69 composants physiques et 15 points de test, permettant au moteur d'injection d'ordonnancer le placement en une passe sans collision.
 
 #### Pilotage via les Scripts Agnostiques (uv) :
 Le fichier est transmis obligatoirement en paramètre `--config` aux outils du skill `pcb-placer` :
@@ -762,7 +768,7 @@ flowchart LR
     subgraph SCANNER["SCANNER OBD-II ESP32"]
         J1["Bornier J1 (5P)\n• Pin 4 (+12V)\n• Pin 8 (GND)\n• Pin 1 (K_LINE)\n• Pin 5 (CANH)\n• Pin 9 (CANL)"]
         JP1["Cavalier JP1 (CAN)\n👉 OUVERT (Sans shunt)"]
-        JP2["Cavalier JP2 (K-Line)\n👉 OUVERT (Sans shunt)"]
+        JP2["Cavalier JP2 (K-Line)\n👉 FERMÉ (Shunt 500Ω Tester)"]
         USBC["Port USB-C (J2)\n👉 DÉCONNECTÉ"]
         POWER_SEC["Étage Alimentation\n• PPTC F1 + TVS D1 (16V)\n• Anti-inversion Q1/Q2\n• Buck TPS54331 (UVLO 8.01V)\n• LDO LDL1117 (3.3V)"]
         RADIO["Radio ESP32-S3\nBLE 5.0 / Wi-Fi"]
@@ -790,9 +796,9 @@ flowchart LR
 * **Cavalier CAN `JP1` (Terminaison 120 Ω) : IMPÉRATIVEMENT OUVERT (SANS shunt)**
   > [!CAUTION]
   > **RISQUE D'ÉCRASEMENT DU BUS CAN VÉHICULE :** Le réseau de bord automobile possède déjà ses deux terminaisons de 120 Ω intégrées aux deux calculateurs d'extrémité (ECU moteur et Tableau de bord / Gateway), totalisant une résistance équivalente de 60 Ω. Insérer un shunt sur `JP1` abaisserait l'impédance totale à 40 Ω, réduisant la tension différentielle Vdiff, surchargeant les émetteurs CAN et risquant de provoquer des pannes de transmission en roulage (*Bus-Off*).
-* **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : IMPÉRATIVEMENT OUVERT (SANS shunt)**
+* **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : IMPÉRATIVEMENT FERMÉ (AVEC shunt)**
   > [!IMPORTANT]
-  > Le calculateur moteur (ECU) intègre sa propre pull-up interne vers le +12V. Laisser `JP2` ouvert garantit que le scanner respecte la norme ISO 9141-2 en présentant une impédance passive Rin >= 100 kΩ.
+  > Conformément à la norme ISO 9141-2 (§4.2.1) et à l'architecture de référence constructeur ST L9637D (Fig. 4), l'outil de diagnostic (*Diagnostic Tester*, notre scanner) doit fournir la pull-up normalisée de 510 Ω ±5% tirée au +12V véhicule, l'ECU ne disposant que d'une entrée haute impédance. **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** pour assurer la polarisation active de la ligne K-Line en diagnostic habitacle.
 * **Alimentation & Autonomie :**
   Le scanner est alimenté à 100% par le réseau de bord via le Buck TPS54331. La consommation en veille est minime (< 25 µA dans le diviseur UVLO), et le seuil de coupure franche à **8.01 V** garantit l'extinction totale du régulateur avant toute décharge profonde de la batterie du véhicule.
 * **Port USB-C `J2` :** Non utilisé dans ce mode (déconnecté).
@@ -821,7 +827,7 @@ flowchart TD
     subgraph SCANNER["SCANNER OBD-II ESP32"]
         J1["Bornier J1\n• 12V, GND, CANH, CANL, K_LINE"]
         JP1["Cavalier JP1 (CAN)\n👉 OUVERT (Sans shunt)"]
-        JP2["Cavalier JP2 (K-Line)\n👉 OUVERT (Sans shunt)"]
+        JP2["Cavalier JP2 (K-Line)\n👉 FERMÉ (Shunt 500Ω Tester)"]
         BUCK["Buck TPS54331\n(Sortie +5.035V)"]
         D4{"Diode Schottky D4\nAnti-Retour\n(V_cathode = +5.035V\n> V_anode = +5.0V)"}
         ESP["ESP32-S3\nConsole Série + JTAG Natif"]
@@ -863,7 +869,7 @@ Le scanner est raccordé simultanément à deux sources d'énergie 5V :
 
 #### 4. Configuration des Cavaliers
 * **`JP1` (CAN 120 Ω) : OUVERT (Sans shunt)** — Terminaisons assurées par le véhicule.
-* **`JP2` (K-Line 500 Ω) : OUVERT (Sans shunt)** — Haute impédance obligatoire face à l'ECU.
+* **`JP2` (K-Line 500 Ω) : FERMÉ (Avec shunt)** — Rôle de Diagnostic Tester apportant la pull-up normalisée ISO 9141-2.
 
 ---
 
@@ -884,14 +890,14 @@ flowchart LR
     subgraph CARTE_A["CARTE A : SCANNER OBD-II"]
         J1_A["Bornier J1\n• Pin 4 (+12V)\n• Pin 8 (GND)\n• Pin 1 (K_LINE)\n• Pin 5 (CANH)\n• Pin 9 (CANL)"]
         JP1_A["Cavalier JP1 (CAN 120Ω)\n👉 FERMÉ (Shunt actif)"]
-        JP2_A["Cavalier JP2 (K-Line 500Ω)\n👉 OUVERT (Sans shunt)"]
+        JP2_A["Cavalier JP2 (K-Line 500Ω)\n👉 FERMÉ (Shunt actif / Tester)"]
         USBC_A["Port USB-C (J2)\nLogs & Debug MCU"]
     end
 
     subgraph CARTE_B["CARTE B : SIMULATEUR ECU"]
         J1_B["Bornier J1\n• Pin 4 (+12V)\n• Pin 8 (GND)\n• Pin 1 (K_LINE)\n• Pin 5 (CANH)\n• Pin 9 (CANL)"]
         JP1_B["Cavalier JP1 (CAN 120Ω)\n👉 FERMÉ (Shunt actif)"]
-        JP2_B["Cavalier JP2 (K-Line 500Ω)\n👉 FERMÉ (Shunt actif)"]
+        JP2_B["Cavalier JP2 (K-Line 500Ω)\n👉 OUVERT (Sans shunt / ECU)"]
         USBC_B["Port USB-C (J2)\nInjection PIDs & Erreurs"]
     end
 
@@ -922,8 +928,8 @@ flowchart LR
   * **Carte B : FERMÉ (Avec shunt)**
   * *Justification physique :* En l'absence de réseau de bord externe, le bus CAN est local. Conformément à l'ISO 11898-2, les deux extrémités de la ligne doivent comporter une terminaison de 120 Ω pour éliminer les réflexions HF, donnant l'impédance nominale équivalente requise de **60 Ω** (120 Ω // 120 Ω).
 * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) :**
-  * **Carte A (Scanner) : OUVERT (Sans shunt)** — Présente une haute impédance (Rin >= 100 kΩ) comme un véritable outil de diagnostic.
-  * **Carte B (Simulateur ECU) : FERMÉ (Avec shunt)** — Fournit la pull-up normalisée de 500 Ω (`R16` // `R18`) tirant la ligne K-Line au `+12V_PROT`.
+  * **Carte A (Scanner) : FERMÉ (Avec shunt)** — Fournit la pull-up normalisée de 500 Ω (`R16` // `R18`) tirant la ligne K-Line au `+12V_PROT` en jouant le rôle de testeur ISO 9141-2.
+  * **Carte B (Simulateur ECU) : OUVERT (Sans shunt)** — Présente une entrée passive haute impédance (Rin >= 100 kΩ) reproduisant fidèlement le comportement d'un calculateur moteur.
 * **Instrumentation Logique (Headers `H1` et `H2`) :**
   Un analyseur logique USB (ex. 24 MHz 8 voies) peut être enfiché directement sur `H1` (`KLINE_RX`, `KLINE_TX`, `GND`) et `H2` (`TWAI_RX`, `TWAI_TX`, `GND`) pour capturer et décoder les trames au niveau logique 3.3V en temps réel.
 
@@ -937,7 +943,7 @@ flowchart LR
 | **Bornier `J1` (5 Contacts)** | Câble pigtail branché sur prise OBD-II | Câble pigtail branché sur prise OBD-II | Lié à la Carte B (ECU) + Alim Labo 12V |
 | **Port USB-C `J2`** | **DÉCONNECTÉ** | Câble relié au **PC sur batterie** | Câble relié au PC (dev / logs) |
 | **Cavalier CAN `JP1` (120 Ω)** | **OUVERT (Sans shunt)** *(Obligatoire)* | **OUVERT (Sans shunt)** *(Obligatoire)* | **FERMÉ (Avec shunt)** sur les 2 cartes |
-| **Cavalier K-Line `JP2` (500 Ω)** | **OUVERT (Sans shunt)** *(Obligatoire)* | **OUVERT (Sans shunt)** *(Obligatoire)* | **FERMÉ sur Banc**, **OUVERT sur Scanner** |
+| **Cavalier K-Line `JP2` (500 Ω)** | **FERMÉ (Avec shunt)** *(Conforme Tester)* | **FERMÉ (Avec shunt)** *(Conforme Tester)* | **FERMÉ sur Scanner**, **OUVERT sur Simulateur ECU** |
 | **Source d'Énergie Active** | 100% Batterie véhicule (Buck 5V) | Véhicule 12V prioritaire (relais USB-C via `D4`) | Alim labo 12V (relais USB-C si coupée) |
 | **Canaux de Données / Logs** | BLE 5.0 (App smartphone) / Wi-Fi | USB Série (Logs PC) + BLE 5.0 (App) | USB Série natif / JTAG + `H1`/`H2` |
 | **Consigne de Sécurité Majeure** | Coupure UVLO calibrée à 8.01 V | **PC portable strictement sur batterie** | Limiter l'alim de labo à 1.0 A |

@@ -31,7 +31,7 @@ Inventaire exhaustif des **67 composants physiques** (82 composants au total inc
 | **D2** | — | `SS34` | `C8678` | **Basic Part** | `SMA` | Diode Schottky 40V 3A de roue libre pour convertisseur Buck U4 (MDD) |
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
 | **D4** | — | `B5819W SL` | `C8598` | **Basic Part** | `SOD-123` | Diode Schottky 40V 1A anti-retour alimentation banc USB-C (SOD-123) |
-| **D5** | — | `SMF24CA` | `C2891487` | Extended Part | `SOD-123FL` | Diode TVS 24V bidirectionnelle protection transitoire K-Line |
+| **D5** | — | `SMF24A` | `C920178` | Extended Part | `SOD-123FL` | Diode TVS 24V unidirectionnelle protection transitoire K-Line (Slkor, clamping direct négatif –1.0V) |
 | **D6** | — | `BAV199,215` | `C40919` | Extended Part | `SOT-23` | Diode double silicium ultra-faible fuite (< 5 nA à chaud) clamp rail-to-rail ADC1 VBAT_SENSE (Nexperia) |
 | **F1** | — | `1812L110/33MR` | `C142747` | Extended Part | `1812` | Fusible réarmable PPTC 1.1A / 33V protection robuste ligne 12V (Littelfuse) |
 | **FB1** | — | `BLM18PG121SN1D` | `C14709` | **Basic Part** | `0603` | Perle de ferrite pour filtrage HF du rail 3.3V LDO |
@@ -40,7 +40,7 @@ Inventaire exhaustif des **67 composants physiques** (82 composants au total inc
 | **J1** | — | `WJ250B-3.5-05P-11-00A` | `C8453` | Extended Part | `CONN-TH_5P-P3.50_WJ250B-3.50-5P` | Bornier à ressort PCB sans vis 5 contacts au pas 3.5 mm (Ningbo Kangnex, 250V 8A, broches quinconce) |
 | **J2** | — | `TYPE-C-31-M-12` | `C165948` | Extended Part | `SMD` | Connecteur USB Type-C 16 broches horizontal CMS (flash, debug et banc 5V) |
 | **JP1** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur terminaison CAN 120Ω (Shunt = Banc ; Ouvert = Voiture) |
-| **JP2** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur pull-up K-Line 500Ω (Shunt = Banc ECU ; Ouvert = Voiture) |
+| **JP2** | — | `PZ2.54-1*2` | `C5360898` | Extended Part | `插件,P=2.54mm` | Cavalier sélecteur pull-up K-Line 500Ω (Shunt = Voiture / Diagnostic Tester ; Ouvert = Banc simulateur ECU) |
 | **L1** | 10uH | `YNR6045-100M` | `C341067` | Extended Part | `SMD,6x6mm` | Inductance blindée 10µH étage Buck U4 |
 | **LED1** | — | `KT-0603R` | `C2286` | **Basic Part** | `0603` | LED d'état rouge (heartbeat/diagnostic) pilotée par la broche IO2 de l'ESP32 |
 | **Q1** | — | `CJ2309A` | `C7433254` | Extended Part | `SOT-23` | P-MOSFET 60V 2A protection contre l'inversion de polarité 12V |
@@ -66,6 +66,8 @@ Inventaire exhaustif des **67 composants physiques** (82 composants au total inc
 | **R19** | 470kΩ | `0805W8F4703T5E` | `C17709` | **Basic Part** | `0805` | Résistance haute pont diviseur UVLO (+12V_PROT vers EN de U4, coupure 8.01V / reprise 9.42V) |
 | **R20** | 68kΩ | `0805W8F6802T5E` | `C17801` | **Basic Part** | `0805` | Résistance basse pont diviseur UVLO (EN de U4 vers GND, 68 kΩ) |
 | **R21** | 10kΩ | `0805W8F1002T5E` | `C17414` | **Basic Part** | `0805` | Résistance de pull-up externe broche strapping IO0 vers rail 3.3V (10 kΩ) |
+| **R22** | 22Ω | `0603WAF220JT5E` | `C23345` | **Basic Part** | `0603` | Résistance série amortissement ligne USB D- (22 Ω, 1%) |
+| **R23** | 22Ω | `0603WAF220JT5E` | `C23345` | **Basic Part** | `0603` | Résistance série amortissement ligne USB D+ (22 Ω, 1%) |
 | **SW1** | — | `TS-1187A-B-A-B` | `C318884` | **Basic Part** | `SMD` | Bouton poussoir tactile CMS de reset matériel (trou d'épingle boîtier, 160 gf) |
 | **TP1** | VBUS_5V | `—` | *—* | — | `—` | Point de test pad cuivre pour le rail 5V USB (VBUS_5V) |
 | **TP2** | K_LINE | `—` | *—* | — | `—` | Point de test pad cuivre pour la ligne K-Line ISO 9141-2 (K_LINE) |
@@ -95,10 +97,10 @@ Inventaire exhaustif des **67 composants physiques** (82 composants au total inc
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **82 composants** du circuit (dont 15 points de test sans composant physique à poser) :
+Sur les **84 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** **67 composants**.
-- **Basic Parts (0 $ de frais de chargement) :** **46 composants** (68.7% des composants assemblés).
+- **Composants physiques à assembler :** **69 composants**.
+- **Basic Parts (0 $ de frais de chargement) :** **48 composants** (69.6% des composants assemblés).
 - **Extended Parts (~3 $ par bobine changée) :** **21 composants** (dont H1 et H2 partagent la même référence `C49257`, et JP1/JP2 partagent `C5360898`, soit 19 références uniques approvisionnées).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
@@ -126,6 +128,7 @@ Sur les **82 composants** du circuit (dont 15 points de test sans composant phys
 * **`R16`, `R18`** (1kΩ, `1206`) : `1206W4F1001T5E` — LCSC `C4410` (**Basic Part**)
 * **`R19`** (470kΩ, `0805`) : `0805W8F4703T5E` — LCSC `C17709` (**Basic Part**)
 * **`R20`** (68kΩ, `0805`) : `0805W8F6802T5E` — LCSC `C17801` (**Basic Part**)
+* **`R22`, `R23`** (22Ω, `0603`) : `0603WAF220JT5E` — LCSC `C23345` (**Basic Part**)
 * **`SW1`** (—, `SMD`) : `TS-1187A-B-A-B` — LCSC `C318884` (**Basic Part**)
 
 ### B. Statut des Optimisations Basic Parts

@@ -20,7 +20,7 @@
     "+12V_PROT": {
       "nominal_v": 12.0,
       "clamped_v": 26.0,
-      "source": "Q1.Drain",
+      "source": "Q1.Source",
       "type": "protected_anti_reverse"
     },
     "+5V": {
@@ -68,8 +68,8 @@
     },
     "usbc_interface": {
       "title": "Interface USB-C, Alimentation Banc & ESD",
-      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2, réservoirs C18/C19 et alimentation autonome banc via D4.",
-      "components": ["J2", "D4", "C18", "C19", "U6", "U7", "R3", "R4"]
+      "description": "Port USB-C natif (D+/D-) pour flash/debug, amortissement 22 ohms R22/R23, configuration CC1/CC2, réservoirs C18/C19 et alimentation autonome banc via D4.",
+      "components": ["J2", "D4", "C18", "C19", "U6", "U7", "R3", "R4", "R22", "R23"]
     },
     "can_transceiver": {
       "title": "Transceiver CAN Haute Vitesse (ISO 11898-2)",
@@ -427,13 +427,14 @@
     "D5": {
       "block": "kline_transceiver",
       "role": "kline_tvs_protection",
-      "description": "Diode TVS 24V bidirectionnelle protégeant la broche K-Line face aux transitoires allumage",
-      "value": "SMF24CA",
+      "description": "Diode TVS 24V unidirectionnelle protégeant la broche K-Line face aux transitoires allumage (clamping direct négatif sous -1.0V)",
+      "value": "SMF24A",
       "footprint": "SOD-123FL",
       "substitutability": "direct_1to1",
       "constraints": {
         "vrwm_v": 24.0,
-        "bidirectional": true,
+        "bidirectional": false,
+        "lcsc_part": "C920178",
         "footprint": "SOD-123FL"
       }
     },
@@ -538,7 +539,7 @@
     "JP2": {
       "block": "kline_transceiver",
       "role": "kline_pullup_jumper",
-      "description": "Cavalier 2 broches 2.54 mm de débrayage de la pull-up K-Line 500 ohms (Shunt=Banc ECU / Ouvert=Voiture)",
+      "description": "Cavalier 2 broches 2.54 mm de débrayage de la pull-up K-Line 500 ohms (Shunt=Voiture / Tester ; Ouvert=Banc simulateur ECU)",
       "value": "PZ2.54-1*2",
       "footprint": "插件,P=2.54mm",
       "substitutability": "locked",
@@ -917,6 +918,34 @@
         "tolerance": "5%",
         "footprint": "0805",
         "notes": "Renforce l'immunité au bruit de boot en habitacle automobile face à la pull-up interne faible (45 kΩ)"
+      }
+    },
+    "R22": {
+      "block": "usbc_interface",
+      "role": "usb_series_damping",
+      "description": "Résistance série d'amortissement 22 ohms sur ligne USB D- (GPIO19)",
+      "value": "22Ω",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 22.0,
+        "tolerance": "1%",
+        "lcsc_part": "C23345",
+        "footprint": "0603"
+      }
+    },
+    "R23": {
+      "block": "usbc_interface",
+      "role": "usb_series_damping",
+      "description": "Résistance série d'amortissement 22 ohms sur ligne USB D+ (GPIO20)",
+      "value": "22Ω",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "constraints": {
+        "value_ohm": 22.0,
+        "tolerance": "1%",
+        "lcsc_part": "C23345",
+        "footprint": "0603"
       }
     },
     "SW1": {

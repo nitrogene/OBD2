@@ -10,10 +10,14 @@ Projet de conception matérielle (schématique et PCB) et logicielle d'un scanne
 > **Périmètre d'application exclusif : Voitures particulières (Réseau 12V)**
 > L'ensemble du matériel est conçu et dimensionné exclusivement pour les véhicules légers équipés d'un **réseau de bord 12V** (batterie 12V nominale, prise standard SAE J1962 Type A). Il **ne doit en aucun cas** être raccordé à des réseaux **24V** (poids lourds, engins de chantier, bus ou prises Type B), ni soumis à des boosters 24V.
 
+> [!NOTE]
+> **Conformité & Périmètre Normatif ISO 16750-2 / Load-Dump :**
+> La tenue aux surtensions du circuit repose sur la présence d'un alternateur automobile moderne doté d'un écrêtage centralisé standard (*Centralized Load Dump Clamp* conforme ISO 16750-2 Test B, VL <= 35V). La diode TVS `D1` (SMBJ16A, Vcl = 26.0V max) et le régulateur Buck `U4` (TPS54331, Vin max 30.0V) procurent une marge de sécurité robuste de 4.0V. Les agressions hors spécification (démarrage forcé sur booster 24V et impulsion d'énergie brute non centralisée de 200J ISO 7637-2 / ISO 16750-2 Test A sans écrêtage alternateur) sont formellement exclues du périmètre contractuel.
+
 Le projet est conçu pour opérer et se qualifier selon **trois cas d'usage et de test opérationnels** :
-1. **Cas 1 : Nominal Véhicule (Usage Conducteur / Atelier) :** Diagnostic autonome enfiché sur la prise OBD-II SAE J1962 (12V) du véhicule, communication 100% sans fil (BLE 5.0 / Wi-Fi), alimentation directe par la batterie du véhicule avec coupure de sécurité UVLO à 8.01 V, cavaliers CAN `JP1` et K-Line `JP2` obligatoirement ouverts.
-2. **Cas 2 : Nominal + Debug In Situ (Roulage d'Essai & Traces Brutes) :** Raccordé au véhicule avec câble USB-C vers PC portable de diagnostic sur batterie interne pour capture des traces en roulage, arbitrage d'alimentation prioritaire 12V via diode anti-retour `D4`, règle d'isolation de masse stricte (anti-boucle de terre).
-3. **Cas 3 : Banc d'Essais Bi-Cartes Miroir (Qualification Labo & Simulation ECU) :** Deux cartes face à face interconnectées via leurs borniers 5 contacts `J1` (Carte Scanner face à Carte Simulateur d'ECU) sous alimentation de laboratoire 12V DC et double liaison USB-C, terminaison CAN `JP1` fermée à 120 Ω sur les deux cartes (60 Ω équivalents) et pull-up K-Line 500 Ω activée sur le simulateur via `JP2`.
+1. **Cas 1 : Nominal Véhicule (Usage Conducteur / Atelier) :** Diagnostic autonome enfiché sur la prise OBD-II SAE J1962 (12V) du véhicule, communication 100% sans fil (BLE 5.0 / Wi-Fi), alimentation directe par la batterie du véhicule avec coupure de sécurité UVLO à 8.01 V, cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` impérativement fermé (avec shunt) conformément au rôle de testeur ISO 9141-2.
+2. **Cas 2 : Nominal + Debug In Situ (Roulage d'Essai & Traces Brutes) :** Raccordé au véhicule avec câble USB-C vers PC portable de diagnostic sur batterie interne pour capture des traces en roulage, arbitrage d'alimentation prioritaire 12V via diode anti-retour `D4`, règle d'isolation de masse stricte (anti-boucle de terre), cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` fermé (avec shunt).
+3. **Cas 3 : Banc d'Essais Bi-Cartes Miroir (Qualification Labo & Simulation ECU) :** Deux cartes face à face interconnectées via leurs borniers 5 contacts `J1` (Carte Scanner face à Carte Simulateur d'ECU) sous alimentation de laboratoire 12V DC et double liaison USB-C, terminaison CAN `JP1` fermée à 120 Ω sur les deux cartes (60 Ω équivalents) et pull-up K-Line 500 Ω activée sur le scanner via `JP2` (cavalier `JP2` ouvert sur le simulateur).
 
 ---
 
@@ -36,9 +40,9 @@ Pour le détail exhaustif des schémas de câblage, des règles de sécurité é
 
 | Cas d'Usage Cible | Bornier 5P (`J1`) | Port USB-C (`J2`) | Cavalier CAN (`JP1` 120 Ω) | Cavalier K-Line (`JP2` 500 Ω) | Canaux de Communication | Source d'Alimentation |
 | :--- | :---: | :---: | :---: | :---: | :--- | :--- |
-| **Cas 1 : Nominal Véhicule** | Faisceau pigtail vers prise SAE J1962 | **DÉCONNECTÉ** | **OUVERT** *(Sans shunt)* | **OUVERT** *(Sans shunt)* | BLE 5.0 (App smartphone) / Wi-Fi | 100% Batterie véhicule 12V |
-| **Cas 2 : Nominal + Debug In Situ** | Faisceau pigtail vers prise SAE J1962 | Relié au **PC sur batterie** | **OUVERT** *(Sans shunt)* | **OUVERT** *(Sans shunt)* | USB Série (Logs PC) + BLE 5.0 (App) | 12V véhicule prioritaire (anti-retour `D4`) |
-| **Cas 3 : Banc d'Essais Bi-Cartes Miroir** | Relié au Banc ECU + Alim Labo 12V | Relié au PC dev | **FERMÉ** *(Shunt 120 Ω)* | **OUVERT** *(Scanner)* / **FERMÉ** *(ECU)* | USB Série natif / JTAG + Headers `H1`/`H2` | Alim Labo 12V (relais USB-C via `D4`) |
+| **Cas 1 : Nominal Véhicule** | Faisceau pigtail vers prise SAE J1962 | **DÉCONNECTÉ** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | BLE 5.0 (App smartphone) / Wi-Fi | 100% Batterie véhicule 12V |
+| **Cas 2 : Nominal + Debug In Situ** | Faisceau pigtail vers prise SAE J1962 | Relié au **PC sur batterie** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | USB Série (Logs PC) + BLE 5.0 (App) | 12V véhicule prioritaire (anti-retour `D4`) |
+| **Cas 3 : Banc d'Essais Bi-Cartes Miroir** | Relié au Banc ECU + Alim Labo 12V | Relié au PC dev | **FERMÉ** *(Shunt 120 Ω)* | **FERMÉ** *(Scanner)* / **OUVERT** *(ECU)* | USB Série natif / JTAG + Headers `H1`/`H2` | Alim Labo 12V (relais USB-C via `D4`) |
 
 > [!CAUTION]
 > **Règle vitale d'isolation de masse (Cas 2) :** Lors d'une session de débogage in situ sur véhicule, le PC portable relié au port USB-C `J2` doit fonctionner **exclusivement sur sa batterie interne**. Le branchement sur secteur 230V avec terre est strictement interdit (danger de destruction immédiate par boucle de terre entre la prise murale et la carrosserie du véhicule).
