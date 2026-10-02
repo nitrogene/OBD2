@@ -62,7 +62,6 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
     * **Cas 2 (Nominal + Debug in situ) :** Faisceau pigtail sur véhicule + câble USB-C vers PC portable, arbitrage de priorité d'alimentation via `D4` (12V prioritaire, relais sans coupure), et **règle impérative d'isolation de masse (PC portable obligatoirement sur batterie interne, interdiction formelle du chargeur 230V relié à la terre de l'atelier pour prévenir toute boucle de terre destructrice)**.
     * **Cas 3 (Banc d'essais bi-cartes miroir) :** Interconnexion 5 fils sur `J1` entre Scanner (Carte A) et Banc ECU (Carte B), alimentation de labo 12V DC partagée, double USB-C vers PC dev, et configuration des cavaliers (`JP1` fermé à 120 Ω sur les deux cartes, `JP2` fermé sur le banc ECU et ouvert sur le scanner).
   - Tableau comparatif synoptique et alertes de sécurité intégrés dans [`README.md`](README.md) et [`HARDWARE.md`](HARDWARE.md).
-- [ ] **Revue complète du schéma électronique :** Faire une revue systématique et approfondie de l'intégralité du schéma sous EasyEDA Pro en s'appuyant notamment sur [`DATASHEETS.md`](DATASHEETS.md) (vérification rigoureuse des préconisations constructeurs, alimentations, découplages, broches non connectées, seuils logiques et protections).
 
 ### 1.5 Validation Schéma
 - [ ] Exécuter et valider le contrôle ERC sous EasyEDA Pro (0 erreur, 0 avertissement).
@@ -113,7 +112,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [ ] **Vias thermiques de dissipation :** Matrice de vias thermiques sous le pad de cuivre du LDO `U5` (LDL1117) et sous le pad thermique central de l'ESP32 (`U1`).
 
 ### 3.5 Sérigraphie & Contrôles finaux
-- [ ] **Sérigraphie complète [M4] :** Polarités des diodes, repères pin 1 sur tous les circuits intégrés et connecteurs (`J1` OBD-II, `J2` USB-C), texte explicite sur le cavalier `JP1` (*« OPEN = CAR / SHUNT = BENCH »*), identification claire de tous les points de test `TP1` à `TP15`.
+- [ ] **Sérigraphie PCB & Annotations Schéma des Cavaliers [review004 M1] :** Polarités des diodes, repères pin 1 sur tous les circuits intégrés et connecteurs (`J1`, `J2`), texte explicite sur les cavaliers (`JP1` : *« OPEN = CAR / SHUNT = BENCH »*, `JP2` : *« OPEN = SCANNER / SHUNT = ECU »*) sur le PCB et sur les pages 2 et 3 du schéma, identification claire de tous les points de test `TP1` à `TP15`.
 - [ ] **Contrôle DRC physique strict :** Exécuter le DRC PCB sous EasyEDA Pro et valider 0 erreur, 0 avertissement.
 - [ ] **Inspection 3D finale :** Contrôle visuel 3D de l'assemblage complet, du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
 
