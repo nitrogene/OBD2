@@ -133,7 +133,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 #### B. Préconisations Constructeur — Schéma Électrique
 1. **Brochage Exact & Identification des Broches (Datasheet ST L9637D) :**
-   * **Pin 1 : `RX`** (Sortie logique vers MCU - Étage push-pull avec pull-up interne $R_{RX} \approx 10\,\text{k}\Omega$ vers $V_{CC}$ ; $V_{RXH} = V_{CC} - 0.1\,\text{V}$).
+   * **Pin 1 : `RX`** (Sortie logique vers MCU - Étage push-pull avec pull-up interne R_RX ≈ 10 kΩ vers VCC ; V_RXH = VCC - 0.1 V).
    * **Pin 2 : `LO`** (Loop Output - non utilisé, laisser ouvert avec drapeau NC).
    * **Pin 3 : `VCC`** (Alimentation logique du circuit interne, raccordée au rail régulé 3.3V).
    * **Pin 4 : `TX`** (Entrée logique de commande d'émission depuis le MCU).
@@ -142,18 +142,18 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
    * **Pin 7 : `VS`** (Alimentation haute tension batterie 12V issue de `+12V_PROT`).
    * **Pin 8 : `LI`** (Loop Input - non utilisé, ponté directement sur la broche adjacente 7 `VS`).
 2. **Conformité & Sécurité de l'Alimentation Logique VCC (Pin 3) :**
-   * *Spécification ST officielle (Table 5, note 1) :* La plage de service recommandée de $V_{CC}$ s'étend de **3.0 V à 7.0 V** (Table 5 : Min 3.0 V, Typ 5.0 V, Max 7.0 V ; le seuil de 4.5 V concerne uniquement la tension batterie $V_S$). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Le fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme et garanti par conception constructeur.
-   * *Structure interne de RX et danger du 5V :* La broche 1 (`RX`) possède une résistance de pull-up interne active reliée à $V_{CC}$ ($R_{RX} \approx 10\,\text{k}\Omega$). Elle n'est PAS un collecteur ouvert pur.
-   * *Protection vitale de l'ESP32-S3 :* Les GPIOs de l'ESP32-S3 ne sont **pas tolérants 5V** (limite absolue à $3.6\,\text{V}$). Si $V_{CC}$ était alimenté en 5V, RX délivrerait ~4.9V dans le GPIO4, entraînant sa destruction immédiate.
+   * *Spécification ST officielle (Table 5, note 1) :* La plage de service recommandée de VCC s'étend de **3.0 V à 7.0 V** (Table 5 : Min 3.0 V, Typ 5.0 V, Max 7.0 V ; le seuil de 4.5 V concerne uniquement la tension batterie VS). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Le fonctionnement sous VCC = 3.3 V est donc 100% conforme et garanti par conception constructeur.
+   * *Structure interne de RX et danger du 5V :* La broche 1 (`RX`) possède une résistance de pull-up interne active reliée à VCC (R_RX ≈ 10 kΩ). Elle n'est PAS un collecteur ouvert pur.
+   * *Protection vitale de l'ESP32-S3 :* Les GPIOs de l'ESP32-S3 ne sont **pas tolérants 5V** (limite absolue à 3.6 V). Si VCC était alimenté en 5V, RX délivrerait ~4.9V dans le GPIO4, entraînant sa destruction immédiate.
    * *Décision de conception :* **VCC doit impérativement rester raccordé au rail `3.3V`** avec son condensateur de découplage de 100 nF (`C4`).
 3. **Raccordement Sécurisé de VS (Pin 7) :**
    * Bien que `U3` tolère -24V sur VS, le raccorder en aval direct de la protection anti-inversion `Q1` et du fusible `F1` (rail `+12V_PROT`) protège le composant contre les transitoires violents et évite toute fuite.
 4. **Verrouillage de l'Entrée Inutilisée LI (Pin 8) :**
-   * La broche 8 (`LI`) est le comparateur d'entrée L (seuil $0.5 \times V_S$). La ponter directement sur la broche adjacente 7 (`VS` / `+12V_PROT`) verrouille le comparateur au repos inactif ($V_{LI} = V_S > 0.55\,V_S$), élimine tout risque d'antenne parasite CEM et garantit une consommation statique nulle ($0\,\mu\text{A}$).
+   * La broche 8 (`LI`) est le comparateur d'entrée L (seuil 0.5 × VS). La ponter directement sur la broche adjacente 7 (`VS` / `+12V_PROT`) verrouille le comparateur au repos inactif (VLI = VS > 0.55 VS), élimine tout risque d'antenne parasite CEM et garantit une consommation statique nulle (0 µA).
 5. **Résistance de Pull-Up Normalisée K-Line (`R16` // `R18`) :**
-   * La norme ISO 9141-2 / ISO 14230-4 impose pour l'outil de test une résistance de pull-up de **510 Ω (±5%)** vers le 12V pour charger la capacité parasite du faisceau ($C \le 2\,\text{nF}$) avec un temps de montée $t_r < 2\,\mu\text{s}$.
-   * L'association en parallèle de deux résistances de 1 kΩ 1206 (`R16` et `R18`) donne $R_{eq} = 500\,\Omega$ (écart de –1.96% par rapport à 510 Ω, conforme à la tolérance ±5%).
-   * La puissance crête totale à l'état dominant sous 14.4 V vaut $P = V^2 / R = (14.4\,\text{V})^2 / 500\,\Omega \approx 0.415\,\text{W}$. Cette puissance est divisée en **2 × 207 mW**, chaque boîtier 1206 restant sous sa limite nominale de 250 mW tout en réutilisant la *Basic Part* `C4410`.
+   * La norme ISO 9141-2 / ISO 14230-4 impose pour l'outil de test une résistance de pull-up de **510 Ω (±5%)** vers le 12V pour charger la capacité parasite du faisceau (C <= 2 nF) avec un temps de montée tr < 2 µs.
+   * L'association en parallèle de deux résistances de 1 kΩ 1206 (`R16` et `R18`) donne Req = 500 Ω (écart de –1.96% par rapport à 510 Ω, conforme à la tolérance ±5%).
+   * La puissance crête totale à l'état dominant sous 14.4 V vaut P = V² / R = (14.4V)² / 500 Ω ≈ 0.415 W. Cette puissance est divisée en **2 × 207 mW**, chaque boîtier 1206 restant sous sa limite nominale de 250 mW tout en réutilisant la *Basic Part* `C4410`.
 
 #### C. Préconisations Constructeur — Implantation & Routage PCB
 * **Protection TVS `D5` (`SMF24CA`) :**
@@ -228,7 +228,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 * [x] **Conforme :** Inductance blindée 10 µH (3.6A) et diode Schottky SS34 (40V 3A).
 * [x] **Conforme :** Filtrage d'entrée avec céramique 100 nF (`C14`) au plus près de VIN et 10 µF (`C7`).
 * [x] **Conforme :** Capacité de sortie optimisée en Basic Parts (2 × 10 µF 50V `C8` // `C16`) divisant par deux l'ESR.
-* [x] **[CONFORME / SÉCURISÉ] Optimisation TVS D1 :** Bascule validée vers `SMBJ16A` (LCSC `C353386`, boîtier `SMB`), garantissant $V_{CL} = 26.0\,\text{V}$ et une marge de sécurité robuste de **4.0 V** sous les 30.0 V de limite absolue de `U4`.
+* [x] **[CONFORME / SÉCURISÉ] Optimisation TVS D1 :** Bascule validée vers `SMBJ16A` (LCSC `C353386`, boîtier `SMB`), garantissant Vcl = 26.0 V et une marge de sécurité robuste de **4.0 V** sous les 30.0 V de limite absolue de `U4`.
 
 ---
 
@@ -257,7 +257,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
    * *Audit de notre circuit :*
      * `C6` (immédiatement en sortie de U5 sur le net `3.3V_PRE` en amont de `FB1`) est dimensionné à **10 µF 50V 1206** (`CL31A106KBHNNNE`, LCSC `C13585`, *Basic Part*).
      * Le condensateur réservoir Bulk `C11` (**10 µF**) complète le filtrage après la perle de ferrite `FB1` sur le net `3.3V`.
-     * **Conformité assurée :** Avec $C_6 = 10\,\mu\text{F} \ge 4.7\,\mu\text{F}$ directement sur `3.3V_PRE` avant `FB1`, la marge de phase intrinsèque du LDO est 100% garantie selon la courbe de stabilité de la datasheet ST.
+     * **Conformité assurée :** Avec C6 = 10 µF >= 4.7 µF directement sur `3.3V_PRE` avant `FB1`, la marge de phase intrinsèque du LDO est 100% garantie selon la courbe de stabilité de la datasheet ST.
 
 #### C. Préconisations Constructeur — Implantation & Thermique
 * **Bilan Thermique :**
@@ -272,7 +272,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 #### D. Confrontation avec le Schéma Actuel
 * [x] **Conforme :** Tension d'entrée 5V et différentiel de 1.7V assurant un fonctionnement très au-dessus du dropout (350 mV).
 * [x] **Conforme :** Perle de ferrite `FB1` (120 Ω @ 100 MHz) associée pour créer un filtre en Pi avec découplages.
-* [x] **[CONFORME] Stabilité LDO :** Condensateur `C6` porté à 10 µF 50V 1206 (*Basic Part* `C13585`) directement sur `3.3V_PRE` avant `FB1`, satisfaisant rigoureusement la préconisation constructeur ST ($C_{OUT} \ge 4.7\,\mu\text{F}$).
+* [x] **[CONFORME] Stabilité LDO :** Condensateur `C6` porté à 10 µF 50V 1206 (*Basic Part* `C13585`) directement sur `3.3V_PRE` avant `FB1`, satisfaisant rigoureusement la préconisation constructeur ST (Cout >= 4.7 µF).
 
 ---
 

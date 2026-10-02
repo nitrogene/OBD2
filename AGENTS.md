@@ -53,3 +53,9 @@
 ## 6. Séquencement Temporel des Mises à Jour Documentaires
 - **Modification des documents APRÈS validation effective :** La mise à jour des documents du projet (`BOM.md`, `circuit_semantics.json`, `HARDWARE.md`, `floorplan.json`) ainsi que le cochage de la tâche dans `TODO.md` (`- [x]`) doivent être réalisés **strictement APRÈS** que l'utilisateur a confirmé et validé la résolution effective de la tâche (notamment l'implémentation physique dans le schéma ou le PCB sous EasyEDA Pro).
 - **Interdiction formelle d'anticiper la documentation :** L'agent ne doit **jamais** modifier la documentation, les nomenclatures ou les fichiers sémantiques par anticipation avant que l'utilisateur n'ait accompli ou validé l'action sur le schéma. Tant que le schéma physique n'a pas été modifié et validé, les documents de référence doivent refléter exclusivement l'état réel et présent du circuit.
+
+## 7. Règle de Typographie & Notation Markdown
+- **Interdiction des notations LaTeX mathématiques (`$...$`) pour les composants, connecteurs, cavaliers et grandeurs simples :**
+  - **Interdiction formelle :** Ne jamais utiliser de notation mathématique en ligne type `$J_1$`, `$J_2$`, `$JP1$`, `$R_{16}$`, `$D_4$`, `$U_1$`, `$60\,\Omega$`, `$10\,\text{k}\Omega$`, etc.
+  - **Notation Markdown obligatoire :** Désigner toujours les composants, connecteurs, cavaliers, broches et grandeurs par du texte brut avec formatage de code en ligne (backticks), par exemple : `J1`, `J2`, `JP1`, `JP2`, `R16`, `D4`, `U1`, `60 Ω`, `10 kΩ`, `3.3V`, `12V`.
+  - **Usage strictement réservé de LaTeX :** La syntaxe mathématique `$ ... $` est exclusivement tolérée pour les équations mathématiques complexes démontrant des calculs de filtres, de boucles de contre-réaction ou de fonctions de transfert (ex. $f_z = \frac{1}{2 \pi R_z C_z}$).

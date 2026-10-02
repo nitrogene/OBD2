@@ -1,6 +1,6 @@
 # Nomenclature Complète des Composants (BOM)
 
-Inventaire exhaustif des **81 composants** du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
+Inventaire exhaustif des **67 composants physiques** (82 composants au total incluant les 15 mires de test TP) du projet **Scanner OBD-II ESP32**, synchronisé en temps réel avec le schéma actif sous EasyEDA Pro (ERC = 0, DRC = 0).
 
 ---
 
@@ -95,10 +95,10 @@ Inventaire exhaustif des **81 composants** du projet **Scanner OBD-II ESP32**, s
 
 ## 2. Analyse des Coûts d'Assemblage JLCPCB (Basic vs Extended Parts)
 
-Sur les **81 composants** du circuit (dont 15 points de test sans composant physique à poser) :
+Sur les **82 composants** du circuit (dont 15 points de test sans composant physique à poser) :
 
-- **Composants physiques à assembler :** 66 composants.
-- **Basic Parts (0 $ de frais de chargement) :** **45 composants** (68.2% des composants assemblés).
+- **Composants physiques à assembler :** **67 composants**.
+- **Basic Parts (0 $ de frais de chargement) :** **46 composants** (68.7% des composants assemblés).
 - **Extended Parts (~3 $ par bobine changée) :** **21 composants** (dont H1 et H2 partagent la même référence `C49257`, et JP1/JP2 partagent `C5360898`, soit 19 références uniques approvisionnées).
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
