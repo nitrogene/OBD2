@@ -68,8 +68,8 @@
     },
     "usbc_interface": {
       "title": "Interface USB-C, Alimentation Banc & ESD",
-      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2, réservoir C18 et alimentation autonome banc via D4.",
-      "components": ["J2", "D4", "C18", "U6", "U7", "R3", "R4"]
+      "description": "Port USB-C natif (D+/D-) pour flash/debug, configuration CC1/CC2, réservoirs C18/C19 et alimentation autonome banc via D4.",
+      "components": ["J2", "D4", "C18", "C19", "U6", "U7", "R3", "R4"]
     },
     "can_transceiver": {
       "title": "Transceiver CAN Haute Vitesse (ISO 11898-2)",
@@ -337,7 +337,7 @@
       }
     },
     "C18": {
-      "block": "usb_interface",
+      "block": "usbc_interface",
       "role": "vbus_bulk_reservoir",
       "description": "Condensateur réservoir local Bulk 10 µF 50V X5R sur le rail VBUS_5V au connecteur USB-C J2",
       "value": "10uF",
@@ -349,6 +349,22 @@
         "dielectric_min": "X5R",
         "footprint": "1206",
         "notes": "Absorbe les rebonds d'enfichage à chaud et le ringing inductif du câble USB lors des sessions sur banc"
+      }
+    },
+    "C19": {
+      "block": "usbc_interface",
+      "role": "hf_decoupling",
+      "description": "Découplage haute fréquence entrée alimentation USB-C VBUS_5V (en parallèle de C18)",
+      "value": "100nF",
+      "footprint": "0603",
+      "substitutability": "direct_1to1",
+      "coupled_with": "C18",
+      "constraints": {
+        "value_farad": 1e-07,
+        "voltage_min_v": 50.0,
+        "dielectric_min": "X7R",
+        "footprint": "0603",
+        "notes": "Filtre les transitoires raides et l'énergie HF (> 20 MHz) lors du branchement USB"
       }
     },
     "D1": {

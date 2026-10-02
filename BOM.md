@@ -26,6 +26,7 @@ Inventaire exhaustif des **81 composants** du projet **Scanner OBD-II ESP32**, s
 | **C16** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur filtrage sortie Buck U4 (10 µF 50V X5R en parallèle avec C8) |
 | **C17** | 10nF | `0603B103K500NT` | `C57112` | **Basic Part** | `0603` | Condensateur de démarrage progressif Buck U4 (broche SS vers GND, Tss = 4.0 ms) |
 | **C18** | 10uF | `CL31A106KBHNNNE` | `C13585` | **Basic Part** | `1206` | Condensateur réservoir local Bulk 10 µF 50V X5R entrée VBUS USB-C J2 |
+| **C19** | 100nF | `CC0603KRX7R9BB104` | `C14663` | **Basic Part** | `0603` | Découplage HF entrée VBUS USB-C J2 (100 nF 50V X7R en parallèle avec C18) |
 | **D1** | — | `SMBJ16A` | `C353386` | Extended Part | `SMB` | Diode TVS 16V unidirectionnelle 600W (écrêtage 26.0V protégeant U4 TPS54331) |
 | **D2** | — | `SS34` | `C8678` | **Basic Part** | `SMA` | Diode Schottky 40V 3A de roue libre pour convertisseur Buck U4 (MDD) |
 | **D3** | — | `BZX84C12` | `C21547682` | Extended Part | `SOT-23` | Diode Zener 12V d'écrêtage tension Grille-Source Vgs P-MOSFET Q1 (DOWO) |
@@ -102,7 +103,7 @@ Sur les **81 composants** du circuit (dont 15 points de test sans composant phys
 
 ### A. Liste des Composants actuellement qualifiés en **Basic Part**
 
-* **`C1`, `C2`, `C3`, `C4`, `C5`, `C10`, `C14`, `C15`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
+* **`C1`, `C2`, `C3`, `C4`, `C5`, `C10`, `C14`, `C15`, `C19`** (100nF 50V, `0603`) : `CC0603KRX7R9BB104` — LCSC `C14663` (**Basic Part**)
 * **`C12`** (1uF 50V, `0603`) : `CL10A105KB8NNNC` — LCSC `C15849` (**Basic Part**)
 * **`C6`, `C7`, `C8`, `C16`, `C18`** (10uF 50V, `1206`) : `CL31A106KBHNNNE` — LCSC `C13585` (**Basic Part**)
 * **`C9`** (3.3nF, `0603`) : `CL10B332KB8NNNC` — LCSC `C1613` (**Basic Part**)

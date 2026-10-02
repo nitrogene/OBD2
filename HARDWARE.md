@@ -248,12 +248,12 @@ flowchart LR
     DM --> U7 --> IO19
     CC1 --> R3 --> GND1["GND"]
     CC2 --> R4 --> GND2["GND"]
-    VBUS --> C18["C18 (10 µF)\nRéservoir USB"] --> GND3["GND"]
+    VBUS --> C18_C19["C18 (10 µF Bulk) // C19 (100 nF HF)\nFiltrage Entrée USB"] --> GND3["GND"]
     VBUS --> D4 --> V5["Rail Interne +5V"]
     VBUS --> TP1["Pad Test TP1 (VBUS_5V)"]
 ```
 
-* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 - `CL31A106KBHNNNE` - *Basic Part*) :** Placé directement aux bornes de `VBUS_5V` à l'entrée de `J2` pour absorber les rebonds de contact et amortir le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement.
+* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 - `CL31A106KBHNNNE` - *Basic Part*) & Découplage HF `C19` (100 nF 50V 0603 - `CC0603KRX7R9BB104` - *Basic Part*) :** Montés en dérivation directe sur le rail `VBUS_5V` à l'entrée immédiate du connecteur `J2`. Le réservoir `C18` absorbe les rebonds de contact mécanique et amortit le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement, tandis que `C19` court-circuite localement les fronts raides de commutation et les parasites HF (> 20 MHz) à la masse.
 * **Diode Schottky de Puissance `D4` (`B5819W SL` - SOD-123 / LCSC `C8598` - *Basic Part*) :**
   * *Alimentation autonome sur table :* Permet d'alimenter toute la logique (LDO 3.3V, ESP32, transceiver CAN) via le port USB-C sans source 12V OBD.
   * *Protection anti-retour absolue :* Dès que la carte est connectée sur véhicule (12V présent, Buck actif), la cathode est portée à 5V, polarisant la diode en inverse et interdisant tout refoulement de courant vers le port USB de l'ordinateur.
@@ -580,10 +580,10 @@ flowchart TD
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(2,4)`, `FB1(1)`, `C6(1)`, `TP14` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
 | **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
-| **`GND`** | Bornier `J1` (Broche 8), plans de masse, blindages, condensateurs (`C1-C18`), transceivers, `U8(3)`, `D5(2)`, `D6(1)`, `TP3`, `H1(3)`, `H2(3)` | Potentiel de référence zéro volt (0V) commun reliant la masse d'alimentation et la carte. | Référence / Masse |
+| **`GND`** | Bornier `J1` (Broche 8), plans de masse, blindages, condensateurs (`C1-C19`), transceivers, `U8(3)`, `D5(2)`, `D6(1)`, `TP3`, `H1(3)`, `H2(3)` | Potentiel de référence zéro volt (0V) commun reliant la masse d'alimentation et la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (13.0 mA) vers l'anode de la LED rouge. | Interface / Statut |
-| **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec condensateur réservoir Bulk 10 µF. | Interface / USB-C |
+| **`VBUS_5V`** | `J2(A4,B9,A9,B4)`, `C18(1)`, `C19(1)`, `TP1`, `D4` (anode) | Alimentation 5V issue du câble USB-C hôte avec réservoir Bulk 10 µF (C18) et découplage HF 100 nF (C19). | Interface / USB-C |
 | **`USB_CC1`** | `J2(A5)`, `R3(1)` | Ligne de configuration USB-C canal 1 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_CC2`** | `J2(B5)`, `R4(1)` | Ligne de configuration USB-C canal 2 (détection Sink 5.1 kΩ). | Interface / USB-C |
 | **`USB_D+`** | `J2(A6,B6)`, `U6(1)`, `U1(14)` (`IO20`) | Ligne de données différentielle USB positive. | Interface / USB-C |
