@@ -42,6 +42,7 @@ class BoardDimensions:
     edge_clearance_mm: float = 1.0
     edge_clearance_mil: float = 39.37
     grid_step_mil: float = 25.0
+    mounting_holes: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -114,6 +115,9 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
 
     meta = data.get("meta", {})
     board_raw = data.get("board", {})
+    mh_raw = board_raw.get("mounting_holes", {})
+    mh_list = mh_raw.get("holes", []) if isinstance(mh_raw, dict) else (mh_raw if isinstance(mh_raw, list) else [])
+
     board = BoardDimensions(
         width_mm=board_raw.get("width_mm", mil_to_mm(board_raw.get("width_mil", 0))),
         height_mm=board_raw.get("height_mm", mil_to_mm(board_raw.get("height_mil", 0))),
@@ -121,7 +125,8 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
         height_mil=board_raw.get("height_mil", mm_to_mil(board_raw.get("height_mm", 0))),
         edge_clearance_mm=board_raw.get("edge_clearance_mm", 1.0),
         edge_clearance_mil=board_raw.get("edge_clearance_mil", mm_to_mil(board_raw.get("edge_clearance_mm", 1.0))),
-        grid_step_mil=board_raw.get("grid_step_mil", 25.0)
+        grid_step_mil=board_raw.get("grid_step_mil", 25.0),
+        mounting_holes=mh_list
     )
 
     thresholds = data.get("thresholds", {
@@ -154,17 +159,65 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
 
     functional_clusters = data.get("functional_clusters", {})
 
+    # Détection automatique du circuit_manifest pour enrichir les règles CEM et clusters
+    manifest_path = None
+    possible_manifests = [
+        p.parent / "circuit_manifest.json",
+        p.parent / "circuit_semantics.json",
+        Path("circuit_manifest.json"),
+        Path("circuit_semantics.json")
+    ]
+    for pm in possible_manifests:
+        if pm.exists():
+            manifest_path = pm
+            break
+
+    manifest_data = {}
+    if manifest_path:
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as mf:
+                manifest_data = json.load(mf)
+            logger.info(f"Manifeste de circuit détecté et chargé : {manifest_path}")
+        except Exception as e:
+            logger.warning(f"Impossible de lire le manifeste {manifest_path} : {e}")
+
+    # Si functional_clusters n'est pas dans le board_constraints, extraire depuis le circuit_manifest
+    if not functional_clusters and manifest_data.get("functional_blocks"):
+        for fb_id, fb in manifest_data["functional_blocks"].items():
+            comps = [des for des, c in manifest_data.get("components", {}).items() if c.get("block") == fb_id]
+            functional_clusters[fb_id.upper()] = comps
+
+    # Extraction des règles de proximité : priorité à la déduction automatique depuis circuit_manifest
     proximity_rules = []
-    for r in data.get("proximity_rules", []):
-        proximity_rules.append(ProximityRule(
-            component=r["component"],
-            reference_component=r["reference_component"],
-            max_distance_mm=float(r["max_distance_mm"]),
-            target_net=r.get("target_net", ""),
-            description=r.get("description", "")
-        ))
+    if manifest_data.get("components"):
+        for des, comp in manifest_data["components"].items():
+            cem = comp.get("cem_target")
+            if cem:
+                ref = cem.get("component") or cem.get("connector")
+                target_net = cem.get("rail") or cem.get("signal") or ""
+                max_dist = float(cem.get("max_distance_mm", 5.0))
+                reason = cem.get("reason", comp.get("description", ""))
+                proximity_rules.append(ProximityRule(
+                    component=des,
+                    reference_component=ref,
+                    max_distance_mm=max_dist,
+                    target_net=target_net,
+                    description=f"{comp.get('role', '')} {des} -> {ref} ({reason})"
+                ))
+
+    # Si aucune règle CEM n'a été déduite du manifeste, utiliser celles du fichier config s'il en a
+    if not proximity_rules and data.get("proximity_rules"):
+        for r in data["proximity_rules"]:
+            proximity_rules.append(ProximityRule(
+                component=r["component"],
+                reference_component=r["reference_component"],
+                max_distance_mm=float(r["max_distance_mm"]),
+                target_net=r.get("target_net", ""),
+                description=r.get("description", "")
+            ))
 
     components = {}
+    # 1. Composants explicites dans le fichier de config (ex: floorplan.json existant)
     for des, c in data.get("components", {}).items():
         components[des] = ComponentPlacement(
             designator=des,
@@ -174,6 +227,21 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
             layer=int(c.get("layer", 1)),
             description=c.get("desc", "")
         )
+
+    # 2. Si le fichier de config est un board_constraints sans section components,
+    # peupler avec la liste des composants de circuit_manifest
+    if not components and manifest_data.get("components"):
+        for des, comp in manifest_data["components"].items():
+            # Si c'est une ancre mécanique fixe définie dans board_constraints, initialiser avec ses coordonnées
+            anc = anchors.get(des)
+            components[des] = ComponentPlacement(
+                designator=des,
+                x_mil=anc.target_x_mil if anc else 0.0,
+                y_mil=anc.target_y_mil if anc else 0.0,
+                rotation=anc.target_rotation if anc else 0.0,
+                layer=1,
+                description=comp.get("description", "")
+            )
 
     return FloorplanConfig(
         project_name=meta.get("project", "PCB Design"),

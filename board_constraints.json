@@ -1,0 +1,164 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "project": "Scanner OBD-II ESP32",
+  "version": "2.0.0",
+  "frame": {
+    "unit": "mm",
+    "origin": "bottom_left",
+    "y_axis": "up",
+    "rotation": "ccw_degrees",
+    "internal_resolution_mm": 0.05,
+    "final_snap_mm": 0.635
+  },
+  "board": {
+    "outline_polygon_mm": [
+      [0.0, 0.0],
+      [81.28, 0.0],
+      [81.28, 35.56],
+      [0.0, 35.56]
+    ],
+    "width_mm": 81.28,
+    "height_mm": 35.56,
+    "layers": 2,
+    "edge_clearance_mm": 1.0,
+    "mounting_holes": [
+      { "id": "MH1", "name": "Fixation Sud-Ouest", "x_mm": 3.5, "y_mm": 3.5,   "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
+      { "id": "MH2", "name": "Fixation Nord-Ouest", "x_mm": 3.5, "y_mm": 32.06, "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
+      { "id": "MH3", "name": "Fixation Sud-Est",   "x_mm": 77.78, "y_mm": 3.5,   "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
+      { "id": "MH4", "name": "Fixation Nord-Est",   "x_mm": 77.78, "y_mm": 32.06, "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" }
+    ]
+  },
+  "anchors": {
+    "J1": {
+      "x_mm": 8.89,
+      "y_mm": 17.78,
+      "rot_deg": 270.0,
+      "fixed": true,
+      "ref_point": "courtyard_center",
+      "edge_flush": "west",
+      "overhang_mm": 0.0,
+      "description": "Bornier à ressort sans vis 5 contacts au pas 3.5 mm centré sur la face Ouest (corps intérieur, face avant affleurante bord X=0)"
+    },
+    "J2": {
+      "x_mm": 40.64,
+      "y_mm": 3.81,
+      "rot_deg": 0.0,
+      "fixed": true,
+      "ref_point": "courtyard_center",
+      "edge_flush": "south",
+      "overhang_mm": 0.0,
+      "description": "Prise USB-C horizontale CMS affleurante bord Sud"
+    },
+    "U1": {
+      "x_mm": 64.77,
+      "y_mm": 17.78,
+      "rot_deg": 0.0,
+      "fixed": true,
+      "ref_point": "courtyard_center",
+      "description": "SoC ESP32-S3 avec antenne PCB orientée vers le bord extérieur Est"
+    }
+  },
+  "keepout_zones": [
+    {
+      "name": "RF_ANTENNA_KEEPOUT",
+      "rect_mm": {
+        "x_min": 73.66,
+        "x_max": 81.28,
+        "y_min": 7.62,
+        "y_max": 27.94
+      },
+      "applies_to": "all_except",
+      "exempt_refs": ["U1"],
+      "layers": ["top", "bottom", "internal"],
+      "forbid": ["components", "copper", "vias"],
+      "description": "Zone d'exclusion totale multicouche sous et autour de l'antenne méandre 2.4 GHz"
+    }
+  ],
+  "separation_rules": [
+    {
+      "id": "SEP_BUCK_ANTENNA",
+      "group_a": { "cluster": "buck_5v" },
+      "group_b": { "zone": "RF_ANTENNA_KEEPOUT" },
+      "min_distance_mm": 15.0,
+      "hard": false,
+      "weight": 6,
+      "rationale": "Découpage Buck 570 kHz éloigné de l'antenne radio 2.4 GHz"
+    },
+    {
+      "id": "SEP_AGGRESSOR_VICTIM",
+      "group_a": { "emc_class": "aggressor" },
+      "group_b": { "emc_class": "victim" },
+      "min_distance_mm": 8.0,
+      "hard": false,
+      "weight": 5,
+      "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance"
+    }
+  ],
+  "net_classes": {
+    "POWER_12V": {
+      "nets": ["+12V", "+12V_FUSED", "+12V_PROT", "VBAT_OBD"],
+      "track_width_mm": 0.8,
+      "clearance_mm": 0.25,
+      "via_drill_mm": 0.4,
+      "via_diameter_mm": 0.8,
+      "emc_class": "power_raw",
+      "description": "Rails de puissance 12V batterie et protections amont"
+    },
+    "POWER_REGULATED": {
+      "nets": ["+5V", "VBUS_5V", "3.3V", "3.3V_PRE"],
+      "track_width_mm": 0.6,
+      "clearance_mm": 0.20,
+      "via_drill_mm": 0.4,
+      "via_diameter_mm": 0.8,
+      "emc_class": "power_clean",
+      "description": "Distribution à faible impédance des rails 5V et 3.3V"
+    },
+    "SWITCHING_BUCK": {
+      "nets": ["PH_BUCK", "BOOT_BUCK"],
+      "track_width_mm": 0.8,
+      "clearance_mm": 0.30,
+      "via_drill_mm": 0.4,
+      "via_diameter_mm": 0.8,
+      "emc_class": "aggressor",
+      "description": "Nœud de commutation haute fréquence (570 kHz) et bootstrap"
+    },
+    "DIFF_USB": {
+      "nets": ["USB_D+", "USB_D-"],
+      "track_width_mm": 0.30,
+      "clearance_mm": 0.20,
+      "diff_pair": true,
+      "diff_impedance_ohm": 90.0,
+      "max_skew_mm": 2.0,
+      "emc_class": "victim",
+      "description": "Paire différentielle USB Full-Speed 90 Ohms"
+    },
+    "DIFF_CAN": {
+      "nets": ["CANH", "CANL"],
+      "track_width_mm": 0.30,
+      "clearance_mm": 0.25,
+      "diff_pair": true,
+      "diff_impedance_ohm": 120.0,
+      "max_skew_mm": 5.0,
+      "emc_class": "victim",
+      "description": "Paire différentielle CAN ISO 11898-2 120 Ohms"
+    },
+    "SIGNAL_CRITICAL": {
+      "nets": ["K_LINE", "KLINE_RX", "KLINE_TX", "K_RX_IC", "K_TX_IC", "TWAI_RX", "TWAI_TX", "ESP_EN", "IO0"],
+      "track_width_mm": 0.254,
+      "clearance_mm": 0.20,
+      "via_drill_mm": 0.3,
+      "via_diameter_mm": 0.6,
+      "emc_class": "signal",
+      "description": "Signaux de communication série, TWAI et contrôle microcontrôleur"
+    },
+    "DEFAULT": {
+      "nets": [],
+      "track_width_mm": 0.254,
+      "clearance_mm": 0.20,
+      "via_drill_mm": 0.3,
+      "via_diameter_mm": 0.6,
+      "emc_class": "neutral",
+      "description": "Signaux généraux par défaut"
+    }
+  }
+}

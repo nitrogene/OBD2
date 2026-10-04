@@ -9,5 +9,9 @@ preview_diagrams.html
 __pycache__/
 *.py[cod]
 *$py.class
+.cache/
+*/.cache/
+placement.json
+placement*.svg
 
 

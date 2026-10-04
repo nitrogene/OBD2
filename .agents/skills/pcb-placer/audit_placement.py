@@ -67,7 +67,7 @@ class PCBAuditor:
 
         try:
             logger.info("Extraction des composants et pastilles du PCB...")
-            components = self.client.get_components()
+            components = self.client.get_components_with_pads()
             pads = self.client.get_all_pads()
         except Exception as e:
             logger.warning(f"Impossible de lire les éléments PCB : {e}")
@@ -82,6 +82,56 @@ class PCBAuditor:
 
         comp_map = {c.get("designator"): c for c in components if c.get("designator")}
         logger.info(f"Analyse géométrique de {len(components)} composants pour le projet '{self.config.project_name}'...")
+
+        # 0. Vérification du Contour Mécanique (Layer 11)
+        outline = self.client.get_board_outline() or {}
+        bbox = outline.get("boundingBox")
+        report["rules_checked"] += 1
+        if not bbox:
+            report["warnings"].append("Contour de carte mécanique (Layer 11) non détecté sur le PCB.")
+        else:
+            w_diff = abs(bbox["width_mm"] - self.config.board.width_mm)
+            h_diff = abs(bbox["height_mm"] - self.config.board.height_mm)
+            if w_diff > 0.5 or h_diff > 0.5:
+                report["warnings"].append(
+                    f"Contour mécanique ({bbox['width_mm']:.2f} × {bbox['height_mm']:.2f} mm) "
+                    f"diffère du gabarit cible ({self.config.board.width_mm:.2f} × {self.config.board.height_mm:.2f} mm)"
+                )
+            else:
+                report["rules_passed"] += 1
+
+        # 0.bis Vérification des Trous de Fixation Mécaniques
+        mh_pads = {p.get("number"): p for p in pads if p.get("number") and str(p.get("number")).startswith("MH")}
+        expected_holes = getattr(self.config.board, "mounting_holes", [])
+        if expected_holes:
+            report["rules_checked"] += 1
+            missing_holes = [h["id"] for h in expected_holes if h["id"] not in mh_pads]
+            if missing_holes:
+                report["violations"].append(
+                    f"VIOLATION FIXATION : Trou(s) de montage manquant(s) sur le PCB : {', '.join(missing_holes)}"
+                )
+            else:
+                report["rules_passed"] += 1
+
+            # Dégagement tête de vis (4.5 mm diamètre / 2.25 mm rayon)
+            report["rules_checked"] += 1
+            screw_encroachments = []
+            for h in expected_holes:
+                hx, hy = h.get("x_mil", 0.0), h.get("y_mil", 0.0)
+                head_r_mm = (h.get("head_clearance_mil", 177.2) / 2.0) * 0.0254
+                for des, comp in comp_map.items():
+                    if des in self.config.anchors:
+                        continue
+                    cx, cy = comp.get("x", 0.0), comp.get("y", 0.0)
+                    dist_mm = mil_to_mm(math.sqrt((cx - hx) ** 2 + (cy - hy) ** 2))
+                    if dist_mm < head_r_mm:
+                        screw_encroachments.append(f"{des} à {dist_mm:.1f} mm de {h['id']}")
+            if screw_encroachments:
+                report["violations"].append(
+                    f"VIOLATION DÉGAGEMENT VIS : Composant(s) sous tête de vis : {', '.join(screw_encroachments)}"
+                )
+            else:
+                report["rules_passed"] += 1
 
         # 1. Vérification des Ancres Fixes
         for des, anchor in self.config.anchors.items():
@@ -102,7 +152,7 @@ class PCBAuditor:
                     f"vs consigne ({anchor.target_x_mil:.0f}, {anchor.target_y_mil:.0f}) mil"
                 )
 
-        # 2. Vérification des Règles de Proximité
+        # 2. Vérification des Règles de Proximité (Pad-à-Pad réel)
         for rule in self.config.proximity_rules:
             report["rules_checked"] += 1
             comp = comp_map.get(rule.component)
@@ -114,25 +164,73 @@ class PCBAuditor:
                 )
                 continue
 
-            dx = comp.get("x", 0.0) - ref_comp.get("x", 0.0)
-            dy = comp.get("y", 0.0) - ref_comp.get("y", 0.0)
-            dist_mil = math.sqrt(dx * dx + dy * dy)
+            c_pads = comp.get("pads", [])
+            ref_pads = ref_comp.get("pads", [])
+            dist_mil = float("inf")
+            method = "centre-à-centre"
+
+            if c_pads and ref_pads:
+                # Priorité 1 : Pastilles partageant explicitement target_net
+                if rule.target_net:
+                    cp_target = [p for p in c_pads if p.get("net") == rule.target_net]
+                    rp_target = [p for p in ref_pads if p.get("net") == rule.target_net]
+                    if cp_target and rp_target:
+                        dist_mil = min(
+                            math.hypot(p1["x"] - p2["x"], p1["y"] - p2["y"])
+                            for p1 in cp_target for p2 in rp_target
+                        )
+                        method = f"net({rule.target_net})"
+
+                # Priorité 2 : Pastilles partageant un net de signal commun
+                if dist_mil == float("inf"):
+                    c_nets = set(p.get("net") for p in c_pads if p.get("net"))
+                    ref_nets = set(p.get("net") for p in ref_pads if p.get("net"))
+                    common_nets = c_nets.intersection(ref_nets)
+                    signal_common = [n for n in common_nets if n not in ("GND", "DGND", "AGND")]
+                    nets_to_check = signal_common if signal_common else list(common_nets)
+                    if nets_to_check:
+                        best_d = float("inf")
+                        best_n = None
+                        for net in nets_to_check:
+                            cp_n = [p for p in c_pads if p.get("net") == net]
+                            rp_n = [p for p in ref_pads if p.get("net") == net]
+                            d = min(
+                                math.hypot(p1["x"] - p2["x"], p1["y"] - p2["y"])
+                                for p1 in cp_n for p2 in rp_n
+                            )
+                            if d < best_d:
+                                best_d = d
+                                best_n = net
+                        dist_mil = best_d
+                        method = f"net_commun({best_n})"
+
+                # Priorité 3 : Distance minimale entre n'importe quelle paire de pastilles
+                if dist_mil == float("inf"):
+                    dist_mil = min(
+                        math.hypot(p1["x"] - p2["x"], p1["y"] - p2["y"])
+                        for p1 in c_pads for p2 in ref_pads
+                    )
+                    method = "min_pad"
+            else:
+                dist_mil = math.hypot(
+                    comp.get("x", 0.0) - ref_comp.get("x", 0.0),
+                    comp.get("y", 0.0) - ref_comp.get("y", 0.0)
+                )
+
             dist_mm = mil_to_mm(dist_mil)
 
-            # Tolérance centre-à-centre vs pad-à-pad (1.5x)
-            if dist_mm <= rule.max_distance_mm * 1.5:
+            if dist_mm <= rule.max_distance_mm:
                 report["rules_passed"] += 1
             else:
                 violation_msg = (
                     f"VIOLATION PROXIMITÉ : {rule.description} | Distance actuelle : {dist_mm:.2f} mm "
-                    f"(seuil max : {rule.max_distance_mm:.2f} mm)"
+                    f"(seuil max : {rule.max_distance_mm:.2f} mm, mesure : {method})"
                 )
                 report["violations"].append(violation_msg)
 
         # 3. Vérification des Zones d'Exclusion (Keepouts)
         for zone in self.config.keepout_zones:
             for des, comp in comp_map.items():
-                # On tolère le composant ancre éventuellement limitrophe
                 if des in self.config.anchors:
                     continue
                 cx = comp.get("x", 0.0)
@@ -142,6 +240,22 @@ class PCBAuditor:
                         f"VIOLATION KEEPOUT : Composant {des} situé à ({cx:.0f}, {cy:.0f}) mil "
                         f"dans la zone interdite '{zone.name}'"
                     )
+
+        # 4. Vérification de la Marge de Bord de Carte (Edge Clearance)
+        edge_clearance_mil = self.config.board.edge_clearance_mil
+        board_w_mil = self.config.board.width_mil
+        board_h_mil = self.config.board.height_mil
+        for des, comp in comp_map.items():
+            if des in self.config.anchors:
+                continue
+            cx = comp.get("x", 0.0)
+            cy = comp.get("y", 0.0)
+            if (cx < edge_clearance_mil or cx > (board_w_mil - edge_clearance_mil) or
+                cy < edge_clearance_mil or cy > (board_h_mil - edge_clearance_mil)):
+                report["warnings"].append(
+                    f"Composant {des} situé à ({cx:.0f}, {cy:.0f}) mil trop près du bord de carte "
+                    f"(marge requise : {self.config.board.edge_clearance_mm:.1f} mm / {edge_clearance_mil:.0f} mil)"
+                )
 
         return report
 

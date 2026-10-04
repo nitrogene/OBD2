@@ -57,6 +57,7 @@ Pour maintenir un projet propre, modulaire et directement exploitable par les ag
 | **Identifiants de couches (Layers)** | Les couches sont référencées par des entiers : `1` = Top Layer, `2` = Bottom Layer, `11` = Board Outline, `12` = Multi-layer. | Utiliser les constantes numériques entières ou l'énumération `EPCB_LayerId`. |
 | **Déplacement / Relocalisation d'un via** | Modifier in-place les coordonnées d'un via existant ne recalcule pas le masque d'isolement du cuivre lors du remplissage. | **Supprimer l'ancien via** (`delete([oldId])`), **créer le nouveau via**, puis exécuter `rebuildCopperRegion()`. |
 | **Chanfreinage paires différentielles** | Les angles à 90° créent des ruptures d'impédance et du rayonnement EMI (critique pour USB 480 Mbps et CAN 500 kbps). | **Systématiser les angles à 45°** (Δx = Δy = 25 mil pour une piste de 10 mil). |
+| **Extraction des géométries de pastilles (`Pad`)** | Les méthodes `getState_Width()` / `getState_Height()` sont absentes de `pcb_PrimitivePad`. | **Utiliser `p.getState_Pad()`** qui renvoie `['RECT', width_mil, height_mil, radius]` et `p.getState_Hole()` qui renvoie `['ROUND', drill_mil]` pour les pastilles THT. |
 
 ### C. Plans de Cuivre, DRC & Cache WebGL
 
