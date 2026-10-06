@@ -285,7 +285,16 @@
       "length_mm": 25.5,
       "height_mm": 3.2,
       "courtyard_margin_mm": 0.5,
-      "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1"
+      "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1",
+      "antenna_keepout": {
+        "name": "RF_ANTENNA_KEEPOUT",
+        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne méandre 2.4 GHz",
+        "dx_min_mm": -9.0,
+        "dx_max_mm": 9.0,
+        "dy_min_mm": 6.45,
+        "dy_max_mm": 12.75,
+        "extend_to_board_edge": true
+      }
     },
     "USB_C_16P": {
       "width_mm": 8.94,

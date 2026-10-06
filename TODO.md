@@ -31,11 +31,11 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
   - Évaluer le score du placement manuel existant sur le PCB pour établir la note de référence absolue à battre.
 
 #### Phase 2 : Moteur de Placement Global par Recuit Simulé (Étage B)
-- [ ] **Solveur Stochastique Global (`simulated_annealing.py`) :**
+- [x] **Solveur Stochastique Global (`simulated_annealing.py`) :**
   - Développer le moteur de recuit multi-départs parallélisé (16 à 64 graines aléatoires).
   - Inclure un départ initialisé sur la baseline existante (garantie mathématique de non-régression).
   - Implémenter les mouvements de voisinage : translation gaussienne, swap de composants de gabarits compatibles, rotation selon `allowed_rotations`, attraction barycentrique vers les broches connectées.
-  - Valider l'obtention d'un placement complet sans aucune violation dure (0 chevauchement, 0 keepout) et améliorant le score face à la baseline.
+  - Valider l'obtention d'un placement complet sans aucune violation dure (0 chevauchement, 0 keepout) et améliorant le score face à la baseline. *(Validé : 0 collision, 0 violation dure, score 8.2732 vs baseline invalide)*
 
 #### Phase 3 : Micro-Placement CP-SAT (Étage A) & Raffinement LNS (Étage C)
 - [ ] **Solveur Exact de Clusters Rigides (`cpsat_cluster.py`) :**

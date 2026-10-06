@@ -11,7 +11,9 @@ __pycache__/
 *$py.class
 .cache/
 */.cache/
-placement.json
+placement*.json
 placement*.svg
+!images/*.svg
+preview_*.html
 
 

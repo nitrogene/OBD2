@@ -27,7 +27,7 @@ Module autonome compact venant s'enficher directement sur la prise diagnostic du
 
 * **Diagnostic moteur multi-protocoles :**
   * **Bus CAN (ISO 15765-4) :** Diagnostic haute vitesse (500 kbps et 250 kbps) pour véhicules récents, via transceiver dédié `U2` (TJA1051T) et contrôleur TWAI de l'ESP32-S3.
-  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée spécifiquement pour le calculateur Daewoo Kalos (2003) et calculateurs historiques, via transceiver `U3` (L9637D).
+  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée, via transceiver `U3` (L9637D).
 * **Cœur de traitement & Connectivité sans fil :** SoC **ESP32-S3-WROOM-1** (Xtensa LX7 Dual-Core 240 MHz, 16 Mo Flash, 8 Mo PSRAM) assurant les liaisons Bluetooth Low Energy (BLE 5.0) et Wi-Fi 2.4 GHz avec antenne méandre PCB intégrée.
 * **Architecture d'alimentation hybride sécurisée :**
   * Étage primaire robuste face aux transitoires automobiles : fusible réarmable PPTC `F1` (0.75A/1.1A), diode TVS `D1` (SMBJ16A/18A), protection anti-inversion par MOSFETs `Q1`/`Q2`.
@@ -176,13 +176,37 @@ flowchart TD
 #### 2. Transceiver CAN (TJA1051T & Terminaison 120Ω)
 ![Schéma Transceiver CAN](./images/SCH_Transceiver%20CAN.png)
 
-#### 3. Transceiver K-Line (L9637D Daewoo Kalos)
+#### 3. Transceiver K-Line (L9637D)
 ![Schéma Transceiver K-Line](./images/SCH_Transceiver%20K-Line.png)
 
 #### 4. Microcontrôleur ESP32-S3 & Périphériques
 ![Schéma ESP32](./images/SCH_ESP32.png)
 
 ### Circuit Imprimé (PCB)
+
+L'agencement des composants est résolu par le moteur d'auto-placement sous contraintes géométriques et CEM ([`pcb-placer`](.agents/skills/pcb-placer/)), s'appuyant sur un algorithme de recuit simulé multi-objectifs (*Simulated Annealing*).
+
+| Métrique / Critère | Placement Initial (Baseline) | Placement Optimisé (Recuit Simulé) | Gain / Amélioration |
+| :--- | :---: | :---: | :---: |
+| **Statut de validité** | ❌ 85 violations dures | ✅ **VALIDE (0 violation dure)** | **100% conforme** |
+| **Chevauchements physiques** | 76 paires (118.2 mm²) | **0 paire (0.0 mm²)** | **-100% de collisions** |
+| **Pénalité proximité CEM** | Violations actives | **0.0000** (`C14` < 3 mm, découplages < 2 mm) | **Règles CEM & intégrité respectées** |
+| **Compacité boucle Buck** | Non contrainte | **0.7449** (boucle SW-L1-D2 compacte) | **Boucle de commutation minimale** |
+| **Zone RF Antenne ESP32** | Keepout statique désaligné | **Zone d'exclusion dérivée dynamiquement (Est)** | **Antenne 2.4 GHz 100% dégagée** |
+| **Chevelu total (HPWL)** | 580.7 mm (non routable) | **679.4 mm** (corridors de routage libérés) | **Chevelu aéré et routable** |
+| **Composants implantés** | 84 composants | **84 composants** (69 physiques + 15 mires TP) | **100% de la BOM couverte** |
+
+#### 1. Placement des composants - baseline (brut)
+> **Statut :** ❌ Invalide — 76 chevauchements (118.2 mm²), 85 violations dures.
+
+<img src="images/placement_baseline.svg" alt="Placement des composants - Baseline" width="100%">
+
+#### 2. Placement des composants - optimisé (Phase 2)
+> **Statut :** ✅ Valide — 0 chevauchement (0.0 mm²), 0 violation dure, Score : 8.2732.
+
+<img src="images/placement_optimised.svg" alt="Placement des composants - Optimisé" width="100%">
+
+#### 3. Rendu final
 ![PCB OBD2 Scanner](./images/PCB.png)
 
 ### Modélisation 3D
@@ -192,9 +216,9 @@ flowchart TD
 
 ## 4. État Actuel (work in progress) & Prochaine Étape
 
-* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 67 composants physiques à assembler (82 composants avec les mires de test TP), intégration des cavaliers de configuration bi-mode (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle ERC strict = 0 sous EasyEDA Pro.
-* **Placement PCB :** Placement 2D pour l'ensemble des composants avec bornier d'entrée `J1` 5 contacts (`WJ250B-3.5-05P`), prise USB-C `J2` affleurante et contour de carte ajusté (81.28 × 35.56 mm).
-* **Prochaine étape immédiate :** Synchroniser le layout PCB depuis le schéma (`Design > Update PCB`) pour instancier les empreintes des nouveaux composants (`U8`, `D5`, `JP1`, `JP2`, `H1`, `H2`, `R18`, `C19`, et `J1` 5P), finaliser le placement, puis engager le routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
+* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 69 composants physiques à assembler (84 composants avec les mires de test TP), intégration des cavaliers de configuration bi-mode (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle ERC strict = 0 sous EasyEDA Pro.
+* **Placement PCB (Phase 2 validée) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, **0 violation dure**, bornier `J1` 5 contacts affleurant à l'Ouest (`x = 6.89 mm`), prise USB-C `J2` affleurante au Sud, SoC `U1` orienté à l'Est avec keepout RF 2.4 GHz dérivé dynamiquement, et respect strict de la boucle chaude Buck et des règles CEM.
+* **Prochaine étape immédiate :** Étape de micro-placement CP-SAT (Phase 3) ou injection directe du placement validé dans EasyEDA Pro (Phase 4), puis routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
 
 ---
 
@@ -205,14 +229,14 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | Document | Description |
 | :--- | :--- |
 | 📋 **[TODO.md](TODO.md)** | **Feuille de route active & checklist complète** : suivi détaillé des 8 phases de conception (mécanique, schéma, floorplanning, routage, plans de masse, contrôles, firmware et fabrication). |
-| 📦 **[BOM.md](BOM.md)** | **Nomenclature complète des 67 composants physiques (82 avec mires de test)** : références fabricants, codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
+| 📦 **[BOM.md](BOM.md)** | **Nomenclature complète des 69 composants physiques (84 avec mires de test)** : références fabricants, codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
 | 📑 **[DATASHEETS.md](DATASHEETS.md)** | **Référentiel constructeur & Audit de conformité des ICs** : synthèse des 6 datasheets officielles (`datasheet/`), caractéristiques électriques, limites absolues, règles d'implantation PCB et matrice de conformité. |
-| 📐 **[floorplan.json](floorplan.json)** | **Configuration formelle du layout machine-readable** : source unique de vérité physique (dimensions, keepout RF, clusters CEM, règles de proximité et coordonnées d'implantation 2D) pilotant le skill `pcb-placer`. |
-| 🧠 **[circuit_semantics.json](circuit_semantics.json)** | **Référentiel sémantique & intention de schéma machine-readable** : source unique de vérité électrique (rôles fonctionnels des composants, contraintes critiques, tolérances, tensions de service et politiques de substituabilité) pilotant les skills `stingy-schematics`, `review` et `pcb-placer`. |
+| 🎯 **[pcb-placer.md](pcb-placer.md)** | **Architecture maîtresse du moteur de placement PCB** : spécifications des phases 0 à 4, critères DRC, pipeline hybride CP-SAT / Recuit simulé / LNS. |
+| 📐 **[board_constraints.json](board_constraints.json)** | **Contraintes mécaniques de carte machine-readable** : dimensions 100% mm, ancres mécaniques (`J1`, `J2`, `U1`), 4 trous M2 de fixation et règles d'accès. |
+| 🧠 **[circuit_manifest.json](circuit_manifest.json)** | **Manifeste sémantique et géométrique unifié** : boîtiers normalisés IPC-7351, zones d'antennes radio, règles de découplage et contraintes CEM. |
 | 🔬 **[HARDWARE.md](HARDWARE.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP15`) et règles de layout. |
 | 🤖 **[AUTOMATION.md](AUTOMATION.md)** | **Automatisation IA via EasyEDA Pro** : architecture du pont Node.js, extension `.eext`, configuration des hooks de cycle de vie Antigravity et règles de routage IA. |
 | 💡 **[LEARNINGS.md](LEARNINGS.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
-| 📜 **[AGENTS.md](AGENTS.md)** | **Règles de gouvernance IA** : découplage strict des skills (règle 0), exécution obligatoire sous `uv`, sécurité du pont et protocole de dépouillement. |
 | 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `TODO.md`. |
 | 📁 **`easyeda/OBD2.epro2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
 

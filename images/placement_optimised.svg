@@ -1,0 +1,377 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1745.6 931.2" width="1745.6" height="931.2" style="background-color: #0f172a; font-family: monospace;">
+<defs>
+  <!-- Motif de hachures pour les keepouts RF -->
+  <pattern id="keepoutHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="0" x2="0" y2="10" stroke="#dc2626" stroke-width="2" opacity="0.6"/>
+  </pattern>
+</defs>
+<g id="hud_header">
+  <rect x="60.0" y="15" width="1625.6" height="75" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <text x="80.0" y="42" fill="#22c55e" font-size="16" font-weight="bold">STATUT : VALIDE (0 VIOLATION DURE)</text>
+  <text x="80.0" y="70" fill="#94a3b8" font-size="13">Score : <tspan fill="#f8fafc" font-weight="bold">8.2732</tspan> | HPWL : <tspan fill="#38bdf8">679.4 mm</tspan> | Chevauchements : <tspan fill="#fbbf24">0 paires (0.0 mm²)</tspan> | Composants : 84</text>
+</g>
+<!-- Contour de carte PCB -->
+<rect x="60.0" y="160.0" width="1625.6" height="711.2" rx="6" fill="#132a1e" stroke="#22c55e" stroke-width="2.5"/>
+<rect x="80.0" y="180.0" width="1585.6" height="671.2" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>
+<!-- Keepout RF_ANTENNA_KEEPOUT -->
+<rect x="1484.4" y="335.6" width="201.20000000000005" height="360.0" fill="url(#keepoutHatch)" stroke="#ef4444" stroke-width="1.5"/>
+<text x="1489.4" y="350.6" fill="#ef4444" font-size="10" font-weight="bold">RF_ANTENNA_KEEPOUT</text>
+<!-- Trou MH1 -->
+<circle cx="130.0" cy="801.2" r="45.0" fill="#fbbf24" fill-opacity="0.15" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3"/>
+<circle cx="130.0" cy="801.2" r="22.0" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="130.0" y="858.2" fill="#cbd5e1" font-size="10" text-anchor="middle">MH1</text>
+<!-- Trou MH2 -->
+<circle cx="130.0" cy="230.0" r="45.0" fill="#fbbf24" fill-opacity="0.15" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3"/>
+<circle cx="130.0" cy="230.0" r="22.0" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="130.0" y="287.0" fill="#cbd5e1" font-size="10" text-anchor="middle">MH2</text>
+<!-- Trou MH3 -->
+<circle cx="1615.6" cy="801.2" r="45.0" fill="#fbbf24" fill-opacity="0.15" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3"/>
+<circle cx="1615.6" cy="801.2" r="22.0" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="1615.6" y="858.2" fill="#cbd5e1" font-size="10" text-anchor="middle">MH3</text>
+<!-- Trou MH4 -->
+<circle cx="1615.6" cy="230.0" r="45.0" fill="#fbbf24" fill-opacity="0.15" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3"/>
+<circle cx="1615.6" cy="230.0" r="22.0" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
+<text x="1615.6" y="287.0" fill="#cbd5e1" font-size="10" text-anchor="middle">MH4</text>
+<!-- Vecteurs boucle chaude Buck -->
+<line x1="583.1600000000001" y1="374.00000000000006" x2="645.9599999999999" y2="408.68" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<line x1="645.9599999999999" y1="408.68" x2="457.88" y2="389.84000000000003" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<line x1="457.88" y1="389.84000000000003" x2="731.1400000000001" y2="281.06" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<line x1="731.1400000000001" y1="281.06" x2="877.02" y2="275.22" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<!-- Composants & Courtyards -->
+<g id="comp_C1">
+  <rect x="1011.4800000000001" y="332.38000000000005" width="41.999999999999886" height="25.999999999999943" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1032.48" y="349.58000000000004" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C1</text>
+</g>
+<g id="comp_C2">
+  <rect x="730.5200000000001" y="715.8000000000001" width="25.999999999999943" height="41.99999999999999" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="743.52" y="741.0000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C2</text>
+</g>
+<g id="comp_C3">
+  <rect x="1029.7" y="603.3000000000001" width="41.999999999999886" height="26.000000000000014" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1050.6999999999998" y="620.5000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C3</text>
+</g>
+<g id="comp_C4">
+  <rect x="1139.74" y="781.5" width="41.999999999999886" height="26.000000000000007" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1160.74" y="798.7" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C4</text>
+</g>
+<g id="comp_C5">
+  <rect x="664.92" y="400.1" width="41.99999999999996" height="25.999999999999943" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="685.92" y="417.3" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C5</text>
+</g>
+<g id="comp_C6">
+  <rect x="729.78" y="455.80000000000007" width="78.00000000000011" height="45.99999999999994" rx="2" fill="#eab308" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="768.78" y="483.0" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C6</text>
+</g>
+<g id="comp_C7">
+  <rect x="418.88" y="366.84000000000003" width="77.99999999999997" height="45.99999999999994" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="457.88" y="394.04" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C7</text>
+</g>
+<g id="comp_C8">
+  <rect x="93.64" y="301.60000000000014" width="78.00000000000001" height="45.99999999999994" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="132.64" y="328.80000000000007" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C8</text>
+</g>
+<g id="comp_C9">
+  <rect x="383.40000000000003" y="417.36" width="25.999999999999943" height="42.00000000000003" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="396.4" y="442.56000000000006" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C9</text>
+</g>
+<g id="comp_C10">
+  <rect x="870.7600000000001" y="489.48" width="25.999999999999943" height="42.00000000000003" rx="2" fill="#06b6d4" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="883.76" y="514.6800000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C10</text>
+</g>
+<g id="comp_C11">
+  <rect x="629.46" y="491.94000000000005" width="35.0" height="50.0" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="646.96" y="521.1400000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C11</text>
+</g>
+<g id="comp_C12">
+  <rect x="1101.8600000000001" y="294.6200000000001" width="41.999999999999886" height="25.999999999999943" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1122.8600000000001" y="311.82000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C12</text>
+</g>
+<g id="comp_C13">
+  <rect x="472.74" y="271.6400000000001" width="42.00000000000003" height="25.999999999999943" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="493.74" y="288.84000000000003" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C13</text>
+</g>
+<g id="comp_C14">
+  <rect x="632.96" y="387.68" width="25.999999999999943" height="42.00000000000003" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="645.9599999999999" y="412.88" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C14</text>
+</g>
+<g id="comp_C15">
+  <rect x="403.04" y="569.6000000000001" width="42.00000000000003" height="26.000000000000014" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="424.04" y="586.8000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C15</text>
+</g>
+<g id="comp_C16">
+  <rect x="1484.1399999999999" y="256.30000000000007" width="78.00000000000011" height="45.99999999999994" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1523.1399999999999" y="283.50000000000006" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C16</text>
+</g>
+<g id="comp_C17">
+  <rect x="634.38" y="324.34000000000003" width="42.00000000000003" height="25.999999999999943" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="655.38" y="341.54" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C17</text>
+</g>
+<g id="comp_C18">
+  <rect x="1194.92" y="245.58000000000007" width="45.99999999999994" height="77.99999999999997" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1217.92" y="288.78000000000003" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C18</text>
+</g>
+<g id="comp_C19">
+  <rect x="1062.6399999999999" y="325.54" width="25.999999999999943" height="42.00000000000003" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1075.6399999999999" y="350.74" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">C19</text>
+</g>
+<g id="comp_D1">
+  <rect x="197.64000000000001" y="230.5000000000001" width="127.99999999999999" height="91.99999999999996" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="261.64" y="280.70000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D1</text>
+</g>
+<g id="comp_D2">
+  <rect x="669.14" y="245.06" width="124.00000000000006" height="72.00000000000003" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="731.1400000000001" y="285.26" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D2</text>
+</g>
+<g id="comp_D3">
+  <rect x="376.54" y="599.4000000000001" width="74.00000000000003" height="42.00000000000003" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="413.53999999999996" y="624.6000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D3</text>
+</g>
+<g id="comp_D4">
+  <rect x="808.8" y="370.9200000000001" width="68.00000000000011" height="45.99999999999994" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="842.8" y="398.12" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D4</text>
+</g>
+<g id="comp_D5">
+  <rect x="332.54" y="524.0600000000001" width="70.00000000000003" height="50.0" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="367.54" y="553.2600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D5</text>
+</g>
+<g id="comp_D6">
+  <rect x="1217.0200000000002" y="706.28" width="41.999999999999886" height="74.00000000000003" rx="2" fill="#06b6d4" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1238.02" y="747.48" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">D6</text>
+</g>
+<g id="comp_F1">
+  <rect x="439.52000000000004" y="187.4000000000001" width="105.99999999999994" height="80.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="492.52000000000004" y="231.60000000000008" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">F1</text>
+</g>
+<g id="comp_FB1">
+  <rect x="798.8000000000001" y="596.28" width="41.999999999999886" height="26.000000000000014" rx="2" fill="#eab308" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="819.8000000000001" y="613.48" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">FB1</text>
+</g>
+<g id="comp_H1">
+  <rect x="684.46" y="622.86" width="168.40000000000003" height="66.8" rx="2" fill="#94a3b8" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="768.66" y="660.46" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">H1</text>
+</g>
+<g id="comp_H2">
+  <rect x="1023.04" y="434.66" width="66.80000000000007" height="168.40000000000003" rx="2" fill="#94a3b8" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1056.44" y="523.0600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">H2</text>
+</g>
+<g id="comp_J1">
+  <rect x="87.8" y="355.6" width="220.0" height="320.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#ffffff" stroke-width="2.0"/>
+  <text x="197.79999999999998" y="519.8000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">J1</text>
+</g>
+<g id="comp_J2">
+  <rect x="773.4000000000001" y="711.5" width="198.79999999999995" height="167.0" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#ffffff" stroke-width="2.0"/>
+  <text x="872.8" y="799.2000000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">J2</text>
+</g>
+<g id="comp_JP1">
+  <rect x="409.46" y="428.1400000000001" width="117.60000000000005" height="66.79999999999993" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="468.26" y="465.74" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">JP1</text>
+</g>
+<g id="comp_JP2">
+  <rect x="378.18" y="297.86" width="117.60000000000002" height="66.80000000000007" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="436.98" y="335.46000000000004" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">JP2</text>
+</g>
+<g id="comp_L1">
+  <rect x="794.02" y="192.22000000000008" width="165.99999999999994" height="165.99999999999994" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="877.02" y="279.42" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">L1</text>
+</g>
+<g id="comp_LED1">
+  <rect x="1404.18" y="772.82" width="41.999999999999886" height="26.000000000000007" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1425.18" y="790.0200000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">LED1</text>
+</g>
+<g id="comp_Q1">
+  <rect x="397.22" y="219.54000000000008" width="42.00000000000003" height="73.99999999999999" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="418.22" y="260.74" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">Q1</text>
+</g>
+<g id="comp_Q2">
+  <rect x="287.29999999999995" y="678.0" width="42.00000000000003" height="74.00000000000003" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="308.29999999999995" y="719.2000000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">Q2</text>
+</g>
+<g id="comp_R1">
+  <rect x="622.54" y="585.1600000000001" width="50.0" height="35.0" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="647.54" y="606.8600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R1</text>
+</g>
+<g id="comp_R2">
+  <rect x="617.64" y="621.36" width="50.0" height="35.0" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="642.64" y="643.0600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R2</text>
+</g>
+<g id="comp_R3">
+  <rect x="973.3" y="720.8000000000001" width="50.0" height="35.0" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="998.3" y="742.5000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R3</text>
+</g>
+<g id="comp_R4">
+  <rect x="975.12" y="761.34" width="35.0" height="50.0" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="992.62" y="790.5400000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R4</text>
+</g>
+<g id="comp_R5">
+  <rect x="291.22" y="752.5000000000001" width="50.0" height="35.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="316.22" y="774.2000000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R5</text>
+</g>
+<g id="comp_R6">
+  <rect x="1423.1" y="722.56" width="35.0" height="50.0" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1440.6" y="751.76" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R6</text>
+</g>
+<g id="comp_R7">
+  <rect x="344.26" y="487.64000000000004" width="50.000000000000036" height="35.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="369.26" y="509.34000000000003" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R7</text>
+</g>
+<g id="comp_R8">
+  <rect x="326.26" y="289.04" width="46.000000000000014" height="77.99999999999997" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="349.26" y="332.24" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R8</text>
+</g>
+<g id="comp_R9">
+  <rect x="677.0600000000001" y="318.7200000000001" width="50.0" height="35.0" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="702.0600000000001" y="340.4200000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R9</text>
+</g>
+<g id="comp_R10">
+  <rect x="732.6800000000001" y="318.52000000000004" width="50.0" height="35.0" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="757.6800000000001" y="340.22" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R10</text>
+</g>
+<g id="comp_R11">
+  <rect x="372.84" y="366.56000000000006" width="35.0" height="50.0" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="390.34" y="395.76000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R11</text>
+</g>
+<g id="comp_R12">
+  <rect x="664.38" y="534.74" width="50.0" height="35.0" rx="2" fill="#06b6d4" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="689.38" y="556.44" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R12</text>
+</g>
+<g id="comp_R13">
+  <rect x="992.62" y="629.8199999999999" width="35.0" height="50.0" rx="2" fill="#06b6d4" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1010.12" y="659.02" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R13</text>
+</g>
+<g id="comp_R14">
+  <rect x="328.38" y="626.1200000000001" width="35.0" height="50.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="345.88" y="655.3200000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R14</text>
+</g>
+<g id="comp_R15">
+  <rect x="1028.1799999999998" y="372.12" width="35.0" height="50.0" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1045.6799999999998" y="401.32" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R15</text>
+</g>
+<g id="comp_R16">
+  <rect x="400.78000000000003" y="682.46" width="77.99999999999997" height="46.000000000000014" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="439.78000000000003" y="709.6600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R16</text>
+</g>
+<g id="comp_R17">
+  <rect x="256.26" y="757.7" width="35.0" height="50.0" rx="2" fill="#f97316" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="273.76" y="786.9000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R17</text>
+</g>
+<g id="comp_R18">
+  <rect x="479.12" y="685.8000000000001" width="77.99999999999997" height="46.000000000000014" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="518.12" y="713.0000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R18</text>
+</g>
+<g id="comp_R19">
+  <rect x="622.4" y="433.40000000000003" width="35.0" height="50.0" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="639.9" y="462.6" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R19</text>
+</g>
+<g id="comp_R20">
+  <rect x="625.46" y="264.78000000000003" width="35.0" height="50.0" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="642.96" y="293.98" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R20</text>
+</g>
+<g id="comp_R21">
+  <rect x="1466.5" y="742.4200000000001" width="50.0" height="35.0" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1491.5" y="764.1200000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R21</text>
+</g>
+<g id="comp_R22">
+  <rect x="1079.3200000000002" y="716.46" width="41.999999999999886" height="26.000000000000014" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1100.32" y="733.6600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R22</text>
+</g>
+<g id="comp_R23">
+  <rect x="1160.7" y="707.0600000000001" width="25.999999999999943" height="42.000000000000014" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1173.7" y="732.2600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">R23</text>
+</g>
+<g id="comp_SW1">
+  <rect x="1054.1200000000001" y="204.72000000000008" width="135.99999999999994" height="85.99999999999994" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1122.1200000000001" y="251.92000000000004" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">SW1</text>
+</g>
+<g id="comp_TP1">
+  <rect x="921.9600000000002" y="409.9200000000001" width="31.999999999999886" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="937.96" y="430.12000000000006" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP1</text>
+</g>
+<g id="comp_TP2">
+  <rect x="430.31999999999994" y="512.04" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="446.32" y="532.24" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP2</text>
+</g>
+<g id="comp_TP3">
+  <rect x="1335.2200000000003" y="728.0200000000001" width="31.999999999999886" height="31.999999999999993" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1351.2200000000003" y="748.22" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP3</text>
+</g>
+<g id="comp_TP4">
+  <rect x="314.1" y="413.8" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="330.1" y="434.00000000000006" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP4</text>
+</g>
+<g id="comp_TP5">
+  <rect x="684.8199999999999" y="702.26" width="31.999999999999957" height="32.000000000000014" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="700.8199999999999" y="722.4600000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP5</text>
+</g>
+<g id="comp_TP6">
+  <rect x="888.48" y="663.96" width="31.999999999999886" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="904.4799999999999" y="684.1600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP6</text>
+</g>
+<g id="comp_TP7">
+  <rect x="577.74" y="464.58000000000004" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="593.74" y="484.78000000000003" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP7</text>
+</g>
+<g id="comp_TP8">
+  <rect x="538.4" y="458.56" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="554.4" y="478.76000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP8</text>
+</g>
+<g id="comp_TP9">
+  <rect x="929.2200000000001" y="625.86" width="31.999999999999886" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="945.22" y="646.0600000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP9</text>
+</g>
+<g id="comp_TP10">
+  <rect x="1459.0200000000002" y="710.06" width="31.999999999999886" height="32.000000000000014" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1475.02" y="730.2600000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP10</text>
+</g>
+<g id="comp_TP11">
+  <rect x="1059.24" y="291.06" width="31.999999999999886" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1075.24" y="311.26000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP11</text>
+</g>
+<g id="comp_TP12">
+  <rect x="634.04" y="354.44000000000005" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="650.04" y="374.64000000000004" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP12</text>
+</g>
+<g id="comp_TP13">
+  <rect x="496.14" y="331.0400000000001" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="512.14" y="351.24000000000007" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP13</text>
+</g>
+<g id="comp_TP14">
+  <rect x="818.3000000000002" y="463.86" width="31.999999999999886" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="834.3000000000001" y="484.06" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP14</text>
+</g>
+<g id="comp_TP15">
+  <rect x="479.0" y="595.7" width="32.00000000000003" height="32.00000000000003" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="495.0" y="615.9000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">TP15</text>
+</g>
+<g id="comp_U1">
+  <rect x="1090.3999999999999" y="325.6" width="530.0" height="380.0" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#ffffff" stroke-width="2.0"/>
+  <text x="1355.3999999999999" y="519.8000000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U1</text>
+</g>
+<g id="comp_U2">
+  <rect x="904.3599999999999" y="494.58000000000004" width="98.00000000000011" height="117.99999999999997" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="953.36" y="557.7800000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U2</text>
+</g>
+<g id="comp_U3">
+  <rect x="512.6400000000001" y="515.48" width="97.99999999999997" height="118.00000000000004" rx="2" fill="#64748b" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="561.64" y="578.6800000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U3</text>
+</g>
+<g id="comp_U4">
+  <rect x="534.1600000000001" y="315.00000000000006" width="97.99999999999997" height="117.99999999999997" rx="2" fill="#ef4444" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="583.1600000000001" y="378.20000000000005" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U4</text>
+</g>
+<g id="comp_U5">
+  <rect x="714.3" y="502.32" width="154.00000000000006" height="94.00000000000003" rx="2" fill="#eab308" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="791.3" y="553.5200000000001" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U5</text>
+</g>
+<g id="comp_U6">
+  <rect x="1096.38" y="742.5400000000001" width="36.999999999999886" height="45.99999999999998" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1114.88" y="769.74" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U6</text>
+</g>
+<g id="comp_U7">
+  <rect x="1023.28" y="695.62" width="36.999999999999886" height="46.000000000000014" rx="2" fill="#ec4899" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="1041.78" y="722.8200000000002" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U7</text>
+</g>
+<g id="comp_U8">
+  <rect x="723.9200000000001" y="381.48" width="41.999999999999886" height="74.00000000000006" rx="2" fill="#a855f7" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>
+  <text x="744.9200000000001" y="422.68000000000006" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle" style="pointer-events: none;">U8</text>
+</g>
+</svg>

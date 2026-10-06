@@ -425,7 +425,7 @@ flowchart LR
     D5 <==> PIN1_CONN
 ```
 
-* **Protocole ISO 9141-2 / ISO 14230 (Daewoo Kalos) :** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
+* **Protocole ISO 9141-2 / ISO 14230:** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
 * **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) & Cavalier Sélecteur `JP2` (`PZ2.54-1*2` — LCSC `C5360898`) :**
   * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de 510 Ω ±5% pour garantir un temps de montée rapide (tr < 2 µs) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne Req = 500 Ω (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
   * *Rôle Normalisé du Diagnostic Tester (ISO 9141-2 / ISO 14230) & Cavalier `JP2` :*
@@ -556,7 +556,7 @@ flowchart TD
 | **Surveillance batterie & détection contact** | Impossibilité de diagnostiquer l'alternateur, claquage ADC | Pont diviseur 1/9.33 protégé + clamp silicium ultra-faible fuite `D6` + passe-bas 148 Hz | `R12`, `R13` (12k), `C10`, `D6` (`BAV199`) vers ADC1 (`IO1`) |
 | **Parasites d'allumage moteur sur bus CAN** | Trames de diagnostic corrompues ou illisibles | Transmission différentielle symétrique + terminaison commutable | Transceiver CAN `U2` + Terminaison `R8`/`JP1` |
 | **Pointes transitoires commutation bus CAN** | Chute de tension VCC sur U2 lors des états dominants | Découplage HF direct sur broche 3 (< 2 mm) | `C15` (100 nF 50V) |
-| **Signaux 12V de la ligne K-Line Daewoo** | Destruction des broches MCU limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line `U3` + `R1`, `R2` |
+| **Signaux 12V de la ligne K-Line** | Destruction des broches MCU limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line `U3` + `R1`, `R2` |
 | **Temps de montée K-Line & conformité ISO** | Trame illisible par front d'onde trop lent (> 2 µs) | Pull-up normalisée 500 Ω (2 × 1 kΩ 1206) commutable par cavalier | `R16` // `R18` (1 kΩ 1206) + `JP2` |
 | **Décharges électrostatiques (ESD) USB** | Claquage des broches USB internes du silicium | Dérivation des pointes 30 kV en < 1 ns | Diodes ESD bidirectionnelles `U6`, `U7` |
 | **Décharges statiques & transitoires bus CAN** | Claquage différentiel des entrées transceiver U2 | Écrêtage bidirectionnel 24V ultra-rapide (< 10 pF) | Double TVS 24V `U8` (`NUP2105LT1G`) |

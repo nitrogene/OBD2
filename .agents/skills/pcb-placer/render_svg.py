@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
-from score import PCBScorer, PlacementEvaluation, RectBox, get_component_courtyard_box
+from score import PCBScorer, PlacementEvaluation, RectBox, get_component_courtyard_box, get_all_keepouts
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("SVGRenderer")
@@ -120,10 +120,6 @@ def generate_svg_view(
         '  <pattern id="keepoutHatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">',
         '    <line x1="0" y1="0" x2="0" y2="10" stroke="#dc2626" stroke-width="2" opacity="0.6"/>',
         '  </pattern>',
-        '  <!-- Ombre portée pour les courtyards -->',
-        '  <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">',
-        '    <feDropShadow dx="1" dy="2" stdDeviation="1" flood-color="#000000" flood-opacity="0.5"/>',
-        '  </filter>',
         '</defs>'
     ]
 
@@ -160,8 +156,9 @@ def generate_svg_view(
     ch = (board_h - 2.0 * edge_clearance) * SCALE
     svg_lines.append(f'<rect x="{cx}" y="{cy}" width="{cw}" height="{ch}" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="4,4" opacity="0.4"/>')
 
-    # 3. Zones Keepout
-    for kz in keepouts:
+    # 3. Zones Keepout (statiques + dynamiques dérivées des packages)
+    rendered_keepouts = get_all_keepouts(board_constraints, manifest, comp_positions)
+    for kz in rendered_keepouts:
         rect = kz.get("rect_mm", {})
         kx = to_svg_x(rect.get("x_min", 0.0))
         ky = to_svg_y(rect.get("y_max", 0.0))
@@ -213,7 +210,7 @@ def generate_svg_view(
         stroke_color = "#ffffff" if is_anchor else ("#ff0000" if is_collision else "#000000")
         stroke_w = "2.5" if is_collision else ("2.0" if is_anchor else "1.0")
 
-        svg_lines.append(f'<g id="comp_{des}" filter="url(#shadow)">')
+        svg_lines.append(f'<g id="comp_{des}">')
         svg_lines.append(
             f'  <rect x="{x_svg}" y="{y_svg}" width="{w_svg}" height="{h_svg}" rx="2" '
             f'fill="{fill_color}" fill-opacity="0.8" stroke="{stroke_color}" stroke-width="{stroke_w}"/>'

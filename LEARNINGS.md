@@ -105,7 +105,7 @@ Les connaissances théoriques et algorithmiques issues de ce document ont été 
   - Validation du triplet de compensation TPS54331 (R11 = 10 kΩ, C9 = 3.3 nF, C13 = 220 pF) garantissant une marge de phase de 61.7° à 68.8°.
 * **[2026-09-20] Dépouillement des revues & Esprit critique :**
   - Mise en évidence des confusions de variantes matérielles chez les reviewers (différences de brochage ADC entre ESP32 classique et ESP32-S3).
-  - Nécessité d'un pull-up fort de 1 kΩ vers le 12V sur la ligne K-Line pour la Daewoo Kalos (ISO 9141-2).
+  - Nécessité d'un pull-up fort de 1 kΩ vers le 12V sur la ligne K-Line (ISO 9141-2).
   - Création du moteur d'auto-placement par contraintes `pcb-placer`.
 * **[2026-09-26] Découplage Sémantique Schéma & Skill Review :**
   - Réfutation de la fausse recommandation VCC 5V sur L9637D (L9637D possède une pull-up interne active sur RX vers VCC, qui détruirait l'ESP32 non 5V-tolerant sous 5V).

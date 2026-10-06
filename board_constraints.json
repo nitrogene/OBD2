@@ -30,7 +30,7 @@
   },
   "anchors": {
     "J1": {
-      "x_mm": 8.89,
+      "x_mm": 6.89,
       "y_mm": 17.78,
       "rot_deg": 270.0,
       "fixed": true,
@@ -52,28 +52,13 @@
     "U1": {
       "x_mm": 64.77,
       "y_mm": 17.78,
-      "rot_deg": 0.0,
+      "rot_deg": 270.0,
       "fixed": true,
       "ref_point": "courtyard_center",
-      "description": "SoC ESP32-S3 avec antenne PCB orientée vers le bord extérieur Est"
+      "description": "SoC ESP32-S3 orienté horizontalement, antenne méandre vers le bord extérieur Est"
     }
   },
-  "keepout_zones": [
-    {
-      "name": "RF_ANTENNA_KEEPOUT",
-      "rect_mm": {
-        "x_min": 73.66,
-        "x_max": 81.28,
-        "y_min": 7.62,
-        "y_max": 27.94
-      },
-      "applies_to": "all_except",
-      "exempt_refs": ["U1"],
-      "layers": ["top", "bottom", "internal"],
-      "forbid": ["components", "copper", "vias"],
-      "description": "Zone d'exclusion totale multicouche sous et autour de l'antenne méandre 2.4 GHz"
-    }
-  ],
+  "keepout_zones": [],
   "separation_rules": [
     {
       "id": "SEP_BUCK_ANTENNA",

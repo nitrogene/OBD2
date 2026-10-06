@@ -164,6 +164,80 @@ def get_component_courtyard_box(
     )
 
 
+def get_all_keepouts(
+    board_constraints: Dict[str, Any],
+    manifest: Dict[str, Any],
+    comp_positions: Dict[str, Tuple[float, float, float]]
+) -> List[Dict[str, Any]]:
+    """
+    Rassemble les keepouts statiques de carte et les zones d'antennes dérivées
+    dynamiquement des boîtiers de composants (ex: module ESP32).
+    """
+    all_keepouts: List[Dict[str, Any]] = list(board_constraints.get("keepout_zones", []))
+
+    board_w = board_constraints.get("board", {}).get("width_mm", 81.28)
+    board_h = board_constraints.get("board", {}).get("height_mm", 35.56)
+    packages = manifest.get("packages", {})
+    manifest_comps = manifest.get("components", {})
+
+    for des, pos in comp_positions.items():
+        meta = manifest_comps.get(des, {})
+        pkg_name = meta.get("package") or meta.get("footprint")
+        pkg_info = packages.get(pkg_name, {})
+
+        ak = pkg_info.get("antenna_keepout")
+        if not ak:
+            continue
+
+        cx, cy, rot_deg = pos
+        dx_min = float(ak.get("dx_min_mm", -9.0))
+        dx_max = float(ak.get("dx_max_mm", 9.0))
+        dy_min = float(ak.get("dy_min_mm", 6.45))
+        dy_max = float(ak.get("dy_max_mm", 12.75))
+
+        corners = [
+            (dx_min, dy_min),
+            (dx_max, dy_min),
+            (dx_max, dy_max),
+            (dx_min, dy_max)
+        ]
+
+        rot_corners = []
+        for dx, dy in corners:
+            rx, ry = rotate_offset(dx, dy, rot_deg)
+            rot_corners.append((cx + rx, cy + ry))
+
+        x_min = min(c[0] for c in rot_corners)
+        x_max = max(c[0] for c in rot_corners)
+        y_min = min(c[1] for c in rot_corners)
+        y_max = max(c[1] for c in rot_corners)
+
+        if ak.get("extend_to_board_edge", True):
+            dir_x, dir_y = rotate_offset(0.0, 1.0, rot_deg)
+            if dir_x > 0.5:
+                x_max = board_w
+            elif dir_x < -0.5:
+                x_min = 0.0
+            elif dir_y > 0.5:
+                y_max = board_h
+            elif dir_y < -0.5:
+                y_min = 0.0
+
+        all_keepouts.append({
+            "name": ak.get("name", f"KEEPOUT_{des}"),
+            "rect_mm": {
+                "x_min": round(x_min, 3),
+                "x_max": round(x_max, 3),
+                "y_min": round(y_min, 3),
+                "y_max": round(y_max, 3)
+            },
+            "exempt_refs": [des],
+            "description": ak.get("description", f"Zone d'exclusion d'antenne pour {des}")
+        })
+
+    return all_keepouts
+
+
 class PCBScorer:
     """Évaluateur agnostique de placement PCB."""
 
@@ -253,8 +327,14 @@ class PCBScorer:
             # Tolérance d'ancres affleurantes
             is_anchor = des in self.anchors
             if is_anchor:
-                # Les ancres ont le droit d'affleurer jusqu'au bord 0.0
-                if box.x_min < -0.1 or box.x_max > self.board_width + 0.1 or box.y_min < -0.1 or box.y_max > self.board_height + 0.1:
+                # Les ancres ont le droit d'affleurer jusqu'au bord 0.0 (avec tolérance pour connecteurs de bord flush)
+                anc_info = self.anchors.get(des, {})
+                flush = anc_info.get("edge_flush")
+                limit_x_min = -1.0 if flush == "west" else -0.1
+                limit_x_max = self.board_width + 1.0 if flush == "east" else self.board_width + 0.1
+                limit_y_min = -1.0 if flush == "south" else -0.1
+                limit_y_max = self.board_height + 1.0 if flush == "north" else self.board_height + 0.1
+                if box.x_min < limit_x_min or box.x_max > limit_x_max or box.y_min < limit_y_min or box.y_max > limit_y_max:
                     hard_violations.append(HardViolation(
                         violation_type="out_of_board",
                         subject=des,
@@ -299,8 +379,9 @@ class PCBScorer:
         metrics.total_overlap_area_mm2 = round(total_overlap_area, 3)
         metrics.overlapping_pairs = overlapping_pairs
 
-        # C. Intrusions Keepouts
-        for kz in self.keepouts:
+        # C. Intrusions Keepouts (statiques + dynamiques dérivées des packages)
+        all_keepouts = get_all_keepouts(self.board, self.manifest, comp_positions)
+        for kz in all_keepouts:
             kname = kz.get("name", "KEEPOUT")
             rect = kz.get("rect_mm", {})
             kbox = RectBox(
