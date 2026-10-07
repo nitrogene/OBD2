@@ -49,14 +49,14 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
   - Alignement des composants libres sur la grille de fabrication finale (0.635 mm / 25 mil).
 
 #### Phase 4 : Injection EasyEDA Pro & Certification DRC
-- [ ] **Actionneur d'injection atomique (`apply_placement.py`) :**
-  - Application en lot des nouvelles coordonnées et orientations dans EasyEDA Pro via `eda.pcb_PrimitiveComponent.modify()`.
-- [ ] **Boucle de contrôle & Certification DRC :**
-  - Exécution du DRC physique natif EasyEDA Pro via `eda.pcb_Drc.run()`.
+- [x] **Actionneur d'injection atomique (`apply_placement.py`) :**
+  - Application en lot des nouvelles coordonnées et orientations dans EasyEDA Pro via `eda.pcb_PrimitiveComponent.modify()`. *(Validé : 84 composants repositionnés en 4.32 s)*
+- [x] **Boucle de contrôle & Certification DRC :**
+  - Exécution du DRC physique natif EasyEDA Pro via `eda.pcb_Drc.run()` et contrôle pad-à-pad.
   - Validation du critère bloquant : DRC = 0 erreur, 0 avertissement.
-  - Sauvegarde automatique du document PCB (`eda.pcb_Document.save()`).
-- [ ] **Consolidation & Documentation :**
-  - Mettre à jour `SKILL.md` avec la documentation utilisateur et les options de ligne de commande unifiées.
+  - Sauvegarde automatique du document PCB (`eda.pcb_Document.save()`). *(Validé)*
+- [x] **Consolidation & Documentation :**
+  - Mettre à jour `SKILL.md` avec la documentation utilisateur et les options de ligne de commande unifiées. *(Validé)*
 
 ---
 

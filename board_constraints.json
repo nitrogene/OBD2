@@ -50,12 +50,12 @@
       "description": "Prise USB-C horizontale CMS affleurante bord Sud"
     },
     "U1": {
-      "x_mm": 64.77,
+      "x_mm": 63.00,
       "y_mm": 17.78,
       "rot_deg": 270.0,
       "fixed": true,
       "ref_point": "courtyard_center",
-      "description": "SoC ESP32-S3 orienté horizontalement, antenne méandre vers le bord extérieur Est"
+      "description": "SoC ESP32-S3 orienté horizontalement, antenne méandre rentrée à l'intérieur du bord extérieur Est"
     }
   },
   "keepout_zones": [],

@@ -27,11 +27,14 @@ Il s'appuie sur le skill [easyeda-api](../easyeda-api/SKILL.md) et son pont loca
 ```
 .agents/skills/pcb-placer/
 ├── SKILL.md                 # Documentation et guide d'utilisation
-├── easyeda_client.py        # Client Python consolidé de communication avec EasyEDA Pro
-├── placement_constraints.py # Schéma de données agnostique et parseur (load_floorplan)
+├── easyeda_client.py        # Client Python de communication avec EasyEDA Pro
+├── validate.py              # Contrôleur d'intégrité et de cohérence des données d'entrée
+├── score.py                 # Évaluateur objectif multicritère (HPWL, collisions, CEM, thermie)
+├── simulated_annealing.py   # Moteur de recuit simulé multi-départs & légalisation géométrique
+├── apply_placement.py       # Actionneur d'injection par lot & certification DRC
+├── render_svg.py            # Générateur de visualisations vectorielles SVG
 ├── size_estimator.py        # Moteur d'estimation et suggestion dimensionnelle (IPC-7351)
 ├── auto_place.py            # Moteur d'auto-placement et d'injection en une passe
-├── apply_placement.py       # Actionneur d'injection direct et certification DRC
 └── audit_placement.py       # Auditeur géométrique des distances critiques CEM et du contour
 ```
 
@@ -106,4 +109,37 @@ uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --apply -
 
 # 4. Synchronisation automatique depuis le schéma (importChanges) avant injection et audit
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --sync --apply --audit
+```
+
+---
+
+### E. Résoudre le Placement Global par Recuit Simulé (`simulated_annealing.py`)
+Génère une solution optimisée sans collision via un recuit simulé multi-départs parallélisé suivi d'une passe de légalisation géométrique déterministe :
+```bash
+# Lancement standard (16 graines, départ baseline inclus, export candidate JSON et SVG)
+uv run .agents/skills/pcb-placer/simulated_annealing.py \
+  --manifest circuit_manifest.json \
+  --constraints board_constraints.json \
+  --output placement_candidate.json \
+  --svg images/placement_optimised.svg
+
+# Résolution haute performance (multi-graines étendu)
+uv run .agents/skills/pcb-placer/simulated_annealing.py \
+  --manifest circuit_manifest.json \
+  --constraints board_constraints.json \
+  --seeds 32 \
+  --steps 30000 \
+  --output placement_candidate.json
+```
+
+---
+
+### F. Injecter le Placement & Certifier le DRC (`apply_placement.py`)
+Applique en une seule transaction par lot les coordonnées d'un fichier de placement dans EasyEDA Pro et lance la certification DRC :
+```bash
+# Simulation sans altération du PCB
+uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json --dry-run
+
+# Injection par lot, contrôle DRC natif et sauvegarde automatique
+uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json
 ```

@@ -206,19 +206,23 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
 
 <img src="images/placement_optimised.svg" alt="Placement des composants - Optimisé" width="100%">
 
-#### 3. Rendu final
-![PCB OBD2 Scanner](./images/PCB.png)
+#### 3. Rendu final & Implantation PCB (EasyEDA Pro)
+* **Vue d'implantation & chevelu (EasyEDA Pro) :**
+![PCB OBD2 Scanner - Vue d'implantation](./images/PCB.png)
+
+* **Rendu 2D photoréaliste :**
+![PCB OBD2 Scanner - Vue 2D photoréaliste](./images/2D.png)
 
 ### Modélisation 3D
-![3D OBD2 Scanner](./images/3D.png)
+![PCB OBD2 Scanner - Vue 3D](./images/3D.png)
 
 ---
 
 ## 4. État Actuel (work in progress) & Prochaine Étape
 
 * **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 69 composants physiques à assembler (84 composants avec les mires de test TP), intégration des cavaliers de configuration bi-mode (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle ERC strict = 0 sous EasyEDA Pro.
-* **Placement PCB (Phase 2 validée) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, **0 violation dure**, bornier `J1` 5 contacts affleurant à l'Ouest (`x = 6.89 mm`), prise USB-C `J2` affleurante au Sud, SoC `U1` orienté à l'Est avec keepout RF 2.4 GHz dérivé dynamiquement, et respect strict de la boucle chaude Buck et des règles CEM.
-* **Prochaine étape immédiate :** Étape de micro-placement CP-SAT (Phase 3) ou injection directe du placement validé dans EasyEDA Pro (Phase 4), puis routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
+* **Placement PCB (Phases 2 & 4 validées) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, **0 violation dure**, bornier `J1` 5 contacts affleurant à l'Ouest (`x = 6.89 mm`), prise USB-C `J2` affleurante au Sud, SoC `U1` orienté à l'Est avec keepout RF 2.4 GHz respecté, et injection par lot validée dans EasyEDA Pro (DRC = 0).
+* **Prochaine étape immédiate :** Développement du skill de routage (`freerouting`) et routage des pistes prioritaires (paires différentielles USB/CAN, signaux critiques, rails de puissance).
 
 ---
 

@@ -395,6 +395,8 @@ class FastAnnealingEngine:
 
         best_energy = current_energy
         best_state = [(it.x, it.y, it.rotation) for it in self.items]
+        best_valid_energy = current_energy if (self.total_overlap < 0.005 and current_hard < 0.005) else None
+        best_valid_state = [(it.x, it.y, it.rotation) for it in self.items] if best_valid_energy is not None else None
 
         T = t_start
         alpha_cool = (t_end / t_start) ** (1.0 / steps)
@@ -530,17 +532,26 @@ class FastAnnealingEngine:
                 if current_energy < best_energy:
                     best_energy = current_energy
                     best_state = [(item.x, item.y, item.rotation) for item in self.items]
+
+                if self.total_overlap < 0.005 and current_hard < 0.005:
+                    if best_valid_energy is None or current_energy < best_valid_energy:
+                        best_valid_energy = current_energy
+                        best_valid_state = [(item.x, item.y, item.rotation) for item in self.items]
             else:
                 # Rollback de position
                 it.x, it.y, it.rotation = old_x, old_y, old_rot
 
             T *= alpha_cool
 
-        # Restauration du meilleur état
-        for k, (bx, by, brot) in enumerate(best_state):
+        # Restauration du meilleur état (priorité absolue à un état 100% valide)
+        chosen_state = best_valid_state if best_valid_state is not None else best_state
+        for k, (bx, by, brot) in enumerate(chosen_state):
             self.items[k].x = bx
             self.items[k].y = by
             self.items[k].rotation = brot
+
+        # Passe de légalisation géométrique agnostique pour éliminer toute micro-pénétration résiduelle
+        self.legalize()
 
         res: Dict[str, Dict[str, Any]] = {}
         for it in self.items:
@@ -551,6 +562,64 @@ class FastAnnealingEngine:
                 "layer": 1
             }
         return res
+
+    def legalize(self, max_passes: int = 60) -> bool:
+        """
+        Passe de légalisation géométrique agnostique :
+        Résout les micro-pénétrations résiduelles par répulsion le long de l'axe
+        de pénétration minimale, tout en respectant les ancres fixes et les bords de carte.
+        """
+        for _ in range(max_passes):
+            moved = False
+            for i in range(self.n_items):
+                it_a = self.items[i]
+                box_a = it_a.box
+                for j in range(i + 1, self.n_items):
+                    it_b = self.items[j]
+                    box_b = it_b.box
+
+                    if box_a.intersects(box_b):
+                        inter_area = box_a.intersection_area(box_b)
+                        if inter_area <= 0.005:
+                            continue
+
+                        pen_x = min(box_a.x_max, box_b.x_max) - max(box_a.x_min, box_b.x_min)
+                        pen_y = min(box_a.y_max, box_b.y_max) - max(box_a.y_min, box_b.y_min)
+                        push_margin = 0.20
+
+                        if pen_x < pen_y:
+                            dist_x = pen_x + push_margin
+                            sign = 1.0 if it_a.x >= it_b.x else -1.0
+                            if not it_a.is_fixed and not it_b.is_fixed:
+                                it_a.x += sign * (dist_x / 2.0)
+                                it_b.x -= sign * (dist_x / 2.0)
+                            elif not it_a.is_fixed:
+                                it_a.x += sign * dist_x
+                            elif not it_b.is_fixed:
+                                it_b.x -= sign * dist_x
+                        else:
+                            dist_y = pen_y + push_margin
+                            sign = 1.0 if it_a.y >= it_b.y else -1.0
+                            if not it_a.is_fixed and not it_b.is_fixed:
+                                it_a.y += sign * (dist_y / 2.0)
+                                it_b.y -= sign * (dist_y / 2.0)
+                            elif not it_a.is_fixed:
+                                it_a.y += sign * dist_y
+                            elif not it_b.is_fixed:
+                                it_b.y -= sign * dist_y
+
+                        for it in (it_a, it_b):
+                            if not it.is_fixed:
+                                hw = it.current_half_w
+                                hh = it.current_half_h
+                                it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, it.x))
+                                it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, it.y))
+
+                        moved = True
+                        box_a = it_a.box
+            if not moved:
+                return True
+        return False
 
 
 def optimize_placement_multistart(
