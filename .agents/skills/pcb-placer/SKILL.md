@@ -32,6 +32,7 @@ Il s'appuie sur le skill [easyeda-api](../easyeda-api/SKILL.md) et son pont loca
 ├── score.py                 # Évaluateur objectif multicritère (HPWL, collisions, CEM, thermie)
 ├── simulated_annealing.py   # Moteur de recuit simulé multi-départs & légalisation géométrique
 ├── apply_placement.py       # Actionneur d'injection par lot & certification DRC
+├── label_placer.py          # Moteur de placement & normalisation de la sérigraphie (IPC-7351)
 ├── render_svg.py            # Générateur de visualisations vectorielles SVG
 ├── size_estimator.py        # Moteur d'estimation et suggestion dimensionnelle (IPC-7351)
 ├── auto_place.py            # Moteur d'auto-placement et d'injection en une passe
@@ -114,22 +115,17 @@ uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --sync --
 ---
 
 ### E. Résoudre le Placement Global par Recuit Simulé (`simulated_annealing.py`)
-Génère une solution optimisée sans collision via un recuit simulé multi-départs parallélisé suivi d'une passe de légalisation géométrique déterministe :
+Génère une solution optimisée sans collision via un recuit simulé multi-départs intégrant la densité uniforme 2D, l'opérateur de colonisation et la légalisation géométrique déterministe certifiée IPC :
 ```bash
-# Lancement standard (16 graines, départ baseline inclus, export candidate JSON et SVG)
+# Lancement standard (4 départs, marge d'aération 0.20 mm, export candidate JSON et SVG)
 uv run .agents/skills/pcb-placer/simulated_annealing.py \
   --manifest circuit_manifest.json \
-  --constraints board_constraints.json \
-  --output placement_candidate.json \
-  --svg images/placement_optimised.svg
-
-# Résolution haute performance (multi-graines étendu)
-uv run .agents/skills/pcb-placer/simulated_annealing.py \
-  --manifest circuit_manifest.json \
-  --constraints board_constraints.json \
-  --seeds 32 \
-  --steps 30000 \
-  --output placement_candidate.json
+  --board board_constraints.json \
+  --starts 4 \
+  --steps 40000 \
+  --spacing 0.20 \
+  --out placement_candidate.json \
+  --svg placement_candidate.svg
 ```
 
 ---
@@ -143,3 +139,16 @@ uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candid
 # Injection par lot, contrôle DRC natif et sauvegarde automatique
 uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json
 ```
+
+---
+
+### G. Optimiser & Normaliser la Sérigraphie (`label_placer.py`)
+Positionne et oriente automatiquement toutes les étiquettes de désignateurs sur la couche de sérigraphie (Top Silk) selon les normes IPC-7351 §3.4.7 et IPC-A-610 :
+```bash
+# Simulation sans altération du PCB (audit de collision et d'orientation)
+uv run .agents/skills/pcb-placer/label_placer.py --dry-run
+
+# Injection réelle, normalisation orthogonale (0°/90°), dégagement du cuivre (>= 0.25 mm) et sauvegarde
+uv run .agents/skills/pcb-placer/label_placer.py
+```
+

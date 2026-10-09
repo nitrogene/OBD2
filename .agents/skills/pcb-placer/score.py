@@ -109,6 +109,8 @@ class ScoreMetrics:
     f_switching_nets: float = 0.0
     f_separation_emc: float = 0.0
     f_edge_access: float = 0.0
+    f_density_uniformity: float = 0.0
+    f_spacing_comfort: float = 0.0
 
     # Score Global Normalisé
     weighted_total_score: float = 0.0
@@ -636,8 +638,63 @@ class PCBScorer:
 
         metrics.f_separation_emc = round(sep_penalty_sum, 4)
 
+        # D. Densité Uniforme par Grille (8x4 Bins)
+        n_bins_x, n_bins_y = 8, 4
+        bin_w = self.board_width / n_bins_x
+        bin_h = self.board_height / n_bins_y
+        bin_areas = [0.0] * (n_bins_x * n_bins_y)
+        usable_bins = []
+
+        keepout_boxes = []
+        for kz in all_keepouts:
+            rect = kz.get("rect_mm", {})
+            keepout_boxes.append(RectBox(rect.get("x_min", 0.0), rect.get("x_max", 0.0), rect.get("y_min", 0.0), rect.get("y_max", 0.0)))
+
+        for ix in range(n_bins_x):
+            for iy in range(n_bins_y):
+                b_idx = iy * n_bins_x + ix
+                bx_min = ix * bin_w
+                bx_max = (ix + 1) * bin_w
+                by_min = iy * bin_h
+                by_max = (iy + 1) * bin_h
+                b_box = RectBox(bx_min, bx_max, by_min, by_max)
+
+                # Si la cellule est dominée par un keepout (ex: antenne RF 2.4 GHz), on l'exclut de la cible
+                in_ko = any(b_box.intersection_area(kbox) > 0.6 * b_box.area for kbox in keepout_boxes)
+                if not in_ko:
+                    usable_bins.append(b_idx)
+
+                for des, box in comp_boxes.items():
+                    if box.intersects(b_box):
+                        bin_areas[b_idx] += box.intersection_area(b_box)
+
+        total_comp_area = sum(box.area for box in comp_boxes.values())
+        target_area_per_bin = total_comp_area / max(1, len(usable_bins))
+
+        density_var = 0.0
+        if usable_bins and target_area_per_bin > 0:
+            density_var = sum(((bin_areas[b] - target_area_per_bin) / target_area_per_bin) ** 2 for b in usable_bins) / len(usable_bins)
+
+        metrics.f_density_uniformity = round(density_var, 4)
+
+        # E. Confort d'espacement (Aération minimale >= 0.80 mm entre courtyards)
+        min_comfort_gap = 0.80
+        spacing_penalty = 0.0
+        comp_keys = list(comp_boxes.keys())
+        for i in range(len(comp_keys)):
+            box_i = comp_boxes[comp_keys[i]]
+            for j in range(i + 1, len(comp_keys)):
+                box_j = comp_boxes[comp_keys[j]]
+                gap_x = max(0.0, max(box_i.x_min - box_j.x_max, box_j.x_min - box_i.x_max))
+                gap_y = max(0.0, max(box_i.y_min - box_j.y_max, box_j.y_min - box_i.y_max))
+                box_dist = max(gap_x, gap_y)
+                if box_dist < min_comfort_gap:
+                    spacing_penalty += ((min_comfort_gap - box_dist) / min_comfort_gap) ** 2
+
+        metrics.f_spacing_comfort = round(spacing_penalty / max(1, len(comp_keys)), 4)
+
         # Calcul du score global pondéré
-        # Score = w1 * f_wire + w2 * f_prox + w3 * f_loop + w4 * f_net + w5 * f_sep + w6 * f_edge
+        # Score = w1 * f_wire + w2 * f_prox + w3 * f_loop + w4 * f_net + w5 * f_sep + w6 * f_edge + w7 * f_density + w8 * f_spacing
         metrics.hard_violations_count = len(hard_violations)
         total_score = (
             1.0 * metrics.f_wire_hpwl +
@@ -645,7 +702,9 @@ class PCBScorer:
             3.0 * metrics.f_loops_compactness +
             2.0 * metrics.f_switching_nets +
             1.5 * metrics.f_separation_emc +
-            0.5 * metrics.f_edge_access
+            0.5 * metrics.f_edge_access +
+            2.0 * metrics.f_density_uniformity +
+            1.5 * metrics.f_spacing_comfort
         )
         metrics.weighted_total_score = round(total_score, 4)
 
@@ -683,6 +742,8 @@ def print_evaluation_report(eval_res: PlacementEvaluation):
     logger.info(f"  • Compacité nœud rayonnant : {score.f_switching_nets:.4f}")
     logger.info(f"  • Pénalité séparation CEM  : {score.f_separation_emc:.4f}")
     logger.info(f"  • Accessibilité bords      : {score.f_edge_access:.4f}")
+    logger.info(f"  • Densité uniforme (8x4)   : {score.f_density_uniformity:.4f}")
+    logger.info(f"  • Aération / Confort       : {score.f_spacing_comfort:.4f}")
     logger.info("--------------------------------------------------------------------------------")
 
     if score.overlapping_pairs:

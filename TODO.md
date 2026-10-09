@@ -58,6 +58,15 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [x] **Consolidation & Documentation :**
   - Mettre à jour `SKILL.md` avec la documentation utilisateur et les options de ligne de commande unifiées. *(Validé)*
 
+#### Phase 5 : Optimisation de la Sérigraphie & Positionnement des Désignateurs (`label_placer.py`)
+- [x] **Moteur de placement & orientation des désignateurs (`label_placer.py`) :**
+  - **Dégagement strict des pastilles de cuivre :** Détecter et éliminer tout chevauchement entre les étiquettes de désignateurs (`pcb_PrimitiveAttribute` de type *Designator*) et les pastilles de cuivre (pads CMS / traversants), perçages de vis M2 et vias, afin d'éviter le rognage à la fabrication JLCPCB. *(Validé : 100% à l'extérieur des pastilles avec garde >= 0.20 mm)*
+  - **Résolution des collisions texte-texte :** Détecter et éliminer les superpositions entre étiquettes de composants voisins dans les zones denses de passifs (autour de `U4`, `U2`, `U3`, `SW1`, `J1`). *(Validé : 0 collision texte-texte avec garde >= 0.15 mm)*
+  - **Normalisation de l'orientation & typographie :** Aligner tous les labels selon les standards de lisibilité IPC (orientations à 0° ou 90° exclusivement, suppression des textes inversés à 180° ou 270°), avec une taille de police lisible et uniforme (hauteur 0.8 mm à 1.0 mm, épaisseur 0.15 mm). *(Validé : 63 à 0°, 21 à 90°, 0 à 180°/270°)*
+  - **Actionneur d'injection sérigraphie EasyEDA Pro :** Mettre à jour en lot les coordonnées `(x, y)` et angles des attributs désignateurs via l'API EasyEDA Pro (`pcb_PrimitiveAttribute.modify()`). *(Validé : 84/84 désignateurs repositionnés en 2.61 s)*
+  - **Validation & Actualisation des rendus :** Régénération et contrôle visuel des rendus `PCB.png`, `2D.png` et `3D.png`. *(Validé : dégagement parfait de C15, TP3, TP2, TP4, TP7, TP8, TP13, TP15, LED1)*
+
+
 ---
 
 ## Phase 3 : Routage PCB & Skill `freerouting`

@@ -90,11 +90,13 @@ class FastAnnealingEngine:
         self,
         manifest: Dict[str, Any],
         board_constraints: Dict[str, Any],
-        geometry: BoardGeometrySnapshot
+        geometry: BoardGeometrySnapshot,
+        spacing_margin_mm: float = 0.35
     ):
         self.manifest = manifest
         self.board_cfg = board_constraints
         self.geometry = geometry
+        self.spacing_margin_mm = spacing_margin_mm
 
         self.board_w = board_constraints.get("board", {}).get("width_mm", 81.28)
         self.board_h = board_constraints.get("board", {}).get("height_mm", 35.56)
@@ -107,6 +109,20 @@ class FastAnnealingEngine:
         self.manifest_comps = manifest.get("components", {})
         self.placement_constraints = manifest.get("placement_constraints", [])
 
+        # Identification agnostique des composants à couplage CEM strict (ne doivent pas être distendus)
+        tight_cem_components: Set[str] = set()
+        for rg in manifest.get("rigid_groups", []):
+            for m in rg.get("members", []):
+                tight_cem_components.add(m)
+        for pc in self.placement_constraints:
+            if pc.get("type") == "proximity" and pc.get("max_mm", 10.0) <= 6.0:
+                s_ref = pc.get("subject", {}).get("ref")
+                t_ref = pc.get("target", {}).get("ref")
+                if s_ref:
+                    tight_cem_components.add(s_ref)
+                if t_ref:
+                    tight_cem_components.add(t_ref)
+
         # Construction de la liste des items
         self.items: List[MovableItem] = []
         self.des_to_index: Dict[str, int] = {}
@@ -115,9 +131,6 @@ class FastAnnealingEngine:
         for des, meta in self.manifest_comps.items():
             pkg_name = meta.get("package") or meta.get("footprint", "0603")
             pkg_info = self.packages.get(pkg_name, {"width_mm": 1.6, "length_mm": 0.8, "courtyard_margin_mm": 0.25})
-
-            w0 = pkg_info.get("width_mm", 1.6) + 2.0 * pkg_info.get("courtyard_margin_mm", 0.25)
-            h0 = pkg_info.get("length_mm", 0.8) + 2.0 * pkg_info.get("courtyard_margin_mm", 0.25)
 
             is_fixed = False
             cur_x, cur_y, cur_rot = 0.0, 0.0, 0.0
@@ -132,6 +145,16 @@ class FastAnnealingEngine:
                 gc = geometry.components[des]
                 cur_x, cur_y, cur_rot = gc.x_mm, gc.y_mm, gc.rotation
                 is_fixed = gc.locked
+
+            # Marge de confort d'aération appliquée aux composants libres hors groupes CEM denses
+            if is_fixed or des in tight_cem_components:
+                extra_margin = 0.0
+            else:
+                extra_margin = self.spacing_margin_mm
+
+            margin_tot = pkg_info.get("courtyard_margin_mm", 0.25) + extra_margin
+            w0 = pkg_info.get("width_mm", 1.6) + 2.0 * margin_tot
+            h0 = pkg_info.get("length_mm", 0.8) + 2.0 * margin_tot
 
             pads_map = {}
             if des in geometry.components:
@@ -233,17 +256,76 @@ class FastAnnealingEngine:
             self.item_to_hard_proximities[s_idx].append(hp)
             self.item_to_hard_proximities[t_idx].append(hp)
 
+        # Indexation des proximités douces et boucles par composant
+        self.item_to_soft_proximities: Dict[int, List[Tuple[int, str, int, str, float, float]]] = {i: [] for i in range(self.n_items)}
+        for sp in self.soft_proximities:
+            s_idx, s_pin, t_idx, t_pin, max_d, w = sp
+            self.item_to_soft_proximities[s_idx].append(sp)
+            self.item_to_soft_proximities[t_idx].append(sp)
+
+        self.item_to_loops: Dict[int, List[Tuple[List[Tuple[int, str]], float, float]]] = {i: [] for i in range(self.n_items)}
+        for lp in self.loop_constraints:
+            members, target_max, w = lp
+            for m_idx, _ in members:
+                self.item_to_loops[m_idx].append(lp)
+
+        # Indexation des contraintes d'accès bord (ex: SW1 au bord Nord)
+        self.item_to_edge_access: Dict[int, List[Tuple[str, float, float]]] = {i: [] for i in range(self.n_items)}
+        for c in self.placement_constraints:
+            if c.get("type") == "edge_access":
+                sub_ref = c.get("subject", {}).get("ref")
+                edge = c.get("edge", "north")
+                max_d = c.get("max_distance_to_edge_mm", 5.0)
+                w = c.get("weight", 3.0)
+                if sub_ref in self.des_to_index:
+                    s_idx = self.des_to_index[sub_ref]
+                    self.item_to_edge_access[s_idx].append((edge, max_d, w))
+
         # Résolution des keepouts dynamiques (packages + carte)
         init_pos_map = {it.designator: (it.x, it.y, it.rotation) for it in self.items}
         self.keepouts = get_all_keepouts(board_constraints, manifest, init_pos_map)
+
+        # Configuration de la grille de densité 2D (8x4 Bins) pour homogénéité spatiale
+        self.n_bins_x = 8
+        self.n_bins_y = 4
+        self.bin_w = self.board_w / self.n_bins_x
+        self.bin_h = self.board_h / self.n_bins_y
+        self.total_bins = self.n_bins_x * self.n_bins_y
+
+        self.usable_bins: List[int] = []
+        keepout_boxes = []
+        for kz in self.keepouts:
+            rect = kz.get("rect_mm", {})
+            keepout_boxes.append(RectBox(rect.get("x_min", 0.0), rect.get("x_max", 0.0), rect.get("y_min", 0.0), rect.get("y_max", 0.0)))
+
+        for ix in range(self.n_bins_x):
+            for iy in range(self.n_bins_y):
+                b_idx = iy * self.n_bins_x + ix
+                bx_min = ix * self.bin_w
+                bx_max = (ix + 1) * self.bin_w
+                by_min = iy * self.bin_h
+                by_max = (iy + 1) * self.bin_h
+                b_box = RectBox(bx_min, bx_max, by_min, by_max)
+                in_ko = any(b_box.intersection_area(kbox) > 0.6 * b_box.area for kbox in keepout_boxes)
+                if not in_ko:
+                    self.usable_bins.append(b_idx)
 
         # Matrices d'état incrémental pour exécution ultra-rapide
         self.overlap_matrix = [[0.0] * self.n_items for _ in range(self.n_items)]
         self.total_overlap = 0.0
 
-        # Initialisation de la matrice de chevauchement
+        # Suivi incrémental de l'occupation par bin
+        self.bin_areas: List[float] = [0.0] * self.total_bins
+        self.item_bin_overlaps: List[Dict[int, float]] = [{} for _ in range(self.n_items)]
+
+        # Initialisation de la matrice de chevauchement et de la grille de densité
         for i in range(self.n_items):
             box_i = self.items[i].box
+            overlaps = self.compute_box_bin_overlaps(box_i)
+            self.item_bin_overlaps[i] = overlaps
+            for b_idx, area in overlaps.items():
+                self.bin_areas[b_idx] += area
+
             for j in range(i + 1, self.n_items):
                 box_j = self.items[j].box
                 if box_i.intersects(box_j):
@@ -252,6 +334,71 @@ class FastAnnealingEngine:
                         self.overlap_matrix[i][j] = area
                         self.overlap_matrix[j][i] = area
                         self.total_overlap += area
+
+        tot_area = sum(self.items[i].box.area for i in range(self.n_items))
+        self.target_bin_area = tot_area / max(1, len(self.usable_bins))
+
+    def compute_box_bin_overlaps(self, box: RectBox) -> Dict[int, float]:
+        """Calcule en O(1) les intersections d'une boîte avec les cellules de la grille de densité."""
+        ix_min = max(0, min(self.n_bins_x - 1, int(box.x_min / self.bin_w)))
+        ix_max = max(0, min(self.n_bins_x - 1, int(box.x_max / self.bin_w)))
+        iy_min = max(0, min(self.n_bins_y - 1, int(box.y_min / self.bin_h)))
+        iy_max = max(0, min(self.n_bins_y - 1, int(box.y_max / self.bin_h)))
+
+        res = {}
+        for ix in range(ix_min, ix_max + 1):
+            for iy in range(iy_min, iy_max + 1):
+                b_idx = iy * self.n_bins_x + ix
+                bx_min = ix * self.bin_w
+                bx_max = (ix + 1) * self.bin_w
+                by_min = iy * self.bin_h
+                by_max = (iy + 1) * self.bin_h
+                b_box = RectBox(bx_min, bx_max, by_min, by_max)
+                ia = box.intersection_area(b_box)
+                if ia > 0.001:
+                    res[b_idx] = ia
+        return res
+
+    def compute_item_prox_and_loop(self, item_idx: int) -> float:
+        """Calcule les pénalités CEM de proximité douce et de compacité de boucles pour un composant."""
+        pen = 0.0
+        for s_idx, s_pin, t_idx, t_pin, max_d, w in self.item_to_soft_proximities[item_idx]:
+            p1 = self.items[s_idx].get_pad_abs(s_pin)
+            p2 = self.items[t_idx].get_pad_abs(t_pin)
+            if p1 and p2:
+                dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                if dist > max_d:
+                    pen += (dist - max_d) * (w * 0.8)
+
+        for members, target_max, w in self.item_to_loops[item_idx]:
+            loop_pts = []
+            for m_idx, m_pin in members:
+                pt = self.items[m_idx].get_pad_abs(m_pin)
+                if pt:
+                    loop_pts.append(pt)
+            if len(loop_pts) >= 2:
+                xs = [p[0] for p in loop_pts]
+                ys = [p[1] for p in loop_pts]
+                l_hpwl = (max(xs) - min(xs)) + (max(ys) - min(ys))
+                if l_hpwl > target_max:
+                    pen += (l_hpwl - target_max) * (w * 1.0)
+
+        for edge, max_d, w in self.item_to_edge_access.get(item_idx, []):
+            it = self.items[item_idx]
+            box = it.box
+            d_edge = 0.0
+            if edge == "north":
+                d_edge = self.board_h - box.y_max
+            elif edge == "south":
+                d_edge = box.y_min
+            elif edge == "east":
+                d_edge = self.board_w - box.x_max
+            elif edge == "west":
+                d_edge = box.x_min
+            if d_edge > max_d:
+                pen += (d_edge - max_d) * (w * 1.5)
+
+        return pen
 
     def compute_single_net_hpwl(self, net_idx: int) -> float:
         """Calcule le demi-périmètre d'un seul net."""
@@ -360,6 +507,23 @@ class FastAnnealingEngine:
                 if l_hpwl > target_max:
                     penalty += (l_hpwl - target_max) * (w * 0.8)
 
+        # Accessibilité bord (ex: SW1 bord Nord)
+        for s_idx, access_list in self.item_to_edge_access.items():
+            it = self.items[s_idx]
+            box = it.box
+            for edge, max_d, w in access_list:
+                d_edge = 0.0
+                if edge == "north":
+                    d_edge = self.board_h - box.y_max
+                elif edge == "south":
+                    d_edge = box.y_min
+                elif edge == "east":
+                    d_edge = self.board_w - box.x_max
+                elif edge == "west":
+                    d_edge = box.x_min
+                if d_edge > max_d:
+                    penalty += (d_edge - max_d) * (w * 1.0)
+
         return penalty
 
     def compute_all_hard_penalties(self) -> float:
@@ -386,11 +550,22 @@ class FastAnnealingEngine:
         current_hard = self.compute_all_hard_penalties()
         current_prox = self.compute_proximity_and_loop_penalties()
 
+        usable_bins_set = set(self.usable_bins)
+        n_usable = max(1, len(self.usable_bins))
+        current_density_var = sum(
+            ((self.bin_areas[b] - self.target_bin_area) / self.target_bin_area) ** 2
+            for b in self.usable_bins
+        ) / n_usable
+
+        w_prox = 1.5
+        w_dens = 180.0
+
         current_energy = (
             current_hpwl +
             mu_overlap_start * self.total_overlap +
             lambda_hard_start * current_hard +
-            current_prox
+            w_prox * current_prox +
+            w_dens * current_density_var
         )
 
         best_energy = current_energy
@@ -412,6 +587,7 @@ class FastAnnealingEngine:
             old_x, old_y, old_rot = it.x, it.y, it.rotation
             old_box = it.box
             old_hard = self.compute_item_hard_violations(it)
+            old_prox = self.compute_item_prox_and_loop(idx)
 
             # Calcul des anciens overlaps de l'item idx
             old_item_overlap = sum(self.overlap_matrix[idx][j] for j in range(self.n_items) if j != idx)
@@ -420,11 +596,13 @@ class FastAnnealingEngine:
             affected_nets = list(set(self.item_to_nets[idx]))
             old_nets_hpwl = sum(self.compute_single_net_hpwl(n) for n in affected_nets)
 
+            old_bin_overlaps = self.item_bin_overlaps[idx]
+
             # Choix de l'opérateur
             r_move = random.random()
 
-            if r_move < 0.40:
-                # 1. Translation gaussienne
+            if r_move < 0.35:
+                # 1. Translation gaussienne locale
                 sigma = 0.4 + 7.0 * (T / t_start)
                 new_x = it.x + random.gauss(0, sigma)
                 new_y = it.y + random.gauss(0, sigma)
@@ -433,13 +611,34 @@ class FastAnnealingEngine:
                 it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, new_x))
                 it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
 
-            elif r_move < 0.60:
-                # 2. Rotation
+            elif r_move < 0.50:
+                # 2. Migration vers cellule sous-occupée (colonisation homogène des zones vides)
+                starved_bins = [b for b in self.usable_bins if self.bin_areas[b] < self.target_bin_area * 0.85]
+                if not starved_bins:
+                    starved_bins = self.usable_bins
+                tgt_b = random.choice(starved_bins)
+                iy = tgt_b // self.n_bins_x
+                ix = tgt_b % self.n_bins_x
+                bx_min = ix * self.bin_w
+                by_min = iy * self.bin_h
+                tgt_x = bx_min + random.uniform(0.15, 0.85) * self.bin_w
+                tgt_y = by_min + random.uniform(0.15, 0.85) * self.bin_h
+
+                blend = 0.35 + 0.65 * (T / t_start)
+                new_x = it.x + blend * (tgt_x - it.x)
+                new_y = it.y + blend * (tgt_y - it.y)
+                hw = it.current_half_w
+                hh = it.current_half_h
+                it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, new_x))
+                it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
+
+            elif r_move < 0.65:
+                # 3. Rotation
                 if len(it.allowed_rotations) > 1:
                     it.rotation = random.choice(it.allowed_rotations)
 
-            elif r_move < 0.80:
-                # 3. Attraction barycentrique
+            elif r_move < 0.85:
+                # 4. Attraction barycentrique
                 connected = list(self.neighbors.get(idx, []))
                 if connected:
                     tgt = self.items[random.choice(connected)]
@@ -452,8 +651,7 @@ class FastAnnealingEngine:
                     it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
 
             else:
-                # 4. Éjection anti-collision directe
-                # Trouver un voisin en collision avec idx
+                # 5. Éjection anti-collision directe
                 collision_found = False
                 for other_idx in range(self.n_items):
                     if other_idx == idx:
@@ -477,6 +675,10 @@ class FastAnnealingEngine:
                 if not collision_found:
                     it.x += random.uniform(-0.8, 0.8)
                     it.y += random.uniform(-0.8, 0.8)
+                    hw = it.current_half_w
+                    hh = it.current_half_h
+                    it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, it.x))
+                    it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, it.y))
 
             # Calcul incrémental O(N) des nouveaux overlaps de l'item idx
             new_box = it.box
@@ -494,16 +696,34 @@ class FastAnnealingEngine:
 
             new_hard = self.compute_item_hard_violations(it)
             new_nets_hpwl = sum(self.compute_single_net_hpwl(n) for n in affected_nets)
+            new_prox = self.compute_item_prox_and_loop(idx)
+
+            # Calcul incrémental O(1) de la variation de densité
+            new_bin_overlaps = self.compute_box_bin_overlaps(new_box)
+            affected_bins = set(old_bin_overlaps.keys()) | set(new_bin_overlaps.keys())
+            delta_dens_sum = 0.0
+            for b in affected_bins:
+                if b in usable_bins_set:
+                    old_a = self.bin_areas[b]
+                    new_a = old_a - old_bin_overlaps.get(b, 0.0) + new_bin_overlaps.get(b, 0.0)
+                    delta_dens_sum += (
+                        ((new_a - self.target_bin_area) / self.target_bin_area) ** 2 -
+                        ((old_a - self.target_bin_area) / self.target_bin_area) ** 2
+                    )
+            delta_density = delta_dens_sum / n_usable
 
             # Variations incrémentales
             delta_hpwl = new_nets_hpwl - old_nets_hpwl
             delta_overlap = new_item_overlap - old_item_overlap
             delta_hard = new_hard - old_hard
+            delta_prox = new_prox - old_prox
 
             delta_energy = (
                 delta_hpwl +
                 mu_ov * delta_overlap +
-                lambda_h * delta_hard
+                lambda_h * delta_hard +
+                w_prox * delta_prox +
+                w_dens * delta_density
             )
 
             # Metropolis
@@ -524,9 +744,16 @@ class FastAnnealingEngine:
                     self.overlap_matrix[idx][j] = area
                     self.overlap_matrix[j][idx] = area
 
+                # Mettre à jour l'occupation par bin
+                for b in affected_bins:
+                    self.bin_areas[b] += new_bin_overlaps.get(b, 0.0) - old_bin_overlaps.get(b, 0.0)
+                self.item_bin_overlaps[idx] = new_bin_overlaps
+
                 self.total_overlap += delta_overlap
                 current_hpwl += delta_hpwl
                 current_hard += delta_hard
+                current_prox += delta_prox
+                current_density_var += delta_density
                 current_energy += delta_energy
 
                 if current_energy < best_energy:
@@ -563,29 +790,45 @@ class FastAnnealingEngine:
             }
         return res
 
-    def legalize(self, max_passes: int = 60) -> bool:
+    def legalize(self, max_passes: int = 100) -> bool:
         """
         Passe de légalisation géométrique agnostique :
         Résout les micro-pénétrations résiduelles par répulsion le long de l'axe
-        de pénétration minimale, tout en respectant les ancres fixes et les bords de carte.
+        de pénétration minimale, tout en respectant les ancres fixes, les fixations M2,
+        les zones d'exclusion (keepouts) et les bords de carte selon les courtyards IPC certifiés.
         """
+        ipc_half_dims: Dict[int, Tuple[float, float]] = {}
+        for it in self.items:
+            pkg_info = self.packages.get(it.package, {"width_mm": 1.6, "length_mm": 0.8, "courtyard_margin_mm": 0.25})
+            w_c = pkg_info.get("width_mm", 1.6) + 2.0 * pkg_info.get("courtyard_margin_mm", 0.25)
+            h_c = pkg_info.get("length_mm", 0.8) + 2.0 * pkg_info.get("courtyard_margin_mm", 0.25)
+            ipc_half_dims[it.index] = (w_c / 2.0, h_c / 2.0)
+
+        def get_real_box(item: MovableItem) -> Tuple[RectBox, float, float]:
+            r = int(round(item.rotation)) % 360
+            hw_c, hh_c = ipc_half_dims[item.index]
+            hw = hh_c if r in (90, 270) else hw_c
+            hh = hw_c if r in (90, 270) else hh_c
+            return RectBox(item.x - hw, item.x + hw, item.y - hh, item.y + hh), hw, hh
+
         for _ in range(max_passes):
             moved = False
             for i in range(self.n_items):
                 it_a = self.items[i]
-                box_a = it_a.box
+                box_a, hw_a, hh_a = get_real_box(it_a)
+
                 for j in range(i + 1, self.n_items):
                     it_b = self.items[j]
-                    box_b = it_b.box
+                    box_b, hw_b, hh_b = get_real_box(it_b)
 
                     if box_a.intersects(box_b):
                         inter_area = box_a.intersection_area(box_b)
-                        if inter_area <= 0.005:
+                        if inter_area <= 0.001:
                             continue
 
                         pen_x = min(box_a.x_max, box_b.x_max) - max(box_a.x_min, box_b.x_min)
                         pen_y = min(box_a.y_max, box_b.y_max) - max(box_a.y_min, box_b.y_min)
-                        push_margin = 0.20
+                        push_margin = 0.08
 
                         if pen_x < pen_y:
                             dist_x = pen_x + push_margin
@@ -608,15 +851,62 @@ class FastAnnealingEngine:
                             elif not it_b.is_fixed:
                                 it_b.y -= sign * dist_y
 
-                        for it in (it_a, it_b):
+                        for it, hw, hh in ((it_a, hw_a, hh_a), (it_b, hw_b, hh_b)):
                             if not it.is_fixed:
-                                hw = it.current_half_w
-                                hh = it.current_half_h
                                 it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, it.x))
                                 it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, it.y))
 
                         moved = True
-                        box_a = it_a.box
+                        box_a, hw_a, hh_a = get_real_box(it_a)
+
+            # Repousser les composants hors des trous de fixation et keepouts
+            for it in self.items:
+                if it.is_fixed:
+                    continue
+                box, hw, hh = get_real_box(it)
+                for h in self.mounting_holes:
+                    hx = h.get("x_mm", 0.0)
+                    hy = h.get("y_mm", 0.0)
+                    hr = h.get("head_clearance_mm", 4.5) / 2.0
+                    hole_box = RectBox(hx - hr, hx + hr, hy - hr, hy + hr)
+                    if box.intersects(hole_box):
+                        dx = it.x - hx
+                        dy = it.y - hy
+                        dist = math.hypot(dx, dy)
+                        if dist < 0.001:
+                            dx, dy, dist = 1.0, 0.0, 1.0
+                        push = (hr + max(hw, hh) + 0.1) - dist
+                        if push > 0:
+                            it.x += (dx / dist) * push
+                            it.y += (dy / dist) * push
+                            it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, it.x))
+                            it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, it.y))
+                            moved = True
+
+                for kz in self.keepouts:
+                    rect = kz.get("rect_mm", {})
+                    kbox = RectBox(rect.get("x_min", 0.0), rect.get("x_max", 0.0), rect.get("y_min", 0.0), rect.get("y_max", 0.0))
+                    exempt = set(kz.get("exempt_refs", []))
+                    if it.designator in exempt:
+                        continue
+                    if box.intersects(kbox):
+                        pen_left = box.x_max - kbox.x_min
+                        pen_right = kbox.x_max - box.x_min
+                        pen_bottom = box.y_max - kbox.y_min
+                        pen_top = kbox.y_max - box.y_min
+                        min_pen = min(pen_left, pen_right, pen_bottom, pen_top)
+                        if min_pen == pen_left:
+                            it.x = kbox.x_min - hw - 0.1
+                        elif min_pen == pen_right:
+                            it.x = kbox.x_max + hw + 0.1
+                        elif min_pen == pen_bottom:
+                            it.y = kbox.y_min - hh - 0.1
+                        else:
+                            it.y = kbox.y_max + hh + 0.1
+                        it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, it.x))
+                        it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, it.y))
+                        moved = True
+
             if not moved:
                 return True
         return False
@@ -627,7 +917,8 @@ def optimize_placement_multistart(
     board_constraints: Dict[str, Any],
     geometry: BoardGeometrySnapshot,
     starts: int = 4,
-    steps_per_start: int = 40000
+    steps_per_start: int = 40000,
+    spacing_margin_mm: float = 0.20
 ) -> Tuple[Dict[str, Dict[str, Any]], PlacementEvaluation]:
     """Exécute un recuit multi-départs ultra-rapide et sélectionne la meilleure solution certifiée."""
     scorer = PCBScorer(manifest, board_constraints, geometry)
@@ -635,11 +926,11 @@ def optimize_placement_multistart(
     best_eval = None
     best_score_val = 1e9
 
-    logger.info(f"Démarrage de l'optimisation par Recuit Simulé ({starts} départs, {steps_per_start} itérations/départ)...")
+    logger.info(f"Démarrage de l'optimisation par Recuit Simulé ({starts} départs, {steps_per_start} itérations/départ, marge espacement {spacing_margin_mm} mm)...")
 
     for s in range(starts):
         t0 = time.time()
-        engine = FastAnnealingEngine(manifest, board_constraints, geometry)
+        engine = FastAnnealingEngine(manifest, board_constraints, geometry, spacing_margin_mm=spacing_margin_mm)
 
         seed = 42 + s * 1337 if s > 0 else 1000
         candidate = engine.run(steps=steps_per_start, seed=seed)
@@ -650,11 +941,14 @@ def optimize_placement_multistart(
         hard_v = eval_res.score.hard_violations_count
         overlap_a = eval_res.score.total_overlap_area_mm2
         hpwl = eval_res.score.total_hpwl_mm
+        dens_v = eval_res.score.f_density_uniformity
+        spac_p = eval_res.score.f_spacing_comfort
         pairs_cnt = len(eval_res.score.overlapping_pairs)
 
         logger.info(
             f"  Départ {s + 1}/{starts} [{elapsed:.1f}s] : "
             f"Score = {total_score:.4f} | HPWL = {hpwl:.1f} mm | "
+            f"Densité = {dens_v:.3f} | Espacement = {spac_p:.3f} | "
             f"Collisions = {pairs_cnt} ({overlap_a:.1f} mm²) | "
             f"Violations dures = {hard_v}"
         )
@@ -689,6 +983,7 @@ def main():
     parser.add_argument("--svg", type=Path, default=Path("placement_candidate.svg"))
     parser.add_argument("--starts", type=int, default=4, help="Nombre de départs multi-graines")
     parser.add_argument("--steps", type=int, default=40000, help="Itérations par départ")
+    parser.add_argument("--spacing", type=float, default=0.20, help="Marge d'aération supplémentaire par composant (mm)")
 
     args = parser.parse_args()
 
@@ -720,7 +1015,7 @@ def main():
         geom = extract_board_geometry()
 
     best_placement, best_eval = optimize_placement_multistart(
-        manifest, board_constraints, geom, starts=args.starts, steps_per_start=args.steps
+        manifest, board_constraints, geom, starts=args.starts, steps_per_start=args.steps, spacing_margin_mm=args.spacing
     )
 
     payload = {

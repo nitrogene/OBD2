@@ -506,7 +506,10 @@ Le déploiement du nouveau skill `pcb-placer` s'articule en 5 phases séquentiel
            Gain mesuré face au recuit seul
            │
            ▼
- Phase 4 : Pipeline d'injection EasyEDA Pro, boucle DRC = 0 & Calibration des poids
+  Phase 4 : Pipeline d'injection EasyEDA Pro, boucle DRC = 0 & Calibration des poids
+            │
+            ▼
+  Phase 5 : Optimisation de la Sérigraphie & Positionnement des Désignateurs (label_placer.py)
 ```
 
 | Phase | Objectif | Livrables Concrets | Critère de Succès |
@@ -516,6 +519,7 @@ Le déploiement du nouveau skill `pcb-placer` s'articule en 5 phases séquentiel
 | **Phase 2** | Solveur Global (Recuit) | • Moteur `simulated_annealing.py`.<br>• Multi-départs parallélisés.<br>• Gestion des rotations et blocs rigides. | Score inférieur à la baseline manuelle, 0 violation dure, 0 chevauchement. |
 | **Phase 3** | Précision CP-SAT & LNS | • Solveur `cpsat_cluster.py` (Étage A).<br>• Module LNS `lns_refiner.py` (Étage C). | Réduction mesurable de l'aire de boucle Buck et du découplage face à la Phase 2. |
 | **Phase 4** | Intégration EasyEDA & Finition | • Actionneur `apply_placement.py`.<br>• Commande CLI unifiée `auto_place.py`.<br>• Documentation finale `SKILL.md`. | Injection complète en 1 clic dans EasyEDA Pro, DRC = 0, document PCB sauvegardé. |
+| **Phase 5** | Sérigraphie & Désignateurs | • Moteur `label_placer.py`.<br>• Dégagement des pastilles et vias.<br>• Alignement IPC 0°/90° des étiquettes. | 0 chevauchement label-pad, 0 texte inversé (180°/270°), marquage clair sur 2D/3D. |
 
 ---
 
