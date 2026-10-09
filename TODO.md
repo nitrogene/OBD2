@@ -65,7 +65,8 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
   - **Normalisation de l'orientation & typographie :** Aligner tous les labels selon les standards de lisibilité IPC (orientations à 0° ou 90° exclusivement, suppression des textes inversés à 180° ou 270°), avec une taille de police lisible et uniforme (hauteur 0.8 mm à 1.0 mm, épaisseur 0.15 mm). *(Validé : 63 à 0°, 21 à 90°, 0 à 180°/270°)*
   - **Actionneur d'injection sérigraphie EasyEDA Pro :** Mettre à jour en lot les coordonnées `(x, y)` et angles des attributs désignateurs via l'API EasyEDA Pro (`pcb_PrimitiveAttribute.modify()`). *(Validé : 84/84 désignateurs repositionnés en 2.61 s)*
   - **Validation & Actualisation des rendus :** Régénération et contrôle visuel des rendus `PCB.png`, `2D.png` et `3D.png`. *(Validé : dégagement parfait de C15, TP3, TP2, TP4, TP7, TP8, TP13, TP15, LED1)*
-
+- [x] **Annotations Schéma des Cavaliers [review004 M1 / review005 I1] :**
+  - Cartouches d'instructions explicites ajoutés sur les pages 2 (`JP1` : CAN 120 Ω) et 3 (`JP2` : K-Line 500 Ω + titre de section) documentant les modes CAR vs BENCH. *(Validé : ERC = 0, source epro2 synchronisé)*
 
 ---
 
@@ -101,9 +102,9 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 - [ ] **Vias thermiques de dissipation :** Matrice de vias thermiques sous le pad de cuivre du LDO `U5` (LDL1117) et sous le pad thermique central de l'ESP32 (`U1`).
 - [ ] **Règle de routage PCB - Retour de masse direct des TVS [review005 M4] :** Relier les broches de masse des diodes de protection (`D1`, `D5`, `U8`) à la broche 8 (`GND`) de `J1` par une zone de cuivre courte et large (>= 2 mm ou polygone dédié avec multiples vias) avant connexion au plan de masse principal pour dériver l'énergie des transitoires sans traverser la zone logique.
 
-### Sérigraphie & Contrôles finaux
-- [ ] **Sérigraphie PCB & Annotations Schéma des Cavaliers [review004 M1 / review005 I1] :** Polarités des diodes, repères pin 1 sur tous les circuits intégrés et connecteurs (`J1`, `J2`), texte explicite sur les cavaliers (`JP1` : *« OPEN = CAR / SHUNT = BENCH »*, `JP2` : *« SHUNT = CAR / OPEN = BENCH HI-Z »*) sur le PCB et sur les pages 2 et 3 du schéma, identification claire de tous les points de test `TP1` à `TP15`.
-- [ ] **Contrôle DRC physique strict :** Exécuter le DRC PCB sous EasyEDA Pro et valider 0 erreur, 0 avertissement.
+### Sérigraphie Finale & Contrôles post-routage
+- [ ] **Sérigraphie PCB des Cavaliers [review004 M1 / review005 I1] :** Texte compact d'aide à l'utilisateur sur les cavaliers (`JP1` : *« OPEN = CAR / SHUNT = BENCH »*, `JP2` : *« SHUNT = CAR / OPEN = BENCH HI-Z »*) sur la couche Top Silk Layer après finalisation des pistes et plans de masse (itération Label <-> Routage).
+- [ ] **Contrôle DRC physique strict post-routage :** Exécuter le DRC PCB sous EasyEDA Pro avec plans de masse coulés et valider 0 erreur, 0 avertissement.
 - [ ] **Inspection 3D finale :** Contrôle visuel 3D de l'assemblage complet, du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
 
 ---
