@@ -64,7 +64,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
   - **Résolution des collisions texte-texte :** Détecter et éliminer les superpositions entre étiquettes de composants voisins dans les zones denses de passifs (autour de `U4`, `U2`, `U3`, `SW1`, `J1`). *(Validé : 0 collision texte-texte avec garde >= 0.15 mm)*
   - **Normalisation de l'orientation & typographie :** Aligner tous les labels selon les standards de lisibilité IPC (orientations à 0° ou 90° exclusivement, suppression des textes inversés à 180° ou 270°), avec une taille de police lisible et uniforme (hauteur 0.8 mm à 1.0 mm, épaisseur 0.15 mm). *(Validé : 63 à 0°, 21 à 90°, 0 à 180°/270°)*
   - **Actionneur d'injection sérigraphie EasyEDA Pro :** Mettre à jour en lot les coordonnées `(x, y)` et angles des attributs désignateurs via l'API EasyEDA Pro (`pcb_PrimitiveAttribute.modify()`). *(Validé : 84/84 désignateurs repositionnés en 2.61 s)*
-  - **Validation & Actualisation des rendus :** Régénération et contrôle visuel des rendus `PCB.png`, `2D.png` et `3D.png`. *(Validé : dégagement parfait de C15, TP3, TP2, TP4, TP7, TP8, TP13, TP15, LED1)*
+  - **Validation & Actualisation des rendus :** Régénération et contrôle visuel des rendus `PCB.png`, `2D-TOP.png`, `2D-BOTTOM.png` et `3D.png`. *(Validé : dégagement parfait de C15, TP3, TP2, TP4, TP7, TP8, TP13, TP15, LED1)*
 - [x] **Annotations Schéma des Cavaliers [review004 M1 / review005 I1] :**
   - Cartouches d'instructions explicites ajoutés sur les pages 2 (`JP1` : CAN 120 Ω) et 3 (`JP2` : K-Line 500 Ω + titre de section) documentant les modes CAR vs BENCH. *(Validé : ERC = 0, source epro2 synchronisé)*
 
@@ -73,18 +73,18 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ## Phase 3 : Routage PCB & Skill `freerouting`
 
 ### 3.1 Développement & Intégration du skill `freerouting`
-- [ ] **Gestionnaire d'environnement d'exécution sous Windows :**
-  - Intégrer le téléchargement et le bootstrap automatique d'une JRE portable headless (ex. Eclipse Temurin OpenJDK 21) et du JAR FreeRouting CLI v2.x dans le cache local du skill sans dépendance système.
-- [ ] **Pipeline Specctra DSN / SES :**
+- [x] **Gestionnaire d'environnement d'exécution sous Windows :**
+  - Intégrer le téléchargement et le bootstrap automatique d'une JRE portable headless (Temurin OpenJDK 25 via API Adoptium) et du JAR FreeRouting CLI v2.4.1 dans le cache local du skill sans dépendance système. *(Validé)*
+- [x] **Pipeline Specctra DSN / SES :**
   - Extraction automatique du fichier `.dsn` depuis la session active EasyEDA Pro via `eda.pcb_ManufactureData.getDsnFile()`.
-  - Patcher de contraintes DSN : injection des Net Classes et règles de routage depuis [`floorplan.json`](floorplan.json) (rails d'alimentation 12V/5V/3V3 >= 0.8 mm à 1.0 mm, signaux standards 0.25 mm, isolements 0.20 mm, zones d'exclusion).
+  - Patcher de contraintes DSN : injection des Net Classes et règles de routage depuis [`board_constraints.json`](board_constraints.json) (rails d'alimentation 12V à 0.8 mm, 5V/3V3 à 0.6 mm, signaux standards 0.254 mm, paires différentielles CAN/USB 0.30 mm / garde 0.20 mm, padstack_overrides fente USB-C).
   - Orchestration de l'exécution headless de FreeRouting avec suivi des passes et métriques d'achèvement.
-  - Réimport automatisé du fichier `.ses` résultant dans EasyEDA Pro via `eda.pcb_Document.importAutoRouteSesFile()`.
-- [ ] **Implémentation des modes opérationnels :**
-  - **Mode `--incremental` :** Préservation stricte de toutes les pistes existantes verrouillées (`(fixed ...)` dans le format Specctra DSN, comme les paires différentielles sensibles USB/CAN préalablement routées ou les rails d'alimentation critiques), avec auto-routage ciblé du seul chevelu (*ratsnest*) manquant. Permet les itérations de schéma sans détruire le travail manuel validé.
-  - **Mode `--clean` :** Dépouillement des pistes non protégées et re-routage intégral à blanc de tout le PCB selon les contraintes globales.
-- [ ] **Validation du skill sur la carte OBD-II :**
-  - Exécution du routage complet ou incrémental et vérification du taux de complétion (100% des connexions routées).
+  - Réimport automatisé du fichier `.ses` résultant dans EasyEDA Pro via `eda.pcb_Document.importAutoRouteSesFile()`. *(Validé)*
+- [x] **Implémentation des modes opérationnels :**
+  - **Mode `--incremental` :** Préservation stricte de toutes les pistes existantes verrouillées (`(fixed ...)` dans le format Specctra DSN), avec auto-routage ciblé du seul chevelu manquant.
+  - **Mode `--clean` :** Dépouillement des pistes non protégées (couches cuivre 1 & 2 sans toucher au contour mécanique couche 11) et re-routage intégral à blanc du PCB selon les contraintes globales. *(Validé)*
+- [x] **Validation du skill sur la carte OBD-II :**
+  - Exécution du routage complet et vérification du taux de complétion (100% des connexions routées : 219/219, 0 non routée) et certification DRC EasyEDA Pro = 0 violation. *(Validé)*
 
 ### Paires différentielles & Signaux critiques
 - [ ] **Paire différentielle USB (`USB_D+` / `USB_D-`) :** Impédance contrôlée 90 Ω, skew < 2 mm, routage direct depuis `J2` à travers `U6`/`U7` vers GPIO19/20, puis verrouillage des pistes.
@@ -105,7 +105,7 @@ Il suit la conception matérielle (schéma, placement, routage, fabrication) et 
 ### Sérigraphie Finale & Contrôles post-routage
 - [ ] **Sérigraphie PCB des Cavaliers [review004 M1 / review005 I1] :** Texte compact d'aide à l'utilisateur sur les cavaliers (`JP1` : *« OPEN = CAR / SHUNT = BENCH »*, `JP2` : *« SHUNT = CAR / OPEN = BENCH HI-Z »*) sur la couche Top Silk Layer après finalisation des pistes et plans de masse (itération Label <-> Routage).
 - [ ] **Contrôle DRC physique strict post-routage :** Exécuter le DRC PCB sous EasyEDA Pro avec plans de masse coulés et valider 0 erreur, 0 avertissement.
-- [ ] **Inspection 3D finale :** Contrôle visuel 3D de l'assemblage complet, du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
+- [ ] **Inspection 3D finale :** Contrôle visuel 3D de l'assemblage complet (`images/3D.png`, `images/2D-TOP.png` et `images/2D-BOTTOM.png`), du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
 
 ---
 

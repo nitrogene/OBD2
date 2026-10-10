@@ -34,7 +34,7 @@
 4. Valider la synchronisation de `circuit_semantics.json` face à `BOM.md` (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check --bom BOM.md --semantics circuit_semantics.json`).
 5. Mettre à jour `LEARNINGS.md` si découverte technique. Si la découverte constitue un calcul, un audit ou un automatisme réutilisable, proposer ou acter sa transformation en Skill autonome sous `.agents/skills/<nom>/`.
 6. Exporter `easyeda/OBD2.epro2` via les skills easyeda-api.
-7. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `3D.png`).
+7. Demander à l'utilisateur les exports graphiques haute résolution (`Schematic.png`, `PCB.png`, `2D-TOP.png`, `2D-BOTTOM.png`, `3D.png`).
 8. Commit et push **uniquement** après accord explicite sur le message de commit.
 
 ## 5. Dépouillement des Revues Techniques (`review/reviewXXX.md`)
