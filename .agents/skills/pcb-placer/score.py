@@ -111,6 +111,7 @@ class ScoreMetrics:
     f_edge_access: float = 0.0
     f_density_uniformity: float = 0.0
     f_spacing_comfort: float = 0.0
+    f_cluster_cohesion: float = 0.0
 
     # Score Global Normalisé
     weighted_total_score: float = 0.0
@@ -618,25 +619,104 @@ class PCBScorer:
             req_d = rule.get("min_distance_mm", 10.0)
             weight = rule.get("weight", 5)
 
-            # Identification des composants du groupe A et B
-            if rid == "SEP_BUCK_ANTENNA":
-                # Buck cluster vs RF keepout
-                buck_pts = [comp_positions[d] for d in ["U4", "L1", "D2", "C7", "C14"] if d in comp_positions]
-                if buck_pts:
-                    # Plus courte distance au keepout antenne (X_min = 73.66)
-                    closest_x = max(p[0] for p in buck_pts)
-                    dist_to_ant = 73.66 - closest_x
-                    if dist_to_ant < req_d:
-                        sep_penalty_sum += weight * ((req_d - dist_to_ant) / req_d)
-                    metrics.constraint_details.append({
-                        "id": rid,
-                        "type": "separation",
-                        "dist_mm": round(dist_to_ant, 2),
-                        "req_mm": req_d,
-                        "ok": dist_to_ant >= req_d
-                    })
+            group_a_cfg = rule.get("group_a", {})
+            target_cluster = group_a_cfg.get("cluster")
+            emc_cls = group_a_cfg.get("emc_class")
+            pts_a = []
+            if target_cluster:
+                fb_comps = self.manifest.get("functional_blocks", {}).get(target_cluster, {}).get("components", [])
+                pts_a = [comp_positions[d] for d in fb_comps if d in comp_positions]
+            elif emc_cls:
+                pts_a = [comp_positions[d] for d, c in self.manifest_comps.items() if c.get("emc_class") == emc_cls and d in comp_positions]
+
+            if pts_a and all_keepouts:
+                # Distance au premier keepout (ou antenne RF)
+                ko_rect = all_keepouts[0].get("rect_mm", {})
+                ko_x_min = ko_rect.get("x_min", self.board_width)
+                closest_x = max(p[0] for p in pts_a)
+                dist_to_ant = ko_x_min - closest_x
+                if dist_to_ant < req_d:
+                    sep_penalty_sum += weight * ((req_d - dist_to_ant) / req_d)
+                metrics.constraint_details.append({
+                    "id": rid,
+                    "type": "separation",
+                    "dist_mm": round(dist_to_ant, 2),
+                    "req_mm": req_d,
+                    "ok": dist_to_ant >= req_d
+                })
 
         metrics.f_separation_emc = round(sep_penalty_sum, 4)
+
+        # D. Cohésion des Blocs Fonctionnels (f_cluster_cohesion)
+        # Règle agnostique : chaque bloc technique doit maintenir ses passifs groupés
+        # autour de son circuit intégré (IC) ou barycentre pour éviter l'éparpillement.
+        cluster_penalty_sum = 0.0
+        clusters_checked = 0
+        functional_blocks = self.manifest.get("functional_blocks", {})
+
+        # Identifier les exemptions (composants astreints à une ancre externe, ex: TVS sur J1)
+        external_anchored = set()
+        for c in self.placement_constraints:
+            if c.get("type") == "proximity":
+                s_ref = c.get("subject", {}).get("ref")
+                t_ref = c.get("target", {}).get("ref")
+                if t_ref in self.anchors:
+                    external_anchored.add(s_ref)
+
+        max_cluster_radius_mm = 10.0  # Rayon maximal admissible pour un bloc technique de passifs
+
+        for fb_id, fb_info in functional_blocks.items():
+            members = fb_info.get("components", [])
+            valid_members = [m for m in members if m in comp_positions and m not in self.anchors]
+            if len(valid_members) <= 1:
+                continue
+
+            # Trouver le composant maître du bloc (priorité IC 'U*', sinon composant avec silicon_ic)
+            anchor_candidates = [m for m in valid_members if m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic")]
+            anchor_comp = anchor_candidates[0] if anchor_candidates else None
+
+            if anchor_comp:
+                anc_pos = comp_positions[anchor_comp]
+                anc_x, anc_y = anc_pos[0], anc_pos[1]
+            else:
+                anc_x = sum(comp_positions[m][0] for m in valid_members) / len(valid_members)
+                anc_y = sum(comp_positions[m][1] for m in valid_members) / len(valid_members)
+
+            block_pen = 0.0
+            for m in valid_members:
+                if m == anchor_comp or m in external_anchored:
+                    continue
+                mx, my = comp_positions[m][0], comp_positions[m][1]
+                dist_to_anc = math.hypot(mx - anc_x, my - anc_y)
+                if dist_to_anc > max_cluster_radius_mm:
+                    pen = (dist_to_anc - max_cluster_radius_mm) / max_cluster_radius_mm
+                    block_pen += pen ** 2
+                    metrics.constraint_details.append({
+                        "id": f"CLUSTER_{fb_id}_{m}",
+                        "type": "cluster_cohesion",
+                        "block": fb_id,
+                        "component": m,
+                        "anchor": anchor_comp or "center",
+                        "dist_mm": round(dist_to_anc, 2),
+                        "max_mm": max_cluster_radius_mm,
+                        "ok": False
+                    })
+                else:
+                    metrics.constraint_details.append({
+                        "id": f"CLUSTER_{fb_id}_{m}",
+                        "type": "cluster_cohesion",
+                        "block": fb_id,
+                        "component": m,
+                        "anchor": anchor_comp or "center",
+                        "dist_mm": round(dist_to_anc, 2),
+                        "max_mm": max_cluster_radius_mm,
+                        "ok": True
+                    })
+
+            cluster_penalty_sum += block_pen
+            clusters_checked += 1
+
+        metrics.f_cluster_cohesion = round(cluster_penalty_sum / max(1, clusters_checked), 4)
 
         # D. Densité Uniforme par Grille (8x4 Bins)
         n_bins_x, n_bins_y = 8, 4
@@ -702,6 +782,7 @@ class PCBScorer:
             3.0 * metrics.f_loops_compactness +
             2.0 * metrics.f_switching_nets +
             1.5 * metrics.f_separation_emc +
+            2.0 * metrics.f_cluster_cohesion +
             0.5 * metrics.f_edge_access +
             2.0 * metrics.f_density_uniformity +
             1.5 * metrics.f_spacing_comfort

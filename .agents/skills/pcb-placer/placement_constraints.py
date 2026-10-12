@@ -139,21 +139,22 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
     for des, a in data.get("anchors", {}).items():
         anchors[des] = AnchorConstraint(
             designator=des,
-            target_x_mil=float(a["x"]),
-            target_y_mil=float(a["y"]),
-            target_rotation=float(a.get("rot", 0.0)),
+            target_x_mil=mm_to_mil(float(a["x_mm"])) if "x_mm" in a else float(a.get("x", a.get("target_x_mil", 0.0))),
+            target_y_mil=mm_to_mil(float(a["y_mm"])) if "y_mm" in a else float(a.get("y", a.get("target_y_mil", 0.0))),
+            target_rotation=float(a.get("rot_deg", a.get("rot", a.get("target_rotation", 0.0)))),
             fixed=bool(a.get("fixed", True)),
             description=a.get("description", "")
         )
 
     keepout_zones = []
     for k in data.get("keepout_zones", []):
+        rect = k.get("rect_mm", {})
         keepout_zones.append(KeepoutZone(
-            name=k.get("name", "KEEPOUT"),
-            x_min_mil=float(k["x_min_mil"]),
-            x_max_mil=float(k["x_max_mil"]),
-            y_min_mil=float(k["y_min_mil"]),
-            y_max_mil=float(k["y_max_mil"]),
+            name=k.get("name", k.get("id", "KEEPOUT")),
+            x_min_mil=mm_to_mil(float(rect["x_min"])) if "x_min" in rect else float(k.get("x_min_mil", 0.0)),
+            x_max_mil=mm_to_mil(float(rect["x_max"])) if "x_max" in rect else float(k.get("x_max_mil", 0.0)),
+            y_min_mil=mm_to_mil(float(rect["y_min"])) if "y_min" in rect else float(k.get("y_min_mil", 0.0)),
+            y_max_mil=mm_to_mil(float(rect["y_max"])) if "y_max" in rect else float(k.get("y_max_mil", 0.0)),
             description=k.get("description", "")
         ))
 

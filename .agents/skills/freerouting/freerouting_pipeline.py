@@ -45,6 +45,7 @@ class FreeRoutingPipeline:
         updating_strategy: str = "hybrid",
         incremental: bool = False,
         clean: bool = False,
+        route_all_nets: bool = False,
     ):
         self.config_path = Path(config_path).resolve()
         self.cache_dir = (cache_dir or (Path(__file__).resolve().parent / ".cache")).resolve()
@@ -54,6 +55,7 @@ class FreeRoutingPipeline:
         self.updating_strategy = updating_strategy
         self.incremental = incremental
         self.clean = clean
+        self.route_all_nets = route_all_nets
 
     def clear_routing_in_easyeda(self) -> bool:
         """Efface les pistes des couches cuivre (Top/Bottom) et vias pour un re-routage à blanc sans toucher au contour."""
@@ -136,6 +138,7 @@ class FreeRoutingPipeline:
                 config_path=self.config_path,
                 output_dsn=patched_dsn,
                 incremental=self.incremental,
+                ignore_plane_nets=not self.route_all_nets,
             )
         except Exception as e:
             logger.error(f"Échec de l'injection des contraintes : {e}")
@@ -202,6 +205,7 @@ if __name__ == "__main__":
     parser.add_argument("--clean", action="store_true", help="Efface les pistes existantes non protégées avant le routage")
     parser.add_argument("--no-import", action="store_true", help="Génère le .ses sans le réimporter dans EasyEDA Pro")
     parser.add_argument("--save", action="store_true", help="Sauvegarde le document PCB après l'importation")
+    parser.add_argument("--route-all-nets", action="store_true", help="Force le routage filaire de tous les nets y compris les plans de masse (ex. GND)")
     args = parser.parse_args()
 
     pipeline = FreeRoutingPipeline(
@@ -211,6 +215,7 @@ if __name__ == "__main__":
         updating_strategy=args.strategy,
         incremental=args.incremental,
         clean=args.clean,
+        route_all_nets=args.route_all_nets,
     )
     res = pipeline.run(
         dsn_input=args.dsn,

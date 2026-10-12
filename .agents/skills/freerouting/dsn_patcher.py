@@ -59,6 +59,49 @@ def mm_to_dsn_units(mm: float, unit: str) -> float:
         return mm * (1000.0 / 25.4)
 
 
+def strip_net_from_dsn(content: str, target_net: str) -> str:
+    """Supprime proprement la déclaration (net ...) et (class ...) d'un réseau dans le DSN."""
+    # 1. Supprimer (net target_net ...) avec parenthèses équilibrées
+    pattern_net = r'\(net\s+' + re.escape(target_net) + r'[\s(]'
+    while True:
+        m = re.search(pattern_net, content)
+        if not m:
+            break
+        start_idx = m.start()
+        depth = 0
+        end_idx = start_idx
+        for i in range(start_idx, len(content)):
+            if content[i] == '(':
+                depth += 1
+            elif content[i] == ')':
+                depth -= 1
+                if depth == 0:
+                    end_idx = i + 1
+                    break
+        content = content[:start_idx] + content[end_idx:]
+
+    # 2. Supprimer (class <any> 'target_net' ...) avec parenthèses équilibrées
+    pattern_cls = r'\(class\s+[^\s()]+\s+\'' + re.escape(target_net) + r'\''
+    while True:
+        m = re.search(pattern_cls, content)
+        if not m:
+            break
+        start_idx = m.start()
+        depth = 0
+        end_idx = start_idx
+        for i in range(start_idx, len(content)):
+            if content[i] == '(':
+                depth += 1
+            elif content[i] == ')':
+                depth -= 1
+                if depth == 0:
+                    end_idx = i + 1
+                    break
+        content = content[:start_idx] + content[end_idx:]
+
+    return content
+
+
 def extract_nets(dsn_content: str) -> List[str]:
     """Extrait tous les noms de nets déclarés dans la section (network ...)."""
     # Net pattern: (net <net_name> ... )
@@ -81,6 +124,8 @@ class DsnPatcher:
         self.net_classes_cfg = constraints.get("net_classes", {})
         self.default_class_cfg = self.net_classes_cfg.get("DEFAULT", {})
         self.padstack_overrides = constraints.get("padstack_overrides", {})
+        self.keepout_zones = constraints.get("keepout_zones", [])
+        self.plane_nets = set(constraints.get("plane_nets", ["GND"]))
 
     def resolve_net_rule(self, net_name: str) -> Dict[str, Any]:
         """Associe un net à sa règle correspondante dans constraints.json."""
@@ -107,10 +152,16 @@ class DsnPatcher:
             "via_diameter_mm": self.default_class_cfg.get("via_diameter_mm", 0.6),
         }
 
-    def patch(self, dsn_content: str, incremental: bool = False) -> str:
+    def patch(self, dsn_content: str, incremental: bool = False, ignore_plane_nets: bool = True) -> str:
         """Applique l'injection de règles et padstacks sur le contenu DSN."""
         unit, resolution = parse_resolution(dsn_content)
         logger.info(f"Unité DSN détectée: {unit} (résolution: {resolution})")
+
+        # 0. Exclusion des réseaux de plans de masse (état de l'art par défaut)
+        if ignore_plane_nets and self.plane_nets:
+            for p_net in sorted(self.plane_nets):
+                dsn_content = strip_net_from_dsn(dsn_content, p_net)
+                logger.info(f"Net de plan exclu du routage filaire (laissé aux plans de cuivre) : {p_net}")
 
         # 1. Identifier tous les types de vias nécessaires
         via_types: Dict[str, float] = {}  # {via_id: diameter_dsn_units}
@@ -200,6 +251,37 @@ class DsnPatcher:
             count=1,
         )
 
+        # 3c. Injection des zones d'exclusion (keepouts) configurées dans (structure ...)
+        if self.keepout_zones:
+            keepout_dsn_blocks = []
+            for kz in self.keepout_zones:
+                kz_name = kz.get("id") or kz.get("name", "KEEPOUT")
+                rect_mm = kz.get("rect_mm", {})
+                if not rect_mm:
+                    continue
+                x1 = mm_to_dsn_units(rect_mm.get("x_min", 0.0), unit)
+                y1 = mm_to_dsn_units(rect_mm.get("y_min", 0.0), unit)
+                x2 = mm_to_dsn_units(rect_mm.get("x_max", 0.0), unit)
+                y2 = mm_to_dsn_units(rect_mm.get("y_max", 0.0), unit)
+
+                layer_req = kz.get("layer", "all").lower()
+                target_layers = ["TopLayer", "BottomLayer"] if layer_req in ("all", "multi") else [kz.get("layer")]
+
+                for t_layer in target_layers:
+                    keepout_dsn_blocks.append(
+                        f"    (keepout {t_layer}\n"
+                        f"      (rect {t_layer} {x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f})\n"
+                        f"    )"
+                    )
+                logger.info(
+                    f"Keepout injecté : {kz_name} sur {target_layers} -> "
+                    f"[{rect_mm.get('x_min')}..{rect_mm.get('x_max')}, {rect_mm.get('y_min')}..{rect_mm.get('y_max')}] mm"
+                )
+
+            if keepout_dsn_blocks:
+                all_ko_str = "\n".join(keepout_dsn_blocks) + "\n"
+                dsn_content = dsn_content.replace("(boundary", all_ko_str + "    (boundary", 1)
+
         # 4. Patch des classes de nets dans (network ...)
         # Analyse des blocs (class ...) existants
         # Format EasyEDA:
@@ -284,6 +366,7 @@ def patch_dsn_file(
     config_path: Path,
     output_dsn: Path,
     incremental: bool = False,
+    ignore_plane_nets: bool = True,
 ) -> Path:
     """Lit un fichier DSN, injecte les contraintes et écrit le fichier DSN corrigé."""
     if not input_dsn.exists():
@@ -298,7 +381,7 @@ def patch_dsn_file(
         dsn_content = f.read()
 
     patcher = DsnPatcher(constraints)
-    patched_content = patcher.patch(dsn_content, incremental=incremental)
+    patched_content = patcher.patch(dsn_content, incremental=incremental, ignore_plane_nets=ignore_plane_nets)
 
     output_dsn.parent.mkdir(parents=True, exist_ok=True)
     with open(output_dsn, "w", encoding="utf-8") as f:
@@ -316,6 +399,13 @@ if __name__ == "__main__":
     parser.add_argument("--config", type=Path, required=True, help="Chemin vers board_constraints.json")
     parser.add_argument("--out", type=Path, required=True, help="Chemin vers le fichier DSN corrigé de sortie")
     parser.add_argument("--incremental", action="store_true", help="Fixe les pistes pré-existantes")
+    parser.add_argument("--route-all-nets", action="store_true", help="Force le routage filaire de tous les nets y compris les plans de masse")
     args = parser.parse_args()
 
-    patch_dsn_file(args.dsn, args.config, args.out, incremental=args.incremental)
+    patch_dsn_file(
+        args.dsn,
+        args.config,
+        args.out,
+        incremental=args.incremental,
+        ignore_plane_nets=not args.route_all_nets,
+    )

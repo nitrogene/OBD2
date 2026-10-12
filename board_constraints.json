@@ -58,7 +58,21 @@
       "description": "SoC ESP32-S3 orienté horizontalement, antenne méandre rentrée à l'intérieur du bord extérieur Est"
     }
   },
-  "keepout_zones": [],
+  "keepout_zones": [
+    {
+      "id": "RF_ANTENNA_KEEPOUT",
+      "name": "Zone d'exclusion RF Antenne ESP32-S3",
+      "layer": "all",
+      "rect_mm": {
+        "x_min": 73.50,
+        "x_max": 81.28,
+        "y_min": 8.78,
+        "y_max": 26.78
+      },
+      "rules": ["no_wires", "no_vias", "no_pours"],
+      "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne méandre 2.4 GHz de l'ESP32-S3"
+    }
+  ],
   "padstack_overrides": {
     "pbdbad5cc7fc4f6ae55": {
       "diameter_mm": 0.90,
@@ -85,6 +99,7 @@
       "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance"
     }
   ],
+  "plane_nets": ["GND"],
   "net_classes": {
     "POWER_12V": {
       "nets": ["+12V", "+12V_FUSED", "+12V_PROT", "VBAT_OBD"],
@@ -96,13 +111,22 @@
       "description": "Rails de puissance 12V batterie et protections amont"
     },
     "POWER_REGULATED": {
-      "nets": ["+5V", "VBUS_5V", "3.3V", "3.3V_PRE"],
+      "nets": ["+5V", "3.3V", "3.3V_PRE"],
       "track_width_mm": 0.6,
       "clearance_mm": 0.20,
       "via_drill_mm": 0.4,
       "via_diameter_mm": 0.8,
       "emc_class": "power_clean",
       "description": "Distribution à faible impédance des rails 5V et 3.3V"
+    },
+    "POWER_USB": {
+      "nets": ["VBUS_5V"],
+      "track_width_mm": 0.35,
+      "clearance_mm": 0.20,
+      "via_drill_mm": 0.3,
+      "via_diameter_mm": 0.6,
+      "emc_class": "power_clean",
+      "description": "Alimentation USB-C 5V adaptée au pas fin du connecteur USB-C J2"
     },
     "SWITCHING_BUCK": {
       "nets": ["PH_BUCK", "BOOT_BUCK"],

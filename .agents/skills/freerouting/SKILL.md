@@ -75,6 +75,7 @@ uv run python .agents/skills/freerouting/freerouting_pipeline.py --config board_
 - `--incremental` : Protège les pistes pré-existantes dans le DSN (`type protect`).
 - `--no-import` : Exécute le routage et produit le `.ses` sans l'injecter dans EasyEDA Pro.
 - `--save` : Sauvegarde automatiquement le document PCB après l'importation.
+- `--route-all-nets` : Force le routage filaire de tous les nets y compris les plans de masse (par défaut, les nets déclarés dans `plane_nets` comme `GND` sont exclus du routage filaire et réservés aux plans de cuivre).
 
 ### Utilisation Modulaire des Scripts
 

@@ -257,6 +257,37 @@ class PCBAuditor:
                     f"(marge requise : {self.config.board.edge_clearance_mm:.1f} mm / {edge_clearance_mil:.0f} mil)"
                 )
 
+        # 5. Vérification de la Cohésion des Blocs Fonctionnels (Clusters)
+        clusters = getattr(self.config, "functional_clusters", {})
+        cluster_max_radius_mm = 12.0
+        for cluster_name, members in clusters.items():
+            valid_m = [m for m in members if m in comp_map and m not in self.config.anchors]
+            if len(valid_m) <= 1:
+                continue
+
+            # Trouver le composant maître du cluster (IC 'U*')
+            anchor_candidates = [m for m in valid_m if m.startswith("U")]
+            anchor_des = anchor_candidates[0] if anchor_candidates else valid_m[0]
+            anchor_comp = comp_map[anchor_des]
+            ax_mil = anchor_comp.get("x", 0.0)
+            ay_mil = anchor_comp.get("y", 0.0)
+
+            for m in valid_m:
+                if m == anchor_des:
+                    continue
+                report["rules_checked"] += 1
+                c = comp_map[m]
+                mx_mil = c.get("x", 0.0)
+                my_mil = c.get("y", 0.0)
+                dist_mm = mil_to_mm(math.hypot(mx_mil - ax_mil, my_mil - ay_mil))
+                if dist_mm > cluster_max_radius_mm:
+                    report["warnings"].append(
+                        f"COHÉSION DE BLOC : Composant {m} du bloc '{cluster_name}' dispersé à {dist_mm:.1f} mm "
+                        f"de son ancre {anchor_des} (seuil recommandé : {cluster_max_radius_mm:.1f} mm)"
+                    )
+                else:
+                    report["rules_passed"] += 1
+
         return report
 
     def print_report(self, report: Dict[str, Any]):
