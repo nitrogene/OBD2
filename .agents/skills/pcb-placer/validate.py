@@ -61,10 +61,15 @@ def load_json_file(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
-def parse_markdown_bom_designators(bom_path: Path) -> Set[str]:
-    """Extrait l'ensemble des désignateurs uniques d'un fichier BOM Markdown."""
+def parse_bom_designators(bom_path: Path) -> Set[str]:
+    """Extrait l'ensemble des désignateurs uniques d'un fichier BOM (JSON ou Markdown)."""
     if not bom_path.is_file():
         raise FileNotFoundError(f"BOM introuvable : {bom_path}")
+
+    if bom_path.suffix.lower() == ".json":
+        with open(bom_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return set(data.get("components", {}).keys())
 
     designators: Set[str] = set()
     with open(bom_path, "r", encoding="utf-8") as f:
@@ -75,7 +80,7 @@ def parse_markdown_bom_designators(bom_path: Path) -> Set[str]:
         stripped = line.strip()
         if not stripped.startswith("|"):
             continue
-        cells = [c.strip() for c in stripped.split("|")[1:-1]]
+        cells = [c.strip() for c in line.split("|")[1:-1]]
         if len(cells) < 4:
             continue
         first = cells[0].replace("*", "").strip()
@@ -251,8 +256,8 @@ def validate_circuit_manifest(
 
 
 def validate_against_bom(manifest_data: Dict[str, Any], bom_path: Path, report: ValidationReport):
-    """Vérifie la correspondance stricte 1-pour-1 des désignateurs face à BOM.md."""
-    bom_designators = parse_markdown_bom_designators(bom_path)
+    """Vérifie la correspondance stricte 1-pour-1 des désignateurs face à la BOM (JSON ou Markdown)."""
+    bom_designators = parse_bom_designators(bom_path)
     manifest_designators = set(manifest_data.get("components", {}).keys())
 
     missing_in_manifest = bom_designators - manifest_designators
@@ -337,23 +342,26 @@ def main():
     parser = argparse.ArgumentParser(
         description="Contrôleur d'intégrité et de cohérence des données pour pcb-placer (Agnostique)"
     )
+    default_manifest = Path("documents/pcb/manifest.json") if Path("documents/pcb/manifest.json").exists() else Path("circuit_manifest.json")
+    default_board = Path("documents/pcb/constraints.json") if Path("documents/pcb/constraints.json").exists() else Path("board_constraints.json")
+    default_bom = Path("documents/schema/bom.json") if Path("documents/schema/bom.json").exists() else (Path("documents/schema/bom.md") if Path("documents/schema/bom.md").exists() else Path("BOM.md"))
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path("circuit_manifest.json"),
-        help="Chemin vers le fichier de manifeste schéma/CEM (ex: circuit_manifest.json)"
+        default=default_manifest,
+        help="Chemin vers le fichier de manifeste PCB (ex: documents/pcb/manifest.json)"
     )
     parser.add_argument(
         "--board",
         type=Path,
-        default=Path("board_constraints.json"),
-        help="Chemin vers le fichier des contraintes mécaniques (ex: board_constraints.json)"
+        default=default_board,
+        help="Chemin vers le fichier des contraintes mécaniques (ex: documents/pcb/constraints.json)"
     )
     parser.add_argument(
         "--bom",
         type=Path,
-        default=Path("BOM.md"),
-        help="Chemin optionnel vers la nomenclature Markdown pour audit croisé (ex: BOM.md)"
+        default=default_bom,
+        help="Chemin optionnel vers la nomenclature JSON/Markdown pour audit croisé (ex: documents/schema/bom.json)"
     )
 
     args = parser.parse_args()

@@ -1,0 +1,596 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "project": "Scanner OBD-II ESP32",
+  "version": "2.0.0",
+  "total_components": 84,
+  "components": {
+    "C1": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C2": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C3": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C4": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C5": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C6": {
+      "value": "10uF",
+      "mpn": "CL31A106KBHNNNE",
+      "lcsc": "C13585",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "C7": {
+      "value": "10uF",
+      "mpn": "CL31A106KBHNNNE",
+      "lcsc": "C13585",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "C8": {
+      "value": "10uF",
+      "mpn": "CL31A106KBHNNNE",
+      "lcsc": "C13585",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "C9": {
+      "value": "3.3nF",
+      "mpn": "CL10B332KB8NNNC",
+      "lcsc": "C1613",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C10": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C11": {
+      "value": "10uF",
+      "mpn": "CL21A106KAYNNNE",
+      "lcsc": "C15850",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "C12": {
+      "value": "1uF",
+      "mpn": "CL10A105KB8NNNC",
+      "lcsc": "C15849",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C13": {
+      "value": "220pF",
+      "mpn": "CL10B221KB8NNNC",
+      "lcsc": "C1603",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C14": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C15": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C16": {
+      "value": "10uF",
+      "mpn": "CL31A106KBHNNNE",
+      "lcsc": "C13585",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "C17": {
+      "value": "10nF",
+      "mpn": "0603B103K500NT",
+      "lcsc": "C57112",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "C18": {
+      "value": "10uF",
+      "mpn": "CL31A106KBHNNNE",
+      "lcsc": "C13585",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "C19": {
+      "value": "100nF",
+      "mpn": "CC0603KRX7R9BB104",
+      "lcsc": "C14663",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "D1": {
+      "value": null,
+      "mpn": "SMBJ16A",
+      "lcsc": "C353386",
+      "type": "Extended Part",
+      "package": "SMB"
+    },
+    "D2": {
+      "value": null,
+      "mpn": "SS34",
+      "lcsc": "C8678",
+      "type": "Basic Part",
+      "package": "SMA"
+    },
+    "D3": {
+      "value": null,
+      "mpn": "BZX84C12",
+      "lcsc": "C21547682",
+      "type": "Extended Part",
+      "package": "SOT-23"
+    },
+    "D4": {
+      "value": null,
+      "mpn": "B5819W SL",
+      "lcsc": "C8598",
+      "type": "Basic Part",
+      "package": "SOD-123"
+    },
+    "D5": {
+      "value": null,
+      "mpn": "SMF24A",
+      "lcsc": "C920178",
+      "type": "Extended Part",
+      "package": "SOD-123FL"
+    },
+    "D6": {
+      "value": null,
+      "mpn": "BAV199,215",
+      "lcsc": "C40919",
+      "type": "Extended Part",
+      "package": "SOT-23"
+    },
+    "F1": {
+      "value": null,
+      "mpn": "1812L110/33MR",
+      "lcsc": "C142747",
+      "type": "Extended Part",
+      "package": "1812"
+    },
+    "FB1": {
+      "value": null,
+      "mpn": "BLM18PG121SN1D",
+      "lcsc": "C14709",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "H1": {
+      "value": "2.54-1*3P",
+      "mpn": "2.54-1*3P针",
+      "lcsc": "C49257",
+      "type": "Extended Part",
+      "package": "插件,P=2.54mm"
+    },
+    "H2": {
+      "value": "2.54-1*3P",
+      "mpn": "2.54-1*3P针",
+      "lcsc": "C49257",
+      "type": "Extended Part",
+      "package": "插件,P=2.54mm"
+    },
+    "J1": {
+      "value": null,
+      "mpn": "WJ250B-3.5-05P-11-00A",
+      "lcsc": "C8453",
+      "type": "Extended Part",
+      "package": "CONN-TH_5P-P3.50_WJ250B-3.50-5P"
+    },
+    "J2": {
+      "value": null,
+      "mpn": "TYPE-C-31-M-12",
+      "lcsc": "C165948",
+      "type": "Extended Part",
+      "package": "SMD"
+    },
+    "JP1": {
+      "value": null,
+      "mpn": "PZ2.54-1*2",
+      "lcsc": "C5360898",
+      "type": "Extended Part",
+      "package": "插件,P=2.54mm"
+    },
+    "JP2": {
+      "value": null,
+      "mpn": "PZ2.54-1*2",
+      "lcsc": "C5360898",
+      "type": "Extended Part",
+      "package": "插件,P=2.54mm"
+    },
+    "L1": {
+      "value": "10uH",
+      "mpn": "YNR6045-100M",
+      "lcsc": "C341067",
+      "type": "Extended Part",
+      "package": "SMD,6x6mm"
+    },
+    "LED1": {
+      "value": null,
+      "mpn": "KT-0603R",
+      "lcsc": "C2286",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "Q1": {
+      "value": null,
+      "mpn": "CJ2309A",
+      "lcsc": "C7433254",
+      "type": "Extended Part",
+      "package": "SOT-23"
+    },
+    "Q2": {
+      "value": null,
+      "mpn": "2N7002",
+      "lcsc": "C8545",
+      "type": "Basic Part",
+      "package": "SOT-23"
+    },
+    "R1": {
+      "value": "10Ω",
+      "mpn": "0805W8F100JT5E",
+      "lcsc": "C17415",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R2": {
+      "value": "10Ω",
+      "mpn": "0805W8F100JT5E",
+      "lcsc": "C17415",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R3": {
+      "value": "5.1kΩ",
+      "mpn": "0805W8F5101T5E",
+      "lcsc": "C27834",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R4": {
+      "value": "5.1kΩ",
+      "mpn": "0805W8F5101T5E",
+      "lcsc": "C27834",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R5": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R6": {
+      "value": "100Ω",
+      "mpn": "0805W8F1000T5E",
+      "lcsc": "C17408",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R7": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R8": {
+      "value": "120Ω",
+      "mpn": "1206W4F1200T5E",
+      "lcsc": "C17909",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "R9": {
+      "value": "27kΩ",
+      "mpn": "0805W8F2702T5E",
+      "lcsc": "C17593",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R10": {
+      "value": "5.1kΩ",
+      "mpn": "0805W8F5101T5E",
+      "lcsc": "C27834",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R11": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R12": {
+      "value": "100kΩ",
+      "mpn": "0805W8F1003T5E",
+      "lcsc": "C149504",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R13": {
+      "value": "12kΩ",
+      "mpn": "0805W8F1202T5E",
+      "lcsc": "C17444",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R14": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R15": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R16": {
+      "value": "1kΩ",
+      "mpn": "1206W4F1001T5E",
+      "lcsc": "C4410",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "R17": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R18": {
+      "value": "1kΩ",
+      "mpn": "1206W4F1001T5E",
+      "lcsc": "C4410",
+      "type": "Basic Part",
+      "package": "1206"
+    },
+    "R19": {
+      "value": "470kΩ",
+      "mpn": "0805W8F4703T5E",
+      "lcsc": "C17709",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R20": {
+      "value": "68kΩ",
+      "mpn": "0805W8F6802T5E",
+      "lcsc": "C17801",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R21": {
+      "value": "10kΩ",
+      "mpn": "0805W8F1002T5E",
+      "lcsc": "C17414",
+      "type": "Basic Part",
+      "package": "0805"
+    },
+    "R22": {
+      "value": "22Ω",
+      "mpn": "0603WAF220JT5E",
+      "lcsc": "C23345",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "R23": {
+      "value": "22Ω",
+      "mpn": "0603WAF220JT5E",
+      "lcsc": "C23345",
+      "type": "Basic Part",
+      "package": "0603"
+    },
+    "SW1": {
+      "value": null,
+      "mpn": "TS-1187A-B-A-B",
+      "lcsc": "C318884",
+      "type": "Basic Part",
+      "package": "SMD"
+    },
+    "TP1": {
+      "value": "VBUS_5V",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP2": {
+      "value": "K_LINE",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP3": {
+      "value": "GND",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP4": {
+      "value": "+12V_PROT",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP5": {
+      "value": "+5V",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP6": {
+      "value": "3.3V",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP7": {
+      "value": "CANH",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP8": {
+      "value": "CANL",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP9": {
+      "value": "VBAT_SENSE",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP10": {
+      "value": "IO0",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP11": {
+      "value": "EN",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP12": {
+      "value": "PH_BUCK",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP13": {
+      "value": "COMP_BUCK",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP14": {
+      "value": "3.3V_PRE",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "TP15": {
+      "value": "KLINE_RX",
+      "mpn": null,
+      "lcsc": null,
+      "type": null,
+      "package": null
+    },
+    "U1": {
+      "value": "2.4GHz",
+      "mpn": "ESP32-S3-WROOM-1-N16R2",
+      "lcsc": "C2913205",
+      "type": "Extended Part",
+      "package": "SMD,25.5x18mm"
+    },
+    "U2": {
+      "value": null,
+      "mpn": "TJA1051T/3/1J",
+      "lcsc": "C38695",
+      "type": "Extended Part",
+      "package": "SOIC-8-150mil"
+    },
+    "U3": {
+      "value": null,
+      "mpn": "E-L9637D013TR",
+      "lcsc": "C153038",
+      "type": "Extended Part",
+      "package": "SOIC-8"
+    },
+    "U4": {
+      "value": null,
+      "mpn": "TPS54331DR",
+      "lcsc": "C9865",
+      "type": "Extended Part",
+      "package": "SOIC-8"
+    },
+    "U5": {
+      "value": null,
+      "mpn": "LDL1117S33R",
+      "lcsc": "C435835",
+      "type": "Extended Part",
+      "package": "SOT-223-4"
+    },
+    "U6": {
+      "value": null,
+      "mpn": "SESD05C",
+      "lcsc": "C720025",
+      "type": "Extended Part",
+      "package": "SOD-323"
+    },
+    "U7": {
+      "value": null,
+      "mpn": "SESD05C",
+      "lcsc": "C720025",
+      "type": "Extended Part",
+      "package": "SOD-323"
+    },
+    "U8": {
+      "value": null,
+      "mpn": "NUP2105LT1G",
+      "lcsc": "C5261087",
+      "type": "Extended Part",
+      "package": "SOT-23"
+    }
+  }
+}

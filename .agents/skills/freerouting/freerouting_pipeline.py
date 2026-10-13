@@ -196,7 +196,8 @@ class FreeRoutingPipeline:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Pipeline d'auto-routage FreeRouting pour EasyEDA Pro")
-    parser.add_argument("--config", type=Path, required=True, help="Chemin vers le fichier de contraintes JSON")
+    default_config = Path("documents/pcb/constraints.json") if Path("documents/pcb/constraints.json").exists() else (Path("board_constraints.json") if Path("board_constraints.json").exists() else None)
+    parser.add_argument("--config", type=Path, default=default_config, required=(default_config is None), help="Chemin vers le fichier de contraintes JSON (défaut: documents/pcb/constraints.json)")
     parser.add_argument("--dsn", type=Path, help="Fichier DSN source (optionnel, exporté en live si omis)")
     parser.add_argument("--passes", type=int, default=10, help="Nombre maximal de passes d'auto-routage (défaut: 10)")
     parser.add_argument("--threads", type=int, default=1, help="Nombre de threads (défaut: 1)")

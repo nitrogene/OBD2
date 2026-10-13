@@ -1130,17 +1130,19 @@ def main():
     parser = argparse.ArgumentParser(
         description="Moteur de Placement & Normalisation de la Sérigraphie IPC-7351 (Agnostique)"
     )
+    default_manifest = Path("documents/pcb/manifest.json") if Path("documents/pcb/manifest.json").exists() else Path("circuit_manifest.json")
+    default_board = Path("documents/pcb/constraints.json") if Path("documents/pcb/constraints.json").exists() else Path("board_constraints.json")
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path("circuit_manifest.json"),
-        help="Chemin vers le manifeste sémantique et packages (défaut: circuit_manifest.json)"
+        default=default_manifest,
+        help="Chemin vers le manifeste sémantique et packages (défaut: documents/pcb/manifest.json)"
     )
     parser.add_argument(
         "--constraints",
         type=Path,
-        default=Path("board_constraints.json"),
-        help="Chemin vers le fichier des contraintes mécaniques (défaut: board_constraints.json)"
+        default=default_board,
+        help="Chemin vers le fichier des contraintes mécaniques (défaut: documents/pcb/constraints.json)"
     )
     parser.add_argument(
         "--font-size",

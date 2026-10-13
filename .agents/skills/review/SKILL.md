@@ -4,7 +4,7 @@ description: >-
   Moteur d'audit, de validation et de dépouillement des revues techniques matérielles pour projets
   électroniques embarqués et automobiles. Fournit une méthodologie rigoureuse d'audit de schéma/PCB
   (conformité constructeur, CEM, thermique, niveaux logiques, intégrité de bus), valide la structure
-  des rapports face aux guidelines, et automatise le dépouillement des observations vers TODO.md.
+  des rapports face aux guidelines, et automatise le dépouillement des observations vers todo.md.
 compatibility: Python 3.8+, uv
 metadata:
   author: OBD2-Scanner-Dev
@@ -15,10 +15,10 @@ metadata:
 
 Ce skill fournit un **cadre méthodologique et algorithmique complet** pour la conduite, la validation formelle et le dépouillement interactif des revues de conception électronique (schéma, nomenclature BOM, layout PCB, routage et conformité automobile).
 
-Conformément à la règle `## 0.` d'[`AGENTS.md`](../../../AGENTS.md), ce skill est **totalement agnostique** :
+Conformément à la règle `## 1.` d'[`agents.md`](../../../agents.md), ce skill est **totalement agnostique** :
 * Aucun composant, net ou valeur n'est codé en dur dans les scripts Python.
 * Il manipule des abstractions (règles de conception, vérifications de seuils logiques, boucles de commutation, critères thermiques).
-* Toutes les données d'entrée proviennent des fichiers du projet (`BOM.md`, `floorplan.json`, `review/*.md`), des arguments CLI ou des configurations JSON.
+* Toutes les données d'entrée proviennent des fichiers du projet (`documents/schema/bom.json`, `documents/pcb/constraints.json`, `review/*.md`), des arguments CLI ou des configurations JSON.
 
 ---
 
@@ -32,11 +32,11 @@ Conformément à la règle `## 0.` d'[`AGENTS.md`](../../../AGENTS.md), ce skill
    L'agent ne doit jamais présumer qu'un choix est « normal », « déjà validé » ou « évident » sous prétexte qu'il en aurait été discuté dans des échanges antérieurs. Toute décision non formalisée dans les fichiers versionnés est réputée inexistante.
 2. **Analyse basée exclusivement sur les fichiers physiques du projet (*Evidence-Based*) :**
    Chaque observation doit être solidement étayée par des éléments directement observables et vérifiables dans le dépôt :
-   * **Exports graphiques haute résolution :** Inspection visuelle méticuleuse des schémas électriques ([`images/SCH_*.png`](../../../images/)), du circuit imprimé ([`images/PCB.png`](../../../images/PCB.png)) et des rendus mécaniques 3D.
-   * **Documents contractuels et nomenclature :** [`BOM.md`](../../../BOM.md), [`HARDWARE.md`](../../../HARDWARE.md), [`floorplan.json`](../../../floorplan.json) et état d'avancement réel dans [`TODO.md`](../../../TODO.md).
-   * **Datasheets constructeurs officielles :** Fichiers PDF originaux archivés dans [`datasheet/`](../../../datasheet/) et synthèse d'audit dans [`DATASHEETS.md`](../../../DATASHEETS.md).
+   * **Exports graphiques haute résolution :** Inspection visuelle méticuleuse des schémas électriques ([`documents/schema/*.png`](../../../documents/schema/)), du circuit imprimé ([`documents/pcb/pcb.png`](../../../documents/pcb/pcb.png)) et des rendus mécaniques 3D.
+   * **Documents contractuels et nomenclature :** [`documents/schema/bom.json`](../../../documents/schema/bom.json), [`hardware.md`](../../../documents/hardware.md), [`documents/pcb/constraints.json`](../../../documents/pcb/constraints.json) et état d'avancement réel dans [`todo.md`](../../../todo.md).
+   * **Datasheets constructeurs officielles :** Fichiers PDF originaux archivés dans [`documents/datasheets/references/`](../../../documents/datasheets/references/) et synthèse d'audit dans [`datasheets.md`](../../../documents/datasheets/datasheets.md).
 3. **Confrontation critique obligatoire :**
-   Une documentation interne ou une consigne préalable dans `TODO.md` ne doit jamais être prise pour argent comptant. L'auditeur a le devoir impératif de confronter chaque recommandation à la réalité de la datasheet constructeur (ex. vérifier la structure interne réelle d'une broche de transceiver avant de préconiser un changement de rail d'alimentation). Si les documents du projet contiennent une incohérence ou une fausse piste technique, l'auditeur doit la dénoncer et la réfuter avec calculs et extraits de datasheet à l'appui.
+   Une documentation interne ou une consigne préalable dans `todo.md` ne doit jamais être prise pour argent comptant. L'auditeur a le devoir impératif de confronter chaque recommandation à la réalité de la datasheet constructeur (ex. vérifier la structure interne réelle d'une broche de transceiver avant de préconiser un changement de rail d'alimentation). Si les documents du projet contiennent une incohérence ou une fausse piste technique, l'auditeur doit la dénoncer et la réfuter avec calculs et extraits de datasheet à l'appui.
 
 ---
 
@@ -126,20 +126,20 @@ Pour intégration automatisée par un agent (sortie JSON) :
 uv run .agents/skills/review/scripts/review_tool.py validate review/review.md --json
 ```
 
-### C. Dépouiller une revue vers `TODO.md` (Triage & Arbitrage)
-Affiche le bloc d'actions formaté en cases à cocher hiérarchisées (`🔴 Bloquant`, `🟠 Important`, `🟢 Mineur`) et détecte d'éventuelles collisions avec le `TODO.md` existant :
+### C. Dépouiller une revue vers `todo.md` (Triage & Arbitrage)
+Affiche le bloc d'actions formaté en cases à cocher hiérarchisées (`🔴 Bloquant`, `🟠 Important`, `🟢 Mineur`) et détecte d'éventuelles collisions avec le `todo.md` existant :
 ```bash
-uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file TODO.md
+uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md
 ```
 
 Après validation et accord explicite de l'utilisateur, insérer les tâches directement sous la section ciblée :
 ```bash
-uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file TODO.md --section "### 1.1 Correctifs critiques" --apply
+uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md --section "### 1.1 Correctifs critiques" --apply
 ```
 
 Pour supprimer le fichier de revue traité une fois l'intégration terminée (conformément à la règle 5) :
 ```bash
-uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file TODO.md --apply --delete-review
+uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md --apply --delete-review
 ```
 
 ---
@@ -148,16 +148,16 @@ uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --to
 
 Permet d'exécuter un premier niveau de vérification statique agnostique sur une nomenclature Markdown ou une netlist :
 ```bash
-uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom BOM.md
+uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom documents/schema/bom.json
 ```
 Sortie JSON pour traitement programmatique :
 ```bash
-uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom BOM.md --json
+uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom documents/schema/bom.json --json
 ```
 
 ---
 
-## 5. Cycle de Vie d'une Revue (Règle 5 `AGENTS.md`)
+## 5. Cycle de Vie d'une Revue (Règle 4 `agents.md`)
 
 ```mermaid
 flowchart TD
@@ -165,6 +165,7 @@ flowchart TD
     B --> C["3. Rédaction du Rapport\n(review/reviewXXX.md)"]
     C --> D["4. Validation du Format\n(uv run review_tool.py validate)"]
     D --> E["5. Présentation & Arbitrage\nInteractif avec l'Utilisateur"]
-    E -->|Arbitrage validé| F["6. Dépouillement vers TODO.md\n(uv run review_tool.py triage --apply)"]
-    F --> G["7. Nettoyage du sas\n(Suppression du reviewXXX.md traité)"]
+    E -->|Arbitrage validé| F["6. Dépouillement vers todo.md\n(uv run review_tool.py triage --apply)"]
+    G["7. Nettoyage du sas\n(Suppression du reviewXXX.md traité)"]
+    F --> G
 ```

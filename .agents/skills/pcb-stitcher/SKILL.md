@@ -28,9 +28,9 @@ Après un auto-routage des signaux (par exemple via FreeRouting) et la générat
 
 ---
 
-## 2. Conformité aux Règles du Projet (AGENTS.md)
+## 2. Conformité aux Règles du Projet (agents.md)
 
-- **Règle 0 (Modularité & Moteur Agnostique) :**
+- **Règle 1 (Modularité & Moteur Agnostique) :**
   - **Zéro composant en dur :** Aucune référence à un composant (`U4`, `R13`, `C7`, etc.), aucune coordonnée physique ni net spécifique n'est codé dans les scripts.
   - **Provenance des Données :** Tous les paramètres (nom du net, largeur de piste, isolement, dimensions des vias) proviennent exclusivement des arguments en ligne de commande (`--net`, `--clearance-mm`, `--via-drill-mm`, etc.) ou de la topologie physique lue dynamiquement via l'API EasyEDA Pro.
   - **Exécution stricte via `uv` :** Tout script Python du skill est exécuté impérativement via `uv run python <script>.py`.

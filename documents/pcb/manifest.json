@@ -1,0 +1,698 @@
+{
+  "$schema": "../../schemas/circuit_manifest.schema.json",
+  "project": "OBD2-Scanner-ESP32",
+  "version": "2.0.0",
+  "date_modified": "2026-10-12",
+  "description": "Manifeste de placement PCB : boîtiers IPC-7351, contraintes CEM de placement et groupes rigides.",
+  "schema_semantics": "../schema/semantics.json",
+  "packages": {
+    "0603": {
+      "width_mm": 2.3,
+      "length_mm": 1.0,
+      "height_mm": 0.5,
+      "courtyard_margin_mm": 0.3,
+      "description": "CMS passif standard 0603 (empreinte cuivre réelle 2.30x0.90 mm)"
+    },
+    "0805": {
+      "width_mm": 3.35,
+      "length_mm": 1.5,
+      "height_mm": 0.6,
+      "courtyard_margin_mm": 0.3,
+      "description": "CMS passif standard 0805 (empreinte cuivre réelle 3.35x1.41 mm)"
+    },
+    "1206": {
+      "width_mm": 4.7,
+      "length_mm": 1.7,
+      "height_mm": 0.9,
+      "courtyard_margin_mm": 0.35,
+      "description": "CMS passif puissance 1206 (empreinte cuivre réelle 4.70x1.70 mm)"
+    },
+    "1812": {
+      "width_mm": 5.2,
+      "length_mm": 3.5,
+      "height_mm": 1.2,
+      "courtyard_margin_mm": 0.4,
+      "description": "Fusible réarmable PPTC 1812 (empreinte cuivre réelle 5.12x3.50 mm)"
+    },
+    "SOD-123": {
+      "width_mm": 4.6,
+      "length_mm": 1.6,
+      "height_mm": 1.2,
+      "courtyard_margin_mm": 0.35,
+      "description": "Diode CMS SOD-123 (empreinte cuivre réelle 4.60x1.00 mm)"
+    },
+    "SOD-123FL": {
+      "width_mm": 4.7,
+      "length_mm": 1.8,
+      "height_mm": 1.0,
+      "courtyard_margin_mm": 0.35,
+      "description": "Diode TVS compacte SOD-123FL (empreinte cuivre réelle 4.67x1.15 mm)"
+    },
+    "SOD-323": {
+      "width_mm": 2.75,
+      "length_mm": 1.25,
+      "height_mm": 0.9,
+      "courtyard_margin_mm": 0.3,
+      "description": "Diode ESD ultra-compacte SOD-323 (empreinte cuivre réelle 2.73x1.00 mm)"
+    },
+    "SOT-23": {
+      "width_mm": 3.3,
+      "length_mm": 3.0,
+      "height_mm": 1.1,
+      "courtyard_margin_mm": 0.35,
+      "description": "Transistors et diodes doubles SOT-23-3 (empreinte cuivre réelle 3.25x2.60 mm)"
+    },
+    "SOT-223-4": {
+      "width_mm": 8.2,
+      "length_mm": 6.5,
+      "height_mm": 1.8,
+      "courtyard_margin_mm": 0.45,
+      "description": "Régulateur LDO SOT-223 avec onglet thermique (empreinte cuivre réelle 8.14x5.58 mm)"
+    },
+    "SOIC-8": {
+      "width_mm": 5.2,
+      "length_mm": 7.4,
+      "height_mm": 1.75,
+      "courtyard_margin_mm": 0.4,
+      "description": "Boîtier SOIC-8 à pas 1.27 mm (empreinte cuivre réelle pads 4.40x7.36 mm)"
+    },
+    "SMA": {
+      "width_mm": 6.4,
+      "length_mm": 2.6,
+      "height_mm": 2.2,
+      "courtyard_margin_mm": 0.4,
+      "description": "Diode de puissance DO-214AC (empreinte cuivre réelle 6.40x2.00 mm)"
+    },
+    "SMB": {
+      "width_mm": 6.8,
+      "length_mm": 3.6,
+      "height_mm": 2.4,
+      "courtyard_margin_mm": 0.4,
+      "description": "Diode TVS de puissance DO-214AA (empreinte cuivre réelle 6.77x2.19 mm)"
+    },
+    "SMD_IND_7X7": {
+      "width_mm": 7.3,
+      "length_mm": 7.3,
+      "height_mm": 4.5,
+      "courtyard_margin_mm": 0.4,
+      "description": "Inductance blindée de puissance 7.3x7.3 mm (empreinte cuivre réelle 7.20x5.72 mm)"
+    },
+    "MODULE_ESP32_S3": {
+      "width_mm": 18.0,
+      "length_mm": 25.5,
+      "height_mm": 3.2,
+      "courtyard_margin_mm": 0.5,
+      "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1",
+      "antenna_keepout": {
+        "name": "RF_ANTENNA_KEEPOUT",
+        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne méandre 2.4 GHz",
+        "dx_min_mm": -9.0,
+        "dx_max_mm": 9.0,
+        "dy_min_mm": 6.45,
+        "dy_max_mm": 12.75,
+        "extend_to_board_edge": true
+      }
+    },
+    "USB_C_16P": {
+      "width_mm": 9.85,
+      "length_mm": 7.5,
+      "height_mm": 3.26,
+      "courtyard_margin_mm": 0.4,
+      "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte réelle 9.85x6.50 mm)"
+    },
+    "TERMINAL_5P_3.5MM": {
+      "width_mm": 19.0,
+      "length_mm": 12.5,
+      "height_mm": 12.0,
+      "courtyard_margin_mm": 0.5,
+      "description": "Bornier à ressort sans vis 5 contacts WJ250B (corps réel 19.0x12.5 mm)"
+    },
+    "HEADER_1X3_2.54": {
+      "width_mm": 7.62,
+      "length_mm": 2.54,
+      "height_mm": 8.5,
+      "courtyard_margin_mm": 0.4,
+      "description": "Barrette mâle 1x3 pas 2.54 mm (corps plastique 7.62x2.54 mm)"
+    },
+    "JUMPER_1X2_2.54": {
+      "width_mm": 5.08,
+      "length_mm": 2.54,
+      "height_mm": 6.0,
+      "courtyard_margin_mm": 0.4,
+      "description": "Cavalier de configuration 1x2 pas 2.54 mm (corps plastique 5.08x2.54 mm)"
+    },
+    "TACT_SWITCH_SMD": {
+      "width_mm": 7.0,
+      "length_mm": 5.2,
+      "height_mm": 2.5,
+      "courtyard_margin_mm": 0.4,
+      "description": "Bouton poussoir miniature CMS pour Reset (empreinte cuivre réelle 7.00x4.50 mm, corps 5.1x5.1 mm)"
+    },
+    "TEST_PAD": {
+      "width_mm": 0.6,
+      "length_mm": 0.6,
+      "height_mm": 0.05,
+      "courtyard_margin_mm": 0.35,
+      "description": "Pastille de test CMS pour pointes d'oscilloscope (pad cuivre 0.50x0.50 mm)"
+    }
+  },
+  "placement_constraints": [
+    {
+      "id": "PC_C14_VIN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C14",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U4",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Découplage HF entrée Buck < 3 mm de VIN"
+    },
+    {
+      "id": "PC_BUCK_HOT_LOOP",
+      "type": "loop",
+      "members": [
+        {
+          "ref": "C14",
+          "pin": "1"
+        },
+        {
+          "ref": "C7",
+          "pin": "1"
+        },
+        {
+          "ref": "U4",
+          "pin": "2"
+        },
+        {
+          "ref": "U4",
+          "pin": "8"
+        },
+        {
+          "ref": "D2",
+          "pin": "K"
+        },
+        {
+          "ref": "U4",
+          "pin": "7"
+        }
+      ],
+      "metric": "bbox_half_perimeter",
+      "target_max_mm": 25.0,
+      "hard": false,
+      "weight": 8,
+      "rationale": "Boucle chaude de découpage di/dt minimale"
+    },
+    {
+      "id": "PC_PH_NODE_COMPACT",
+      "type": "net_compact",
+      "net": "PH_BUCK",
+      "metric": "bbox_half_perimeter",
+      "target_max_mm": 12.0,
+      "hard": false,
+      "weight": 6,
+      "rationale": "Nœud de commutation PH haute fréquence compact pour limiter le rayonnement"
+    },
+    {
+      "id": "PC_SW1_EDGE",
+      "type": "edge_access",
+      "subject": {
+        "ref": "SW1"
+      },
+      "edge": "north",
+      "max_distance_to_edge_mm": 5.0,
+      "hard": false,
+      "weight": 2,
+      "rationale": "Accessibilité mécanique du bouton Reset"
+    },
+    {
+      "id": "PC_C18_VBUS",
+      "type": "proximity",
+      "subject": {
+        "ref": "C18",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "J2",
+        "pin": "A4B9"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": false,
+      "weight": 6,
+      "rationale": "Réservoir local Bulk VBUS à proximité du port USB-C J2"
+    },
+    {
+      "id": "PC_C19_VBUS",
+      "type": "proximity",
+      "subject": {
+        "ref": "C19",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "J2",
+        "pin": "A4B9"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": false,
+      "weight": 7,
+      "rationale": "Découplage HF VBUS à proximité immédiate du port USB-C J2"
+    }
+  ],
+  "rigid_groups": [
+    {
+      "id": "G_BUCK_CORE",
+      "anchor_component": "U4",
+      "members": [
+        "U4",
+        "C5",
+        "C7",
+        "C14",
+        "D2",
+        "C17",
+        "R11",
+        "C9",
+        "C13"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_ESP32_CORE",
+      "anchor_component": "U1",
+      "members": [
+        "U1",
+        "C1",
+        "C2",
+        "C11",
+        "C12",
+        "R15"
+      ],
+      "layout": "solve"
+    }
+  ],
+  "components": {
+    "C1": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U1",
+        "rail": "3.3V",
+        "max_distance_mm": 5.0,
+        "reason": "Découplage HF pin 2 (VDD)"
+      }
+    },
+    "C2": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U1",
+        "rail": "3.3V",
+        "max_distance_mm": 5.0,
+        "reason": "Découplage HF pin 2 (VDD)"
+      }
+    },
+    "C3": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U2",
+        "rail": "3.3V",
+        "max_distance_mm": 4.0,
+        "reason": "Découplage VIO CAN"
+      }
+    },
+    "C4": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U3",
+        "rail": "3.3V",
+        "max_distance_mm": 4.0,
+        "reason": "Découplage VCC K-Line"
+      }
+    },
+    "C5": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U4",
+        "pin": "BOOT",
+        "max_distance_mm": 5.0,
+        "reason": "Bootstrap BOOT -> PH"
+      }
+    },
+    "C6": {
+      "package": "1206"
+    },
+    "C7": {
+      "package": "1206",
+      "cem_target": {
+        "component": "U4",
+        "rail": "+12V_PROT",
+        "max_distance_mm": 5.0,
+        "reason": "Condensateur entrée VIN Buck"
+      }
+    },
+    "C8": {
+      "package": "1206"
+    },
+    "C9": {
+      "package": "0603"
+    },
+    "C10": {
+      "package": "0603"
+    },
+    "C11": {
+      "package": "0805",
+      "cem_target": {
+        "component": "U1",
+        "rail": "3.3V",
+        "max_distance_mm": 5.0,
+        "reason": "Réservoir Bulk Wi-Fi TX"
+      }
+    },
+    "C12": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U1",
+        "pin": "ESP_EN",
+        "max_distance_mm": 5.0,
+        "reason": "Filtre RC Reset EN"
+      }
+    },
+    "C13": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U4",
+        "pin": "COMP",
+        "max_distance_mm": 7.0,
+        "reason": "Filtre HF boucle compensation"
+      }
+    },
+    "C14": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U4",
+        "rail": "+12V_PROT",
+        "max_distance_mm": 5.0,
+        "reason": "Découplage HF VIN Buck"
+      }
+    },
+    "C15": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U2",
+        "rail": "+5V",
+        "max_distance_mm": 4.0,
+        "reason": "Découplage VCC CAN"
+      }
+    },
+    "C16": {
+      "package": "1206"
+    },
+    "C17": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U4",
+        "pin": "SS",
+        "max_distance_mm": 5.0,
+        "reason": "Timing Soft-Start pin SS"
+      }
+    },
+    "C18": {
+      "package": "1206",
+      "cem_target": {
+        "connector": "J2",
+        "rail": "VBUS_5V",
+        "max_distance_mm": 9.0,
+        "reason": "Réservoir entrée VBUS"
+      }
+    },
+    "C19": {
+      "package": "0603",
+      "cem_target": {
+        "connector": "J2",
+        "rail": "VBUS_5V",
+        "max_distance_mm": 9.0,
+        "reason": "Découplage HF VBUS"
+      }
+    },
+    "D1": {
+      "package": "SMB"
+    },
+    "D2": {
+      "package": "SMA"
+    },
+    "D3": {
+      "package": "SOT-23"
+    },
+    "D4": {
+      "package": "SOD-123"
+    },
+    "D5": {
+      "package": "SOD-123FL",
+      "cem_target": {
+        "connector": "J1",
+        "signal": "K_LINE",
+        "max_distance_mm": 15.0,
+        "reason": "TVS K-Line"
+      }
+    },
+    "D6": {
+      "package": "SOT-23",
+      "cem_target": {
+        "component": "R13",
+        "pin": "VBAT_SENSE",
+        "max_distance_mm": 5.0,
+        "reason": "Diode clamp anti-surtension ADC"
+      }
+    },
+    "F1": {
+      "package": "1812"
+    },
+    "FB1": {
+      "package": "0603"
+    },
+    "H1": {
+      "package": "HEADER_1X3_2.54"
+    },
+    "H2": {
+      "package": "HEADER_1X3_2.54"
+    },
+    "J1": {
+      "package": "TERMINAL_5P_3.5MM"
+    },
+    "J2": {
+      "package": "USB_C_16P"
+    },
+    "JP1": {
+      "package": "JUMPER_1X2_2.54"
+    },
+    "JP2": {
+      "package": "JUMPER_1X2_2.54"
+    },
+    "L1": {
+      "package": "SMD_IND_7X7"
+    },
+    "LED1": {
+      "package": "0603"
+    },
+    "Q1": {
+      "package": "SOT-23"
+    },
+    "Q2": {
+      "package": "SOT-23"
+    },
+    "R1": {
+      "package": "0805"
+    },
+    "R2": {
+      "package": "0805"
+    },
+    "R3": {
+      "package": "0805"
+    },
+    "R4": {
+      "package": "0805"
+    },
+    "R5": {
+      "package": "0805"
+    },
+    "R6": {
+      "package": "0805"
+    },
+    "R7": {
+      "package": "0805"
+    },
+    "R8": {
+      "package": "1206"
+    },
+    "R9": {
+      "package": "0805"
+    },
+    "R10": {
+      "package": "0805"
+    },
+    "R11": {
+      "package": "0805"
+    },
+    "R12": {
+      "package": "0805"
+    },
+    "R13": {
+      "package": "0805"
+    },
+    "R14": {
+      "package": "0805"
+    },
+    "R15": {
+      "package": "0805",
+      "cem_target": {
+        "component": "U1",
+        "pin": "ESP_EN",
+        "max_distance_mm": 5.0,
+        "reason": "Pull-up Reset EN"
+      }
+    },
+    "R16": {
+      "package": "1206",
+      "cem_target": {
+        "connector": "J1",
+        "signal": "K_LINE",
+        "max_distance_mm": 15.0,
+        "reason": "Pull-up K-Line 1k"
+      }
+    },
+    "R17": {
+      "package": "0805"
+    },
+    "R18": {
+      "package": "1206"
+    },
+    "R19": {
+      "package": "0805"
+    },
+    "R20": {
+      "package": "0805"
+    },
+    "R21": {
+      "package": "0805",
+      "cem_target": {
+        "component": "U1",
+        "pin": "IO0",
+        "max_distance_mm": 5.0,
+        "reason": "Pull-up strapping Bootloader"
+      }
+    },
+    "R22": {
+      "package": "0603",
+      "cem_target": {
+        "connector": "J2",
+        "signal": "USB_D-",
+        "max_distance_mm": 6.0,
+        "reason": "Amortissement série D-"
+      }
+    },
+    "R23": {
+      "package": "0603",
+      "cem_target": {
+        "connector": "J2",
+        "signal": "USB_D+",
+        "max_distance_mm": 6.0,
+        "reason": "Amortissement série D+"
+      }
+    },
+    "SW1": {
+      "package": "TACT_SWITCH_SMD"
+    },
+    "TP1": {
+      "package": "TEST_PAD"
+    },
+    "TP2": {
+      "package": "TEST_PAD"
+    },
+    "TP3": {
+      "package": "TEST_PAD"
+    },
+    "TP4": {
+      "package": "TEST_PAD"
+    },
+    "TP5": {
+      "package": "TEST_PAD"
+    },
+    "TP6": {
+      "package": "TEST_PAD"
+    },
+    "TP7": {
+      "package": "TEST_PAD"
+    },
+    "TP8": {
+      "package": "TEST_PAD"
+    },
+    "TP9": {
+      "package": "TEST_PAD"
+    },
+    "TP10": {
+      "package": "TEST_PAD"
+    },
+    "TP11": {
+      "package": "TEST_PAD"
+    },
+    "TP12": {
+      "package": "TEST_PAD"
+    },
+    "TP13": {
+      "package": "TEST_PAD"
+    },
+    "TP14": {
+      "package": "TEST_PAD"
+    },
+    "TP15": {
+      "package": "TEST_PAD"
+    },
+    "U1": {
+      "package": "MODULE_ESP32_S3"
+    },
+    "U2": {
+      "package": "SOIC-8"
+    },
+    "U3": {
+      "package": "SOIC-8"
+    },
+    "U4": {
+      "package": "SOIC-8"
+    },
+    "U5": {
+      "package": "SOT-223-4"
+    },
+    "U6": {
+      "package": "SOD-323",
+      "cem_target": {
+        "connector": "J2",
+        "signal": "USB_D+",
+        "max_distance_mm": 6.0,
+        "reason": "ESD USB D+"
+      }
+    },
+    "U7": {
+      "package": "SOD-323",
+      "cem_target": {
+        "connector": "J2",
+        "signal": "USB_D-",
+        "max_distance_mm": 6.0,
+        "reason": "ESD USB D-"
+      }
+    },
+    "U8": {
+      "package": "SOT-23",
+      "cem_target": {
+        "connector": "J1",
+        "signal": "CANH",
+        "max_distance_mm": 15.0,
+        "reason": "TVS double CAN"
+      }
+    }
+  }
+}

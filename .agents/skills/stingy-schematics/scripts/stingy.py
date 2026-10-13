@@ -521,7 +521,7 @@ def generate_review_markdown(proposals: List[SubstitutionProposal], total_extend
         "",
         "- **Nom du Reviewer / Agent :** Moteur d'Optimisation SMT (stingy-schematics)",
         f"- **Date :** {today_str}",
-        "- **Périmètre audité :** Nomenclature PCBA (BOM.md) & Intention de Schéma (circuit_semantics.json)",
+        "- **Périmètre audité :** Nomenclature PCBA (documents/schema/bom.json) & Intention de Schéma (documents/schema/semantics.json)",
         "- **Version / Référence examinée :** Version 1.0",
         f"- **Verdict global :** {verdict} ({len(proposals)} composant(s) éligible(s) audité(s))",
         "",
@@ -531,7 +531,7 @@ def generate_review_markdown(proposals: List[SubstitutionProposal], total_extend
         "",
         f"L'audit automatisé de la nomenclature du projet face au catalogue en temps réel de JLCPCB SMT a analysé "
         f"les **{total_extended_count} composants Extended Parts** du circuit. "
-        f"Grâce au référentiel d'intention [`circuit_semantics.json`](../circuit_semantics.json) et aux filtres de non-régression "
+        f"Grâce au référentiel d'intention [`semantics.json`](../documents/schema/semantics.json) et aux filtres de non-régression "
         f"de `ComponentValidator`, le moteur a écarté tout faux positif (puissance, tenue en tension, CEM, fuites ADC) et a identifié "
         f"les opportunités réelles de basculement vers des **Basic Parts (0,00 $ de frais d'outillage)** sans aucun compromis technique.",
         "",
@@ -588,8 +588,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Moteur d'optimisation de nomenclature PCBA JLCPCB pour la réduction des frais SMT."
     )
-    parser.add_argument("--bom", default="BOM.md", help="Chemin vers le fichier BOM (Markdown ou CSV).")
-    parser.add_argument("--semantics", default="circuit_semantics.json", help="Chemin vers circuit_semantics.json.")
+    default_bom = "documents/schema/bom.json" if Path("documents/schema/bom.json").exists() else ("documents/schema/bom.md" if Path("documents/schema/bom.md").exists() else "BOM.md")
+    default_sem = "documents/schema/semantics.json" if Path("documents/schema/semantics.json").exists() else "circuit_semantics.json"
+    parser.add_argument("--bom", default=default_bom, help="Chemin vers le fichier BOM (JSON, Markdown ou CSV).")
+    parser.add_argument("--semantics", default=default_sem, help="Chemin vers le fichier sémantique JSON.")
     parser.add_argument("--output-review", help="Chemin du fichier de revue à générer (défaut: review/reviewXXX.md).")
     parser.add_argument("--allow-expansion", action="store_true", help="Autorise les substitutions topologiques 1-to-2.")
     parser.add_argument("--disallow-color-shift", action="store_true", help="Interdit les propositions de LED avec changement de couleur.")

@@ -16,8 +16,8 @@ La batterie 12V d'un véhicule n'est ni stable, ni propre :
 Le circuit imprimé est découpé en **10 blocs fonctionnels interconnectés**, organisés pour purifier l'énergie, protéger les composants sensibles et assurer une communication bidirectionnelle infaillible.
 
 > [!NOTE]
-> **Modélisation formelle & Intention de Schéma (`circuit_semantics.json`) :**
-> L'ensemble des 69 composants physiques du projet (84 composants avec les mires de test TP), leurs rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation, diélectrique) et politiques de substitution sont formellement modélisés sous format machine-readable dans le fichier racine [`circuit_semantics.json`](circuit_semantics.json). Ce fichier sert de contrat sémantique vérifié à chaque évolution du schéma par l'outil de synchronisation (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
+> **Modélisation formelle & Intention de Schéma (`semantics.json`) :**
+> L'ensemble des 69 composants physiques du projet (84 composants avec les mires de test TP), leurs rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation, diélectrique) et politiques de substitution sont formellement modélisés sous format machine-readable dans le fichier [`schema/semantics.json`](schema/semantics.json). Ce fichier sert de contrat sémantique vérifié à chaque évolution du schéma par l'outil de synchronisation (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
 
 ---
 
@@ -204,7 +204,7 @@ flowchart LR
 
 * **Régulateur Linéaire LDO `U5` (`LDL1117S33R` - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB. Les broches 2 et 4 (`VOUT` et Tab) sont reliées en commun sur le net `3.3V_PRE` pour maximiser la dissipation thermique sur le plan de cuivre PCB.
 * **Perle de Ferrite `FB1` (`BLM18PG121SN1D` - boîtier 0603) :** Présente une impédance inductive de **120 Ω à 100 MHz**, empêchant le bruit numérique du microcontrôleur de refluer vers les capteurs et transceivers.
-* **Condensateur Réservoir & Stabilité de Boucle `C6` (10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Placé sur le rail intermédiaire `3.3V_PRE` directement en sortie de `U5` (en amont de la perle `FB1`), il garantit le respect de la condition formelle de stabilité constructeur (Cout >= 4.7 µF) de la datasheet ST LDL1117.
+* **Condensateur Réservoir & Stabilité de Boucle `C6` (10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Placé sur le rail intermédiaire `3.3V_PRE` directement en sortie de `U5` (en amont de la perle `FB1`), il garantit le respect de la condition formelle de stabilité constructeur (Cout >= 4.7 µF) de la [datasheet ST LDL1117](datasheets/datasheets.md#u5--régulateur-ldo-faible-bruit--ldl1117s33r).
 
 ---
 
@@ -429,7 +429,7 @@ flowchart LR
 * **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) & Cavalier Sélecteur `JP2` (`PZ2.54-1*2` — LCSC `C5360898`) :**
   * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de 510 Ω ±5% pour garantir un temps de montée rapide (tr < 2 µs) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne Req = 500 Ω (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
   * *Rôle Normalisé du Diagnostic Tester (ISO 9141-2 / ISO 14230) & Cavalier `JP2` :*
-    * **En mode Voiture / Scanner (Cas 1 et Cas 2) :** La norme ISO 9141-2 (§4.2.1) et la datasheet du L9637D (Fig. 4) stipulent expressément que c'est l'outil de diagnostic (*Diagnostic Tester*, notre scanner) qui doit fournir la résistance de pull-up normalisée de 510 Ω vers le +12V véhicule, l'ECU du véhicule ne disposant que d'une haute impédance (Rin >= 100 kΩ). **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** sur véhicule pour polariser activement la ligne K-Line.
+    * **En mode Voiture / Scanner (Cas 1 et Cas 2) :** La norme ISO 9141-2 (§4.2.1) et la [datasheet du L9637D (Fig. 4)](datasheets/datasheets.md#u3--transceiver-k-line-iso-9141--e-l9637d013tr-l9637d) stipulent expressément que c'est l'outil de diagnostic (*Diagnostic Tester*, notre scanner) qui doit fournir la résistance de pull-up normalisée de 510 Ω vers le +12V véhicule, l'ECU du véhicule ne disposant que d'une haute impédance (Rin >= 100 kΩ). **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** sur véhicule pour polariser activement la ligne K-Line.
     * **En mode Banc d'essais bi-cartes (Cas 3) :** Une seule des deux cartes fermera son cavalier `JP2` (la Carte A Scanner), tandis que la Carte B (Simulateur ECU) laissera `JP2` **OUVERT (sans shunt)** pour reproduire fidèlement la haute impédance passive d'un calculateur moteur.
   * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie avec le shunt JP2 en place, la puissance crête totale dissipée sous 14.4 V vaut Ptot = V² / Req = (14.4V)² / 500 Ω ≈ 0.415 W. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse P = (14.4V)² / 1000 Ω ≈ 0.207 W, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
 * **Diode TVS Unidirectionnelle `D5` (`SMF24A` - SOD-123FL / LCSC `C920178`) :**
@@ -685,36 +685,24 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
 
 ---
 
-### 7.7 Modélisation Formelle du Layout : Le Fichier `floorplan.json`
+### 7.7 Modélisation Formelle du Layout PCB & Outillage Découplé
 
-Conformément au principe du **Moteur Agnostique** (règle `## 0.` d'[`AGENTS.md`](AGENTS.md)), les outils de calcul, de placement et d'audit sous `.agents/skills/` ne comportent aucune référence en dur à un composant ou à une coordonnée. 
+Conformément au principe du **Moteur Agnostique** (règle `## 1.` d'[`../agents.md`](../agents.md)), les outils de calcul, de placement et d'audit sous `.agents/skills/` ne comportent aucune référence en dur à un composant ou à une coordonnée. 
 
-L'intégralité des contraintes physiques du Scanner OBD-II est formalisée dans le fichier [`floorplan.json`](floorplan.json) situé à la racine du projet. Ce document constitue la source unique de vérité machine-readable pour l'outillage logiciel.
+L'intégralité des contraintes physiques du Scanner OBD-II est formalisée dans deux fichiers complémentaires sans redondance :
+1. **[`pcb/constraints.json`](pcb/constraints.json) :** Gabarit mécanique de carte (81.28 × 35.56 mm / 3200 × 1400 mil), 4 perçages M2 de fixation, ancres fixes (`J1` à l'Ouest, `J2` au Sud, `U1` à l'Est), zone d'exclusion RF multicouche (*Keepout*) et classes de routage FreeRouting.
+2. **[`pcb/manifest.json`](pcb/manifest.json) :** Géométrie physique normalisée IPC-7351 des 20 boîtiers, courtyards pad-à-pad, micro-clusters fonctionnels et contraintes de proximité CEM (découplage < 2 mm, boucle Buck compacte, TVS frontalières). Pointeur dynamique vers [`schema/semantics.json`](schema/semantics.json).
 
-#### Structure du Fichier `floorplan.json` :
-1. **`meta` :** Identité et version du projet (*Scanner OBD-II ESP32*).
-2. **`board` :** Enveloppe physique du PCB (81.28 mm × 35.56 mm / 3200 × 1400 mil), marge de sécurité périphérique (*edge clearance* de 1.0 mm) et pas de grille d'alignement (25 mil).
-3. **`thresholds` :** Seuils physiques d'audit géométrique (découplage HF < 2.0 mm, reset RC < 2.0 mm, protections ESD/TVS < 5.0 mm).
-4. **`anchors` :** Positions mécaniques imposées par l'enveloppe du boîtier et l'ergonomie :
-   * `J1` : Bornier à ressort 5 contacts au pas 3.5 mm centré sur la face Ouest (`x=200, y=700, rot=270°`).
-   * `J2` : Prise USB-C horizontale CMS affleurante au bord Sud (`x=1600, y=150, rot=0°`).
-   * `U1` : Module ESP32-S3 avec son antenne dégagée vers l'Est (`x=2550, y=700, rot=0°`).
-5. **`keepout_zones` :** Définition géométrique des zones d'exclusion multicouches strictes (`RF_ANTENNA_KEEPOUT` de x=2900 à 3200 mil et y=300 à 1100 mil).
-6. **`functional_clusters` :** Découpage des 69 composants physiques en 8 îlots fonctionnels étanches (Protections 12V, Diviseur batterie, Transceivers OBD, Régulateur Buck, LDO 3.3V, Interface USB, Cœur MCU, Témoin LED).
-7. **`proximity_rules` :** Règles relationnelles de proximité physique associant chaque composant critique à son circuit cible et son équipotentielle (découplage direct, mailles courtes, diodes TVS frontalières).
-8. **`components` :** Coordonnées 2D déterministes (X, Y, rotation, couche) de l'ensemble des 69 composants physiques et 15 points de test, permettant au moteur d'injection d'ordonnancer le placement en une passe sans collision.
-
-#### Pilotage via les Scripts Agnostiques (uv) :
-Le fichier est transmis obligatoirement en paramètre `--config` aux outils du skill `pcb-placer` :
+#### Pilotage du Placement via le Skill `pcb-placer` :
 ```bash
-# Simulation du placement
-uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json
+# Optimisation déterministe par recuit simulé & régénération de documents/pcb/placement.svg
+uv run .agents/skills/pcb-placer/simulated_annealing.py \
+  --manifest documents/pcb/manifest.json \
+  --board documents/pcb/constraints.json \
+  --svg documents/pcb/placement.svg
 
-# Audit géométrique et CEM du PCB actif sous EasyEDA Pro
-uv run .agents/skills/pcb-placer/audit_placement.py --config floorplan.json
-
-# Injection réelle du placement dans EasyEDA Pro avec sauvegarde et DRC
-uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --apply --audit
+# Contrôle DRC et injection dans EasyEDA Pro
+uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json
 ```
 
 ---

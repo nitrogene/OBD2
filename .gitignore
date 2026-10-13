@@ -1,9 +1,6 @@
-/easyeda/run-api-gateway_v1.0.5.eext
+/documents/easyeda/run-api-gateway_v1.0.5.eext
 /.agents/skills/easyeda-api/
 /.agents/easyeda-bridge.log
-
-# Visualisation locale des diagrammes Mermaid
-preview_diagrams.html
 
 # Python
 __pycache__/
@@ -12,8 +9,7 @@ __pycache__/
 .cache/
 */.cache/
 placement*.json
-placement*.svg
-!images/*.svg
-preview_*.html
+*.svg
+!documents/pcb/*.svg
 
 

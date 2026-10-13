@@ -2,6 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "project": "Scanner OBD-II ESP32",
   "version": "2.0.0",
+  "pcb_manifest": "./manifest.json",
+  "schema_semantics": "../schema/semantics.json",
   "frame": {
     "unit": "mm",
     "origin": "bottom_left",
@@ -33,29 +35,18 @@
       "x_mm": 6.89,
       "y_mm": 17.78,
       "rot_deg": 270.0,
-      "fixed": true,
-      "ref_point": "courtyard_center",
-      "edge_flush": "west",
-      "overhang_mm": 0.0,
-      "description": "Bornier à ressort sans vis 5 contacts au pas 3.5 mm centré sur la face Ouest (corps intérieur, face avant affleurante bord X=0)"
+      "edge_flush": "west"
     },
     "J2": {
       "x_mm": 40.64,
       "y_mm": 3.81,
       "rot_deg": 0.0,
-      "fixed": true,
-      "ref_point": "courtyard_center",
-      "edge_flush": "south",
-      "overhang_mm": 0.0,
-      "description": "Prise USB-C horizontale CMS affleurante bord Sud"
+      "edge_flush": "south"
     },
     "U1": {
       "x_mm": 63.00,
       "y_mm": 17.78,
-      "rot_deg": 270.0,
-      "fixed": true,
-      "ref_point": "courtyard_center",
-      "description": "SoC ESP32-S3 orienté horizontalement, antenne méandre rentrée à l'intérieur du bord extérieur Est"
+      "rot_deg": 270.0
     }
   },
   "keepout_zones": [
@@ -69,8 +60,7 @@
         "y_min": 8.78,
         "y_max": 26.78
       },
-      "rules": ["no_wires", "no_vias", "no_pours"],
-      "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne méandre 2.4 GHz de l'ESP32-S3"
+      "rules": ["no_wires", "no_vias", "no_pours"]
     }
   ],
   "padstack_overrides": {

@@ -28,9 +28,9 @@ Le skill `freerouting` fournit une suite logicielle autonome et portable permett
 
 ---
 
-## 2. Conformité aux Règles du Projet (AGENTS.md)
+## 2. Conformité aux Règles du Projet (agents.md)
 
-- **Règle 0 (Modularité & Moteur Agnostique) :**
+- **Règle 1 (Modularité & Moteur Agnostique) :**
   - **Zéro composant en dur :** Aucune référence à un composant (`U4`, `R13`, etc.), aucune coordonnée physique ni net spécifique n'est codé dans les scripts.
   - **Origine des données :** Toutes les règles (classes de nets, largeurs de pistes, dégagements, diamètres de vias) proviennent exclusivement du fichier de configuration formel passé en argument (`--config <fichier.json>`).
   - **Exécution stricte via `uv` :** Tout script Python du skill doit être exécuté impérativement via `uv run python <script>.py`.
@@ -57,17 +57,17 @@ Le skill `freerouting` fournit une suite logicielle autonome et portable permett
 ### Pipeline Complet Unifié (Recommandé)
 ```bash
 # Routage complet depuis EasyEDA Pro avec réimport automatique
-uv run python .agents/skills/freerouting/freerouting_pipeline.py --config board_constraints.json --passes 10
+uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --passes 10
 
 # Routage en mode incrémental (préserve les pistes déjà routées)
-uv run python .agents/skills/freerouting/freerouting_pipeline.py --config board_constraints.json --incremental
+uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --incremental
 
 # Génération du fichier SES sans réimport dans le PCB (simulation / analyse)
-uv run python .agents/skills/freerouting/freerouting_pipeline.py --config board_constraints.json --no-import
+uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --no-import
 ```
 
 ### Options du Pipeline :
-- `--config <path>` : **(Obligatoire)** Fichier JSON contenant les règles de conception et classes de nets.
+- `--config <path>` : Fichier JSON contenant les règles de conception et classes de nets (défaut: `documents/pcb/constraints.json`).
 - `--dsn <path>` : Fichier DSN source (optionnel ; si omis, exporté directement depuis EasyEDA Pro).
 - `--passes <int>` : Nombre maximal de passes d'autoroutage (défaut : `10`).
 - `--threads <int>` : Nombre de threads pour le moteur (défaut : `1` pour garantir l'absence de violations d'isolement lors de l'optimisation).
@@ -91,7 +91,7 @@ uv run python .agents/skills/freerouting/dsn_exporter.py --out .agents/skills/fr
 
 #### 3. Patching seul des contraintes :
 ```bash
-uv run python .agents/skills/freerouting/dsn_patcher.py --dsn input.dsn --config board_constraints.json --out patched.dsn
+uv run python .agents/skills/freerouting/dsn_patcher.py --dsn input.dsn --config documents/pcb/constraints.json --out patched.dsn
 ```
 
 #### 4. Exécution seule du moteur de routage :

@@ -395,8 +395,9 @@ if __name__ == "__main__":
     import argparse
     logging.basicConfig(level=logging.INFO, format="[dsn_patcher] %(message)s")
     parser = argparse.ArgumentParser(description="Patcher de contraintes Specctra DSN pour FreeRouting")
+    default_config = Path("documents/pcb/constraints.json") if Path("documents/pcb/constraints.json").exists() else (Path("board_constraints.json") if Path("board_constraints.json").exists() else None)
     parser.add_argument("--dsn", type=Path, required=True, help="Chemin vers le fichier DSN brut")
-    parser.add_argument("--config", type=Path, required=True, help="Chemin vers board_constraints.json")
+    parser.add_argument("--config", type=Path, default=default_config, required=(default_config is None), help="Chemin vers constraints.json (défaut: documents/pcb/constraints.json)")
     parser.add_argument("--out", type=Path, required=True, help="Chemin vers le fichier DSN corrigé de sortie")
     parser.add_argument("--incremental", action="store_true", help="Fixe les pistes pré-existantes")
     parser.add_argument("--route-all-nets", action="store_true", help="Force le routage filaire de tous les nets y compris les plans de masse")

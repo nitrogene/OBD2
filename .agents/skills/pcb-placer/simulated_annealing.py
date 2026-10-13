@@ -976,20 +976,41 @@ def main():
     parser = argparse.ArgumentParser(
         description="Solveur d'Auto-Placement Global par Recuit Simulé (Agnostique)"
     )
-    parser.add_argument("--manifest", type=Path, default=Path("circuit_manifest.json"))
-    parser.add_argument("--board", type=Path, default=Path("board_constraints.json"))
+    default_manifest = Path("documents/pcb/manifest.json") if Path("documents/pcb/manifest.json").exists() else Path("circuit_manifest.json")
+    default_board = Path("documents/pcb/constraints.json") if Path("documents/pcb/constraints.json").exists() else Path("board_constraints.json")
+    parser.add_argument("--manifest", type=Path, default=default_manifest)
+    parser.add_argument("--board", type=Path, default=default_board)
     parser.add_argument("--geometry", type=Path, default=Path(".agents/skills/pcb-placer/.cache/netlist_geometry.json"))
     parser.add_argument("--out", type=Path, default=Path("placement_candidate.json"))
-    parser.add_argument("--svg", type=Path, default=Path("placement_candidate.svg"))
+    parser.add_argument("--svg", type=Path, default=Path("documents/pcb/placement.svg"), help="Chemin du rendu vectoriel SVG (défaut : documents/pcb/placement.svg)")
     parser.add_argument("--starts", type=int, default=4, help="Nombre de départs multi-graines")
     parser.add_argument("--steps", type=int, default=40000, help="Itérations par départ")
     parser.add_argument("--spacing", type=float, default=0.20, help="Marge d'aération supplémentaire par composant (mm)")
 
     args = parser.parse_args()
 
-    with open(args.manifest, "r", encoding="utf-8") as f:
+    manifest_path = args.manifest
+    if not manifest_path.exists() and Path("documents/pcb/manifest.json").exists():
+        manifest_path = Path("documents/pcb/manifest.json")
+    with open(manifest_path, "r", encoding="utf-8") as f:
         manifest = json.load(f)
-    with open(args.board, "r", encoding="utf-8") as f:
+    sem_ref = manifest.get("schema_semantics")
+    if sem_ref:
+        sem_path = (manifest_path.parent / sem_ref).resolve()
+        if sem_path.exists():
+            with open(sem_path, "r", encoding="utf-8") as sf:
+                sem_data = json.load(sf)
+            if "functional_blocks" not in manifest and "functional_blocks" in sem_data:
+                manifest["functional_blocks"] = sem_data["functional_blocks"]
+            for des, s_comp in sem_data.get("components", {}).items():
+                if des in manifest.get("components", {}):
+                    for k, v in s_comp.items():
+                        if k not in manifest["components"][des]:
+                            manifest["components"][des][k] = v
+    board_path = args.board
+    if not board_path.exists() and Path("documents/pcb/constraints.json").exists():
+        board_path = Path("documents/pcb/constraints.json")
+    with open(board_path, "r", encoding="utf-8") as f:
         board_constraints = json.load(f)
 
     if args.geometry.is_file():

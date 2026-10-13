@@ -41,26 +41,54 @@ class SchematicAuditor:
     def __init__(self, rules_config: Dict[str, Any]):
         self.rules = rules_config.get("rules", [])
 
-    def audit_bom_markdown(self, bom_content: str) -> List[AuditFinding]:
-        """Audite une nomenclature BOM formatée en Markdown à la recherche d'incohérences connues."""
+    def audit_bom_markdown(self, bom_content: str, semantics_data: Optional[Dict[str, Any]] = None) -> List[AuditFinding]:
+        """Audite une nomenclature BOM formatée en JSON ou Markdown à la recherche d'incohérences connues."""
         findings: List[AuditFinding] = []
 
-        # Analyse des lignes de tableau Markdown
         rows: List[Dict[str, str]] = []
-        lines = bom_content.splitlines()
-        header = []
-        for line in lines:
-            line_str = line.strip()
-            if not line_str.startswith("|"):
-                continue
-            cells = [c.strip() for c in line_str.split("|")[1:-1]]
-            if not cells or all(re.match(r"^:?-+:?$", c) for c in cells):
-                continue
-            if not header:
-                header = [c.lower() for c in cells]
-            else:
-                row_dict = {header[i]: cells[i] for i in range(min(len(header), len(cells)))}
-                rows.append(row_dict)
+        stripped_content = bom_content.strip()
+        if stripped_content.startswith("{"):
+            try:
+                bom_json = json.loads(stripped_content)
+                for des, c in bom_json.get("components", {}).items():
+                    val = c.get("value") or ""
+                    mpn = c.get("mpn") or ""
+                    rows.append({
+                        "désignateur": des,
+                        "designator": des,
+                        "valeur": val,
+                        "valeur (`value`)": val,
+                        "mpn": mpn,
+                        "référence fabricant (`mpn`)": mpn,
+                        "type": c.get("type") or "",
+                        "empreinte": c.get("package") or "",
+                    })
+            except Exception as e:
+                sys.stderr.write(f"Erreur lors du décodage de la BOM JSON : {e}\n")
+        else:
+            # Analyse des lignes de tableau Markdown
+            lines = bom_content.splitlines()
+            header = []
+            for line in lines:
+                line_str = line.strip()
+                if not line_str.startswith("|"):
+                    continue
+                cells = [c.strip() for c in line_str.split("|")[1:-1]]
+                if not cells or all(re.match(r"^:?-+:?$", c) for c in cells):
+                    continue
+                if not header:
+                    header = [c.lower() for c in cells]
+                else:
+                    row_dict = {header[i]: cells[i] for i in range(min(len(header), len(cells)))}
+                    rows.append(row_dict)
+
+        # Si semantics_data est fourni, enrichir chaque ligne avec le rôle/description sémantique
+        if semantics_data and "components" in semantics_data:
+            for r in rows:
+                des = r.get("désignateur", r.get("designator", ""))
+                if des in semantics_data["components"]:
+                    s_comp = semantics_data["components"][des]
+                    r.setdefault("rôle & fonction électrique", f"{s_comp.get('role', '')} {s_comp.get('description', '')}".strip())
 
         # Vérification 1 : Rôle des condensateurs de filtrage LDO vs ferrite
         has_ferrite = any("ferrite" in r.get("rôle & fonction électrique", "").lower() or "ferrite" in r.get("description", "").lower() for r in rows)
@@ -93,9 +121,9 @@ class SchematicAuditor:
                 ))
 
         # Vérification 3 : Diode TVS d'entrée vs tenue du convertisseur
-        tvss = [r for r in rows if "tvs" in r.get("rôle & fonction électrique", "").lower() or "tvs" in r.get("valeur (`value`)", "").lower() or "smbj" in r.get("référence fabricant (`mpn`)", "").lower()]
+        tvss = [r for r in rows if "tvs" in r.get("rôle & fonction électrique", "").lower() or "tvs" in r.get("valeur (`value`)", "").lower() or "smbj" in r.get("référence fabricant (`mpn`)", "").lower() or "smbj" in r.get("mpn", "").lower()]
         for tvs in tvss:
-            mpn = tvs.get("référence fabricant (`mpn`)", "").upper()
+            mpn = tvs.get("référence fabricant (`mpn`)", tvs.get("mpn", "")).upper()
             if "18A" in mpn:
                 findings.append(AuditFinding(
                     rule_id="RULE_MOSFET_GATE_PROTECTION",
@@ -113,8 +141,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Moteur agnostique d'audit automatique de règles matérielles."
     )
+    default_bom = Path("documents/schema/bom.json") if Path("documents/schema/bom.json").exists() else (Path("documents/schema/bom.md") if Path("documents/schema/bom.md").exists() else (Path("BOM.md") if Path("BOM.md").exists() else None))
+    default_sem = Path("documents/schema/semantics.json") if Path("documents/schema/semantics.json").exists() else (Path("circuit_semantics.json") if Path("circuit_semantics.json").exists() else None)
     parser.add_argument("--rules", required=True, help="Chemin vers le fichier de règles d'audit JSON.")
-    parser.add_argument("--bom", help="Chemin vers le fichier BOM Markdown à analyser.")
+    parser.add_argument("--bom", type=Path, default=default_bom, help="Chemin vers le fichier BOM (JSON ou Markdown) à analyser (défaut: documents/schema/bom.json).")
+    parser.add_argument("--semantics", type=Path, default=default_sem, help="Chemin vers le fichier semantics.json.")
     parser.add_argument("--json", action="store_true", help="Format de sortie en JSON.")
 
     args = parser.parse_args()
@@ -127,13 +158,20 @@ def main() -> int:
     rules_data = json.loads(rules_path.read_text(encoding="utf-8"))
     auditor = SchematicAuditor(rules_data)
 
+    semantics_data = None
+    if args.semantics and Path(args.semantics).exists():
+        try:
+            semantics_data = json.loads(Path(args.semantics).read_text(encoding="utf-8"))
+        except Exception as e:
+            sys.stderr.write(f"Avertissement : impossible de lire {args.semantics} : {e}\n")
+
     findings: List[AuditFinding] = []
     if args.bom:
         bom_path = Path(args.bom)
         if not bom_path.exists():
             sys.stderr.write(f"Erreur : fichier BOM introuvable : {bom_path}\n")
             return 1
-        findings.extend(auditor.audit_bom_markdown(bom_path.read_text(encoding="utf-8")))
+        findings.extend(auditor.audit_bom_markdown(bom_path.read_text(encoding="utf-8"), semantics_data=semantics_data))
 
     if args.json:
         print(json.dumps([asdict(f) for f in findings], indent=2, ensure_ascii=False))

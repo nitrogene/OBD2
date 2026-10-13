@@ -16,7 +16,7 @@ metadata:
 
 Ce skill fournit un **moteur algorithmique pur** de calcul géométrique, d'estimation dimensionnelle, de contrôle de contraintes CEM/thermiques et d'injection en une passe pour l'agencement de circuits imprimés sous **EasyEDA Pro**.
 
-Conformément à la règle `## 0.` d'`AGENTS.md`, ce skill est **totalement agnostique** : il ne contient aucune référence en dur à des composants, empreintes ou coordonnées physiques spécifiques. Toutes les données doivent lui être transmises via un fichier de configuration formel (`--config <fichier.json>`) ou une nomenclature (`--bom <BOM.md>`).
+Conformément à la règle `## 1.` d'[`agents.md`](../../../agents.md), ce skill est **totalement agnostique** : il ne contient aucune référence en dur à des composants, empreintes ou coordonnées physiques spécifiques. Toutes les données doivent lui être transmises via un fichier de configuration formel (`--config <fichier.json>`) ou une nomenclature (`--bom <bom.json>`).
 
 Il s'appuie sur le skill [easyeda-api](../easyeda-api/SKILL.md) et son pont local (port 49620).
 
@@ -56,7 +56,7 @@ uv run .agents/skills/pcb-placer/size_estimator.py --config floorplan.json
 uv run .agents/skills/pcb-placer/size_estimator.py --config floorplan.json --layers 4
 
 # Estimation directe depuis la nomenclature BOM
-uv run .agents/skills/pcb-placer/size_estimator.py --bom BOM.md --layers 2
+uv run .agents/skills/pcb-placer/size_estimator.py --bom documents/schema/bom.json --layers 2
 
 # Via auto_place.py
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --suggest-size
@@ -119,14 +119,15 @@ Génère une solution optimisée sans collision via un recuit simulé multi-dép
 ```bash
 # Lancement standard (4 départs, marge d'aération 0.20 mm, export candidate JSON et SVG)
 uv run .agents/skills/pcb-placer/simulated_annealing.py \
-  --manifest circuit_manifest.json \
-  --board board_constraints.json \
+  --manifest documents/pcb/manifest.json \
+  --board documents/pcb/constraints.json \
   --starts 4 \
   --steps 40000 \
   --spacing 0.20 \
   --out placement_candidate.json \
-  --svg placement_candidate.svg
+  --svg documents/pcb/placement.svg
 ```
+> **Règle projet :** À chaque modification ou recalcul de placement avec le skill `pcb-placer`, le fichier [`documents/pcb/placement.svg`](../../../documents/pcb/placement.svg) doit être systématiquement mis à jour.
 
 ---
 

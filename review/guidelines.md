@@ -13,7 +13,7 @@ Déposez votre revue dans le dossier `review/` sous la forme :
 `review/reviewXXX.md` *(ex. `review001.md`, `review_schema_01.md`, `review_pcb_02.md`)*.
 
 > [!NOTE]
-> **Cycle de vie :** Une fois votre fichier de revue déposé, l'équipe projet (l'utilisateur et l'agent de développement) analysera vos remarques, arbitrera chaque point, intégrera les actions retenues dans `TODO.md`, puis **supprimera** votre fichier `reviewXXX.md` pour signifier qu'il a été intégralement traité et laisser le sas propre pour les revues suivantes.
+> **Cycle de vie :** Une fois votre fichier de revue déposé, l'équipe projet (l'utilisateur et l'agent de développement) analysera vos remarques, arbitrera chaque point, intégrera les actions retenues dans `todo.md`, puis **supprimera** votre fichier `reviewXXX.md` pour signifier qu'il a été intégralement traité et laisser le sas propre pour les revues suivantes.
 
 ### En-tête obligatoire (Métadonnées)
 Toute revue **doit impérativement débuter** par ce bloc de métadonnées pour assurer la traçabilité :
@@ -36,7 +36,7 @@ Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impé
 
 0. **Posture de l'auditeur : Oubli de mémoire & Preuve matérielle exclusive (*Evidence-Based*)**
    - Si vous êtes un modèle d'IA ayant un historique conversationnel sur ce dépôt ou un ingénieur familier de l'historique, vous **devez faire abstraction totale de tout souvenir ou échange passé**. Adoptez la posture d'un auditeur externe impartial découvrant le circuit.
-   - Toute remarque doit être **strictement étayée par les fichiers versionnés du projet** (exports graphiques PNG des schémas, nomenclature [`BOM.md`](../BOM.md), datasheets officielles archivées dans [`datasheet/`](../datasheet/) et référentiel [`DATASHEETS.md`](../DATASHEETS.md)).
+   - Toute remarque doit être **strictement étayée par les fichiers versionnés du projet** (exports graphiques PNG des schémas, nomenclature [`bom.json`](../documents/schema/bom.json), datasheets officielles archivées dans [`documents/datasheets/references/`](../documents/datasheets/references/) et référentiel [`datasheets.md`](../documents/datasheets/datasheets.md)).
    - **Esprit critique obligatoire :** Ne jamais prendre pour argent comptant les affirmations textuelles des documents. Confrontez systématiquement chaque consigne ou affirmation aux datasheets constructeurs.
 
 1. **Périmètre véhicule : 12V VL exclusivement**
@@ -53,7 +53,7 @@ Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impé
    - **Priorité absolue aux *Basic Parts* JLCPCB :** Toute modification de composant passif ou actif doit privilégier les pièces de base du catalogue LCSC/JLCPCB pour éviter les frais d'outillage additionnels (*Extended part changeover fee*).
 
 4. **Consulter l'état d'avancement réel**
-   - Avant de lever une alerte, parcourez brièvement [`TODO.md`](../TODO.md), [`HARDWARE.md`](../HARDWARE.md) et [`BOM.md`](../BOM.md).
+   - Avant de lever une alerte, parcourez brièvement [`todo.md`](../todo.md), [`hardware.md`](../documents/hardware.md) et [`bom.json`](../documents/schema/bom.json).
    - De nombreuses remarques antérieures sont déjà traitées ou arbitrées (ex. cavalier JP1 sur terminaison CAN, diode de clamp D6, condensateur C13 sur broche COMP, etc.).
 
 5. **Transceiver K-Line U3 (L9637D) : Alimentation VCC 3.3V vs 5V & Intégrité du MCU**

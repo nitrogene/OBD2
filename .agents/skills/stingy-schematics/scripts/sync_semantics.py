@@ -114,11 +114,31 @@ def parse_csv_bom(content: str) -> Dict[str, BomItem]:
     return items
 
 
+def parse_json_bom(content: str) -> Dict[str, BomItem]:
+    """Extrait les composants d'un fichier JSON de nomenclature."""
+    data = json.loads(content)
+    comps = data.get("components", {})
+    items: Dict[str, BomItem] = {}
+    for desig, d in comps.items():
+        items[desig] = BomItem(
+            designator=desig,
+            value=d.get("value") or "",
+            mpn=d.get("mpn") or "",
+            lcsc=d.get("lcsc") or "",
+            type_status=d.get("type") or "",
+            footprint=d.get("package") or "",
+            description="",
+        )
+    return items
+
+
 def load_bom(bom_path: Path) -> Dict[str, BomItem]:
-    """Charge la BOM depuis un fichier Markdown ou CSV."""
+    """Charge la BOM depuis un fichier JSON, Markdown ou CSV."""
     if not bom_path.exists():
         raise FileNotFoundError(f"Fichier BOM introuvable : {bom_path}")
     content = bom_path.read_text(encoding="utf-8")
+    if bom_path.suffix.lower() == ".json":
+        return parse_json_bom(content)
     if bom_path.suffix.lower() in (".csv", ".tsv"):
         return parse_csv_bom(content)
     return parse_markdown_bom(content)
@@ -312,8 +332,10 @@ def cmd_scaffold(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("--bom", default="BOM.md", help="Chemin vers le fichier BOM (Markdown ou CSV).")
-    parent_parser.add_argument("--semantics", default="circuit_semantics.json", help="Chemin vers circuit_semantics.json.")
+    default_bom = "documents/schema/bom.json" if Path("documents/schema/bom.json").exists() else ("documents/schema/bom.md" if Path("documents/schema/bom.md").exists() else "BOM.md")
+    default_sem = "documents/schema/semantics.json" if Path("documents/schema/semantics.json").exists() else "circuit_semantics.json"
+    parent_parser.add_argument("--bom", default=default_bom, help="Chemin vers le fichier BOM (JSON, Markdown ou CSV).")
+    parent_parser.add_argument("--semantics", default=default_sem, help="Chemin vers le fichier sémantique JSON.")
 
     parser = argparse.ArgumentParser(
         description="Outil agnostique de synchronisation et vérification entre BOM et circuit_semantics.json."

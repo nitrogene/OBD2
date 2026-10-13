@@ -1,6 +1,6 @@
 ---
 name: stingy-schematics
-description: Moteur d'optimisation SMT et gardien sémantique de schéma. Analyse la BOM et circuit_semantics.json pour proposer de remplacer des composants Extended par des Basic Parts JLCPCB (économie de 3,00 $ par composant) sans compromis de qualité ni de sécurité, avec génération automatique de rapports de revue.
+description: Moteur d'optimisation SMT et gardien sémantique de schéma. Analyse la BOM et documents/schema/semantics.json pour proposer de remplacer des composants Extended par des Basic Parts JLCPCB (économie de 3,00 $ par composant) sans compromis de qualité ni de sécurité, avec génération automatique de rapports de revue.
 ---
 
 # Skill : stingy-schematics
@@ -23,7 +23,7 @@ Sur une petite série de 5 cartes prototypes, remplacer 5 à 10 composants Exten
 
 `stingy-schematics` s'interdit formellement de dégrader la qualité des signaux ou les marges de sécurité du matériel :
 
-1. **Intention de Schéma (`circuit_semantics.json`) :**
+1. **Intention de Schéma (`documents/schema/semantics.json`) :**
    Le moteur ne travaille jamais à l'aveugle. Il lit impérativement le contrat sémantique pour connaître le rôle de chaque pièce et sa politique de substitution (`locked`, `direct_1to1`, `ratio_pair_recalc`, `topology_expansion_ok`).
 2. **Garde-fous Physiques Inviolables :**
    * **Condensateurs :** $V_{rated\_new} \ge V_{rated\_old}$. Diélectrique $\ge$ ($C0G/NP0 > X7R > X5R$). Exclusion absolue des diélectriques instables Y5V/Z5U.
@@ -35,31 +35,31 @@ Sur une petite série de 5 cartes prototypes, remplacer 5 à 10 composants Exten
 
 ## 3. Architecture & Outils Embarqués
 
-Le skill comprend deux outils agnostiques conformes à la Règle 0 (AGENTS.md) :
+Le skill comprend deux outils agnostiques conformes à la Règle 1 (agents.md) :
 
 ```
 .agents/skills/stingy-schematics/
 ├── SKILL.md
 └── scripts/
     ├── jlcpcb_api.py       # Client HTTP d'interrogation en temps réel du catalogue JLCPCB SMT
-    ├── sync_semantics.py   # Gardien d'intégrité entre BOM.md et circuit_semantics.json
+    ├── sync_semantics.py   # Gardien d'intégrité entre documents/schema/bom.json et documents/schema/semantics.json
     └── stingy.py           # Moteur principal d'optimisation et générateur de reviewXXX.md
 ```
 
 ### A. Gardien Sémantique (`sync_semantics.py`)
 Contrôle l'alignement parfait entre la nomenclature et le contrat d'intention :
 ```powershell
-# Contrôle de cohérence (DRC sémantique)
-uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check --bom BOM.md --semantics circuit_semantics.json
+# Contrôle de cohérence (DRC sémantique, chemins par défaut)
+uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check
 
 # Génération assistée d'ébauches pour les nouveaux composants
-uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py scaffold --bom BOM.md --semantics circuit_semantics.json
+uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py scaffold
 ```
 
 ### B. Moteur d'Optimisation SMT (`stingy.py`)
 Scanne les composants Extended éligibles, interroge en direct JLCPCB, résout les recalculs de ratios via `ratio-solver` et génère un rapport de revue formel dans `review/` :
 ```powershell
-uv run python .agents/skills/stingy-schematics/scripts/stingy.py --bom BOM.md --semantics circuit_semantics.json
+uv run python .agents/skills/stingy-schematics/scripts/stingy.py
 ```
 
 ---
@@ -72,4 +72,4 @@ uv run python .agents/skills/stingy-schematics/scripts/stingy.py --bom BOM.md --
    uv run python .agents/skills/review/scripts/review_tool.py validate review/reviewXXX.md
    ```
 3. **Arbitrage avec l'ingénieur :** Revue interactive des propositions chiffrées.
-4. **Dépouillement vers TODO :** Les modifications retenues sont injectées dans `TODO.md` puis le fichier `reviewXXX.md` est supprimé.
+4. **Dépouillement vers TODO :** Les modifications retenues sont injectées dans `todo.md` puis le fichier `reviewXXX.md` est supprimé.

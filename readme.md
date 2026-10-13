@@ -1,6 +1,11 @@
-# Scanner OBD-II ESP32
+# Scanner OBD-II ESP32 — Conception Matérielle (Hardware)
 
-Projet de conception matérielle (schématique et PCB) et logicielle d'un scanner de diagnostic automobile OBD-II intelligent, communicant et sécurisé.
+Projet de conception matérielle (schéma électrique, dimensionnement des composants, routage PCB 2 couches et fabricabilité) d'un scanner de diagnostic automobile OBD-II universel, communicant et sécurisé basé sur le SoC ESP32-S3.
+
+> [!NOTE]
+> **Séparation des Dépôts Matériel vs Logiciel :**
+> Ce dépôt `OBD2` est **dédié à la conception matérielle** (CAO EasyEDA Pro, dimensionnement physique, simulations thermiques/CEM, validation DRC/ERC et dossiers de fabrication JLCPCB). Le développement du firmware embarqué (ESP-IDF / FreeRTOS) fait l'objet d'un **dépôt logiciel dédié séparé**.
+> Le document de cadrage technique et de liaison entre les deux projets est consultable dans [`documents/software.md`](documents/software.md) (*Software Handover & Specifications*).
 
 ---
 
@@ -21,22 +26,23 @@ Le projet est conçu pour opérer et se qualifier selon **trois cas d'usage et d
 
 ---
 
-### 1.1 Le Scanner OBD-II (Matériel & Firmware en cours de conception)
+### 1.1 Capacités Matérielles en Mode Scanner OBD-II (Client)
 
 Module autonome compact venant s'enficher directement sur la prise diagnostic du véhicule :
 
 * **Diagnostic moteur multi-protocoles :**
-  * **Bus CAN (ISO 15765-4) :** Diagnostic haute vitesse (500 kbps et 250 kbps) pour véhicules récents, via transceiver dédié `U2` (TJA1051T) et contrôleur TWAI de l'ESP32-S3.
-  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée, via transceiver `U3` (L9637D).
-* **Cœur de traitement & Connectivité sans fil :** SoC **ESP32-S3-WROOM-1** (Xtensa LX7 Dual-Core 240 MHz, 16 Mo Flash, 8 Mo PSRAM) assurant les liaisons Bluetooth Low Energy (BLE 5.0) et Wi-Fi 2.4 GHz avec antenne méandre PCB intégrée.
+  * **Bus CAN (ISO 11898-2 / ISO 15765-4) :** Couche physique différentielle haute vitesse (jusqu'à 1 Mbps), via transceiver certifié `U2` (TJA1051T) avec adaptation logique `VIO` 3.3V, contrôleur matériel TWAI de l'ESP32-S3 et protection ESD dédiée `U8` (NUP2105L).
+  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée, via transceiver `U3` (L9637D), pull-up normalisée 500 Ω (`R16` // `R18` 1206) commutable par cavalier `JP2`, et protection TVS unidirectionnelle `D5` (SMF24A).
+* **Cœur de traitement & Connectivité sans fil :** SoC **ESP32-S3-WROOM-1** (Xtensa LX7 Dual-Core 240 MHz, 16 Mo Flash, 2 Mo PSRAM, –40 °C à +85 °C) assurant les liaisons Bluetooth Low Energy (BLE 5.0) et Wi-Fi 2.4 GHz avec antenne méandre PCB intégrée.
 * **Architecture d'alimentation hybride sécurisée :**
-  * Étage primaire robuste face aux transitoires automobiles : fusible réarmable PPTC `F1` (0.75A/1.1A), diode TVS `D1` (SMBJ16A/18A), protection anti-inversion par MOSFETs `Q1`/`Q2`.
-  * Double étage de régulation : convertisseur Buck haute fréquence 570 kHz (`U4` TPS54331) 12V → 5V (rendement > 85%), suivi d'un LDO ultra-faible bruit 3.3V (`U5` LDL1117) filtré par perle de ferrite `FB1`.
-  * Alimentation autonome sur port USB-C protégée contre les retours par diode Schottky de puissance `D4`.
+  * Étage primaire robuste face aux transitoires automobiles : fusible réarmable PPTC `F1` (1.1A / 33V), diode TVS `D1` (SMBJ16A, serrage 26.0V max), protection anti-inversion active sans chute de tension par P-MOSFET `Q1` (60V) et N-MOSFET `Q2`.
+  * Double étage de régulation : convertisseur Buck haute fréquence 570 kHz (`U4` TPS54331) 12V → 5V (rendement > 85%, coupure UVLO franche à 8.01 V), suivi d'un LDO ultra-faible bruit 3.3V (`U5` LDL1117S33R) filtré par perle de ferrite `FB1`.
+  * Alimentation autonome sur port USB-C protégée contre les retours véhicule par diode Schottky de puissance 1A `D4`.
+* **Spécifications logicielles associées :** Voir [`documents/software.md §4 & §5`](documents/software.md) pour les machines d'état protocolaires, l'initialisation 5-baud / Fast-Init et les services OBD-II (Modes 01 à 09).
 
 #### Profils & Cas d'Utilisation Cibles du Scanner
 
-Pour le détail exhaustif des schémas de câblage, des règles de sécurité électrique et des diagrammes d'interconnexion, consulter le **[Guide d'Architecture des Cas d'Usage (HARDWARE.md §8)](HARDWARE.md#8-architecture-des-cas-dusage-cibles--câblage-opérationnel)** :
+Pour le détail exhaustif des schémas de câblage, des règles de sécurité électrique et des diagrammes d'interconnexion, consulter le **[Guide d'Architecture des Cas d'Usage (documents/hardware.md §8)](documents/hardware.md#8-architecture-des-cas-dusage-cibles--câblage-opérationnel)** :
 
 | Cas d'Usage Cible | Bornier 5P (`J1`) | Port USB-C (`J2`) | Cavalier CAN (`JP1` 120 Ω) | Cavalier K-Line (`JP2` 500 Ω) | Canaux de Communication | Source d'Alimentation |
 | :--- | :---: | :---: | :---: | :---: | :--- | :--- |
@@ -47,10 +53,9 @@ Pour le détail exhaustif des schémas de câblage, des règles de sécurité é
 > [!CAUTION]
 > **Règle vitale d'isolation de masse (Cas 2) :** Lors d'une session de débogage in situ sur véhicule, le PC portable relié au port USB-C `J2` doit fonctionner **exclusivement sur sa batterie interne**. Le branchement sur secteur 230V avec terre est strictement interdit (danger de destruction immédiate par boucle de terre entre la prise murale et la carrosserie du véhicule).
 
-
 ---
 
-### 1.2 La Carte en Mode Simulateur d'ECU (Qualification sur Table & Banc d'Essais)
+### 1.2 Capacités Matérielles en Mode Simulateur d'ECU (Serveur Banc d'Essais)
 
 > [!IMPORTANT]
 > **Une seule et même carte matérielle universelle :**
@@ -60,21 +65,11 @@ Dans le **Cas 3 (Banc d'Essais Bi-Cartes Miroir)**, une seconde carte configuré
 
 * **Configuration Matérielle Dédiée au Rôle Simulateur d'ECU :**
   * **Cavalier CAN `JP1` (Terminaison 120 Ω) : FERMÉ (avec shunt)** — Fournit la terminaison de ligne indispensable à l'extrémité du bus CAN simulé (la carte Scanner fournissant les autres 120 Ω, formant les 60 Ω équivalents de la norme ISO 11898-2).
-  * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : FERMÉ (avec shunt)** — Active le pont de rappel normalisé 500 Ω (`R16` // `R18`) tiré vers le `+12V_PROT`, polarisant activement la ligne K-Line mono-fil ISO 9141-2 / ISO 14230 (rôle normalement dévolu à l'ECU du véhicule).
+  * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : OUVERT (sans shunt)** — Laisse la ligne en haute impédance passive ($R_{in} \ge 100\,\text{k}\Omega$), rôle normalisé de l'ECU du véhicule (le scanner fournissant la polarisation active 500 Ω).
   * **Bornier 5 contacts `J1` :** Raccordé en direct au bornier `J1` de la carte Scanner (lignes CANH, CANL, K_LINE) et alimenté par une alimentation 12V DC de laboratoire (rails +12V et GND).
-  * **Port USB-C `J2` :** Relié au PC de développement pour le pilotage interactif (CLI / logs) et l'injection dynamique de scénarios.
+  * **Port USB-C `J2` :** Relié au PC de développement pour le pilotage interactif (CLI / logs) et l'injection dynamique de scénarios de panne.
   * **Embases de Diagnostic (`H1` et `H2`) :** Permettent le branchement d'un analyseur logique USB pour espionner simultanément les trames CAN et UART au niveau logique 3.3V.
-
-* **Fonctionnalités Logicielles du Firmware Simulateur d'ECU :**
-  * **Émulation TWAI CAN (ISO 15765-4) :**
-    * Diffusion cyclique de trames périodiques d'ECU (régime moteur RPM, vitesse véhicule, couple, température liquide de refroidissement).
-    * Répondeur ISO-TP et serveur de diagnostic OBD-II : traitement des requêtes Mode 01 (PIDs temps réel), Mode 02 (*Freeze Frames*), Mode 03 / 07 (codes défauts DTCs émulés), et Mode 04 (effacement des défauts).
-  * **Émulation K-Line (ISO 9141-2 / ISO 14230 KWP2000) :**
-    * Répondeur d'initialisation lente 5-baud et rapide (*Fast-Init* 25 ms).
-    * Émulation de la pile protocolaire constructeur Daewoo Kalos (calculateurs ECM `0x10`, TCM `0x28`, ABS `0x58`).
-  * **Console Interactive CLI (Série USB-C / Web BLE) :**
-    * Commandes de variation dynamique des PIDs pour simuler une accélération, une surchauffe moteur, ou une dérive de sonde.
-    * Injection interactive de pannes moteur et génération de DTCs spécifiques (`P0300`, `P0420`, `P1xxx`).
+* **Spécifications logicielles associées :** Voir [`documents/software.md §6`](documents/software.md#6-simulateur-decu-embarqué-banc-dessais-sur-table) pour l'émulation des trames cycliques, le répondeur ISO-TP et les commandes CLI d'injection de pannes (`set rpm`, `fault inject P0300`).
 
 ---
 
@@ -91,7 +86,7 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 | **Connectique** | **SAE J1962 / ISO 15031-3** | Bornier de diagnostic & banc | 🟢 **100%** | • Bornier PCB à ressort sans vis 5 contacts au pas 3.5 mm (`WJ250B-3.5-05P-11-00A`, 250V 8A) pour raccordement faisceau véhicule pigtail ou banc d'essais.<br>• Brochage direct : 4 (+12V), 8 (GND), 1 (K_LINE), 5 (CANH), 9 (CANL). | Raccordement direct par fils dénudés ou nappe. |
 | **Bus CAN** | **ISO 11898-2** | Couche physique différentielle CAN High-Speed | 🟢 **100%** | • Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique `VIO` (3.3V).<br>• Paires différentielles symétriques 120 Ω.<br>• Terminaison 120 Ω (`R8`) commutable par cavalier `JP1` (obligatoire). | Cavalier `JP1` impérativement **ouvert** sur véhicule. |
 | **Bus K-Line** | **ISO 9141-2 & ISO 14230 (KWP2000)** | Ligne K-Line mono-fil bidirectionnelle 12V | 🟢 **100%** | • Transceiver dédié STMicroelectronics **L9637D** conforme ISO 9141.<br>• Pull-up normalisée à 500 Ω (`R16` // `R18` boîtiers 1206) garantissant tr < 2 µs sur 2 nF.<br>• Compatible init lente 5-baud et *Fast-Init* 25 ms. | Débit limité à 10.4 kbps (spécification ISO). |
-| **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Dépend de l'implémentation de la pile logicielle FreeRTOS. |
+| **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Matériel dimensionné ; stack firmware déportée dans le dépôt dédié (spécifiée dans [`documents/software.md`](documents/software.md)). |
 | **Transitoires 12V** | **ISO 7637-2** | Perturbations électriques conduites sur faisceau 12V | 🟢 **95%** *(Niveau III / Classe A)* | • **Impulsion 1 (–100 V inductif) :** Bloqué par MOSFET P-MOS `Q1` (tenue 60V, Vgs borné par `D3` 12V et diviseur `R5`/`R17`).<br>• **Impulsion 2a (+50 V) :** Écrêté sous 26.0 V par TVS `D1` (SMBJ16A).<br>• **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtré par TVS `D1` + capacités d'entrée `C14`, `C7`. | Conçu pour impédance de source automobile standard. |
 | **Environnement VL** | **ISO 16750-2** | Contraintes électriques pour véhicules légers (12V) | 🟡 **90%** *(Ciblé 12V)* | • **Inversion polarité (§4.7, –14 V) :** Bloqué à 100% par P-MOS `Q1` (aucun courant inverse).<br>• **Démarrage / Cranking (§4.6.3) :** Coupure sous 8.01 V via pont UVLO `R19`/`R20` et démarrage progressif 4.0 ms (`C17`) pour protéger la Flash NVS.<br>• **Load-Dump centralisé (§4.6.4, 35 V) :** Écrêté à 26.0 V par `D1` sous la limite absolue de 30.0 V du Buck TPS54331. | Interdiction formelle du réseau 24V et surtensions *Jump-Start* 24V prolongées (> quelques s). |
 | **Immunité ESD** | **ISO 10605 / IEC 61000-4-2** | Décharges électrostatiques (Contact & Air) | 🟢 **100%** *(Niveau 4 : ±8 kV contact / ±15 kV air)* | • Bus CAN : Diode double TVS `U8` (NUP2105L, qualifiée ISO 10605 jusqu'à ±30 kV).<br>• K-Line : Diode TVS `D5` (SMF24CA 24V bidirectionnelle, 400 W crête).<br>• Port USB-C : Diodes ESD ultra-rapides `U6`, `U7` (SESD05C, Cj < 1.0 pF). | Nécessite un plan de masse PCB continu avec vias de couture. |
@@ -171,16 +166,16 @@ flowchart TD
 ### Schéma Électronique Modulaire (4 Blocs Fonctionnels)
 
 #### 1. Étage d'Alimentation & Protections 12V
-![Schéma Alimentation](./images/SCH_Alimentation.png)
+![Schéma Alimentation](./documents/schema/alimentation.png)
 
 #### 2. Transceiver CAN (TJA1051T & Terminaison 120Ω)
-![Schéma Transceiver CAN](./images/SCH_Transceiver%20CAN.png)
+![Schéma Transceiver CAN](./documents/schema/can.png)
 
 #### 3. Transceiver K-Line (L9637D)
-![Schéma Transceiver K-Line](./images/SCH_Transceiver%20K-Line.png)
+![Schéma Transceiver K-Line](./documents/schema/kline.png)
 
 #### 4. Microcontrôleur ESP32-S3 & Périphériques
-![Schéma ESP32](./images/SCH_ESP32.png)
+![Schéma ESP32](./documents/schema/esp32.png)
 
 ### Circuit Imprimé (PCB)
 
@@ -196,36 +191,33 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
 | **Chevelu total (HPWL)** | 580.7 mm (non routable) | **679.4 mm** (corridors de routage libérés) | **Chevelu aéré et routable** |
 | **Composants implantés** | 84 composants | **84 composants** (69 physiques + 15 mires TP) | **100% de la BOM couverte** |
 
-#### 1. Placement des composants - baseline (brut)
-> **Statut :** ❌ Invalide — 76 chevauchements (118.2 mm²), 85 violations dures.
-
-<img src="images/placement_baseline.svg" alt="Placement des composants - Baseline" width="100%">
-
-#### 2. Placement des composants - optimisé (Phase 2)
+#### 1. Placement des composants optimisé (Phase 2)
 > **Statut :** ✅ Valide — 0 chevauchement (0.0 mm²), 0 violation dure, Score : 8.2732.
 
-<img src="images/placement_optimised.svg" alt="Placement des composants - Optimisé" width="100%">
+<img src="documents/pcb/placement.svg" alt="Placement des composants - Optimisé" width="100%">
 
-#### 3. Rendu final & Implantation PCB (EasyEDA Pro)
+#### 2. Rendu final & Implantation PCB (EasyEDA Pro)
 * **Vue d'implantation & pistes routées (EasyEDA Pro) :**
-![PCB OBD2 Scanner - Vue d'implantation](./images/PCB.png)
+![PCB OBD2 Scanner - Vue d'implantation](./documents/pcb/pcb.png)
 
 * **Rendus 2D photoréalistes :**
   * **Face supérieure (Top) :**
-  ![PCB OBD2 Scanner - Vue 2D Face Supérieure](./images/2D-TOP.png)
+  ![PCB OBD2 Scanner - Vue 2D Face Supérieure](./documents/pcb/2d-top.png)
   * **Face inférieure (Bottom) :**
-  ![PCB OBD2 Scanner - Vue 2D Face Inférieure](./images/2D-BOTTOM.png)
+  ![PCB OBD2 Scanner - Vue 2D Face Inférieure](./documents/pcb/2d-bottom.png)
 
 ### Modélisation 3D
-![PCB OBD2 Scanner - Vue 3D photoréaliste](./images/3D.png)
+![PCB OBD2 Scanner - Vue 3D photoréaliste](./documents/pcb/3d.png)
 
 ---
 
-## 4. État Actuel (work in progress) & Prochaine Étape
+## 4. État d'Avancement & Prochaine Étape Immédiate
 
-* **Schématique :** Schéma complet modulaire découpé en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 69 composants physiques à assembler (84 composants avec les mires de test TP), intégration des cavaliers de configuration bi-mode (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle ERC strict = 0 sous EasyEDA Pro.
-* **Placement & Routage PCB (Phases 2 & 3.1 validées) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**. Routage intégral à 100% (219 connexions) exécuté par le skill `freerouting` headless (FreeRouting v2.4.1 sous OpenJDK 25) avec réimport automatique et **DRC EasyEDA Pro = 0 violation**.
-* **Prochaine étape immédiate :** Plans de masse continus Top/Bottom (`GND`), vias de couture (*stitching*), dissipation thermique sous `U5`/`U1` et zone d'exclusion RF (*Keepout*) de l'antenne méandre ESP32.
+* **Phase 1 : Schématique & Nomenclature (Validée) :** Schéma complet modulaire en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 84 composants validés, nomenclature 100% optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json)), cavaliers de configuration bi-mode intégrés (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle strict **ERC = 0** sous EasyEDA Pro.
+* **Phase 2 : Placement PCB & Sérigraphie (Validée) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, courtyards et dégagements pastilles IPC-7351 respectés, sérigraphie optimisée par *Line-of-Sight* sans texte inversé ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
+* **Phase 3.1 : Auto-Routage Headless (Validée) :** 100% des pistes actives routées (219/219 connexions) via le skill `freerouting` (FreeRouting v2.4.1 sous OpenJDK 25 portable) avec réimport automatique et **DRC EasyEDA Pro = 0 violation**.
+* **Phase 3.2 : Plans de Masse & Stitching (En cours de finalisation) :** Plans de masse `GND` continus TopLayer (`POUR1`) et BottomLayer (`POUR2`) coulés, 34 vias de couture implantés (**0 Connection Error**).
+* **Prochaine étape immédiate :** Résolution des 13 Clearance Errors résiduelles de pontage d'îlots de masse via les chemins d'évitement A* du skill `pcb-stitcher` (`island_bridger.py`), sérigraphie finale des cavaliers `JP1`/`JP2` et certification **DRC = 0 strict**.
 
 ---
 
@@ -235,38 +227,43 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 
 | Document | Description |
 | :--- | :--- |
-| 📋 **[TODO.md](TODO.md)** | **Feuille de route active & checklist complète** : suivi détaillé des 8 phases de conception (mécanique, schéma, floorplanning, routage, plans de masse, contrôles, firmware et fabrication). |
-| 📦 **[BOM.md](BOM.md)** | **Nomenclature complète des 69 composants physiques (84 avec mires de test)** : références fabricants, codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
-| 📑 **[DATASHEETS.md](DATASHEETS.md)** | **Référentiel constructeur & Audit de conformité des ICs** : synthèse des 6 datasheets officielles (`datasheet/`), caractéristiques électriques, limites absolues, règles d'implantation PCB et matrice de conformité. |
-| 🎯 **[pcb-placer.md](pcb-placer.md)** | **Architecture maîtresse du moteur de placement PCB** : spécifications des phases 0 à 4, critères DRC, pipeline hybride CP-SAT / Recuit simulé / LNS. |
-| 📐 **[board_constraints.json](board_constraints.json)** | **Contraintes mécaniques de carte machine-readable** : dimensions 100% mm, ancres mécaniques (`J1`, `J2`, `U1`), 4 trous M2 de fixation et règles d'accès. |
-| 🧠 **[circuit_manifest.json](circuit_manifest.json)** | **Manifeste sémantique et géométrique unifié** : boîtiers normalisés IPC-7351, zones d'antennes radio, règles de découplage et contraintes CEM. |
-| 🔬 **[HARDWARE.md](HARDWARE.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP15`) et règles de layout. |
-| 🤖 **[AUTOMATION.md](AUTOMATION.md)** | **Automatisation IA via EasyEDA Pro** : architecture du pont Node.js, extension `.eext`, configuration des hooks de cycle de vie Antigravity et règles de routage IA. |
-| 💡 **[LEARNINGS.md](LEARNINGS.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
-| 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `TODO.md`. |
-| 📁 **`easyeda/OBD2.epro2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
+| 📖 **[readme.md](readme.md)** | **Présentation générale du projet matériel** : architecture, cas d'usage, référentiel normatif, visuels schémas et PCB, guide de navigation. |
+| 📋 **[todo.md](todo.md)** | **Feuille de route active & checklist complète** : suivi détaillé des étapes de conception (mécanique, schéma, floorplanning, routage, plans de masse, contrôles, firmware et fabrication). |
+| 📦 **[bom.json](documents/schema/bom.json)** | **Nomenclature PCBA structurée des 84 composants** : références fabricants (MPN), codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
+| 🧠 **[semantics.json](documents/schema/semantics.json)** | **Intention sémantique et électrique de schéma** : rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation), blocs fonctionnels et politique de substitution. |
+| 📑 **[datasheets.md](documents/datasheets/datasheets.md)** | **Référentiel constructeur & Audit de conformité des ICs** : synthèse des 6 datasheets officielles ([`documents/datasheets/references/`](documents/datasheets/references/)), caractéristiques électriques, limites absolues, règles d'implantation PCB et matrice de conformité. |
+| 📐 **[constraints.json](documents/pcb/constraints.json)** | **Contraintes mécaniques de carte et de routage** : dimensions 100% mm, ancres mécaniques (`J1`, `J2`, `U1`), 4 trous M2 de fixation, keepouts et classes de routage FreeRouting. |
+| 🧩 **[manifest.json](documents/pcb/manifest.json)** | **Manifeste physique et géométrique PCB** : boîtiers normalisés IPC-7351, règles de découplage, micro-clusters et contraintes CEM de placement. |
+| 🔬 **[hardware.md](documents/hardware.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP15`) et règles de layout. |
+| 💻 **[software.md](documents/software.md)** | **Cahier des charges & Handover Firmware** : guide d'amorçage pour le dépôt logiciel dédié, mappage GPIOs, protocoles (TWAI CAN, K-Line KWP2000 Daewoo), formule ADC batterie, veille < 1 mA et simulateur d'ECU. |
+| 📜 **[agents.md](agents.md)** | **Règles directrices des agents IA** : modularité agnostique, sécurité du pont EasyEDA, méthode séquentielle, post-validation et typographie. |
+| 💡 **[learnings.md](learnings.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
+| 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `todo.md`. |
+| 📁 **`documents/easyeda/OBD2.epro2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
 
 ---
 
 ## 6. Outils & Skills Spécialisés d'Automatisation
 
-Le projet intègre et exploite 5 compétences logicielles dédiées (*Skills*) pour assister l'agent IA et fiabiliser les étapes critiques de modélisation théorique, d'audit, de CAO, d'agencement physique et d'optimisation des coûts d'assemblage :
+Le projet intègre et exploite 8 compétences logicielles dédiées (*Skills*) sous `.agents/skills/` pour assister l'agent IA et fiabiliser les étapes critiques de modélisation théorique, d'audit, de CAO, d'agencement physique et d'optimisation des coûts d'assemblage :
 
 | Skill | Emplacement | Rôle & Fonctionnalités |
 | :--- | :--- | :--- |
-| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | **Modélisation petit-signal & Stabilité Buck :** Outil de calcul mathématique et d'optimisation paramétrique du réseau de compensation Type II pour le régulateur TI TPS54331 (évaluation Bode, fréquence de coupure fco, marge de phase ≥ 45°, marge de gain ≥ 10 dB, et sélection optimale du triplet Rz, Cz, Cp sur le catalogue Basic Parts JLCPCB). Exécuté via `uv run`. |
+| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | **Modélisation petit-signal & Stabilité Buck :** Outil de calcul mathématique et d'optimisation paramétrique du réseau de compensation Type II pour le régulateur TI TPS54331 (évaluation Bode, fréquence de coupure fco, marge de phase ≥ 45°, marge de gain ≥ 10 dB, et sélection optimale du triplet Rz, Cz, Cp sur le catalogue Basic Parts JLCPCB). |
 | 🔌 **`easyeda-api`** | [`.agents/skills/easyeda-api/`](.agents/skills/easyeda-api/SKILL.md) | **Contrôle programmatique EasyEDA Pro :** Pont bidirectionnel local (WebSocket/HTTP sur port 49620) permettant d'interroger, d'auditer et d'automatiser le schéma et le PCB en temps réel sans manipulation manuelle à risque, avec accès aux 120+ classes de l'API officielle. |
-| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | **Moteur Agnostique d'Auto-Placement par Contraintes :** Algorithme déterministe d'agencement 2D en une passe pour les composants du PCB sous EasyEDA Pro. Moteur générique découplé (aucun composant en dur), piloté via `uv run` avec l'argument obligatoire `--config floorplan.json`. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3), d'audit géométrique et d'injection en direct. |
-| 🔍 **`review`** | [`.agents/skills/review/`](.agents/skills/review/SKILL.md) | **Audit Matériel, Validation & Triage :** Moteur méthodologique et outillé pour la conduite de revues techniques matérielles (Axe 1 à 6, règle d'or Tabula Rasa / oubli de mémoire). Outil CLI agnostique (`review_tool.py`) extrayant le template depuis `review/guidelines.md`, validant la structure des rapports face aux standards et automatisant le dépouillement vers `TODO.md` avec détection de collisions. Exécuté via `uv run`. |
-| 💰 **`stingy-schematics`** | [`.agents/skills/stingy-schematics/`](.agents/skills/stingy-schematics/SKILL.md) | **Optimiseur SMT & Gardien Sémantique de Schéma :** Moteur d'audit et de réduction des coûts de fabrication JLCPCB PCBA. Analyse la BOM et `circuit_semantics.json` pour proposer de basculer des pièces Extended vers des Basic Parts sans compromis de qualité ni de sécurité (substitutions 1-to-1, recalculs de ponts diviseurs E24/E96, et contrôle de synchronisation continue via `sync_semantics.py`). Exécuté via `uv run`. |
+| 🛣️ **`freerouting`** | [`.agents/skills/freerouting/`](.agents/skills/freerouting/SKILL.md) | **Auto-routage Headless Specctra DSN/SES :** Moteur d'auto-routage complet pilotant FreeRouting v2.4.1 sous OpenJDK 25 headless portable. Injecte les règles de classes de nets et isole les paires différentielles CAN/USB et les keepouts RF. |
+| 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | **Moteur Agnostique d'Auto-Placement par Contraintes :** Algorithme stochastique par recuit simulé multi-objectifs pour l'agencement 2D des composants PCB sous EasyEDA Pro. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3) et génère nativement [`documents/pcb/placement.svg`](documents/pcb/placement.svg). |
+| 🪡 **`pcb-stitcher`** | [`.agents/skills/pcb-stitcher/`](.agents/skills/pcb-stitcher/SKILL.md) | **Auto-stitching & Pontage Multi-Couches A* :** Solveur agnostique d'échappement par vias CMS, d'interconnexion 3D d'îlots de cuivre par algorithme A* avec évitement d'obstacles, et de renforcement des plans de masse GND. |
+| 🔢 **`ratio-solver`** | [`.agents/skills/ratio-solver/`](.agents/skills/ratio-solver/SKILL.md) | **Solveur Mathématique de Ponts Diviseurs :** Calcul et optimisation automatique des couples de résistances sur les séries normalisées E24/E96 pour régulateurs, diviseurs ADC et références de tension. |
+| 🔍 **`review`** | [`.agents/skills/review/`](.agents/skills/review/SKILL.md) | **Audit Matériel, Validation & Triage :** Moteur méthodologique et outillé pour la conduite de revues techniques matérielles (Axe 1 à 6, règle d'or Tabula Rasa / oubli de mémoire). Outil CLI agnostique (`review_tool.py`) validant la structure des rapports face aux standards et automatisant le dépouillement vers `todo.md`. |
+| 💰 **`stingy-schematics`** | [`.agents/skills/stingy-schematics/`](.agents/skills/stingy-schematics/SKILL.md) | **Optimiseur SMT & Gardien Sémantique de Schéma :** Moteur d'audit et de réduction des coûts de fabrication JLCPCB PCBA. Analyse la nomenclature et `documents/schema/semantics.json` pour basculer des pièces Extended vers des Basic Parts sans compromis de qualité ni de sécurité, avec synchroniseur `sync_semantics.py`. |
 
 ---
 
 ## 7. Démarrage Rapide
 
-1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `easyeda/OBD2.epro2`.
+1. **Ouvrir le projet :** Lancer EasyEDA Pro (version bureau ou web) et ouvrir le fichier `documents/easyeda/OBD2.epro2`.
 2. **Contrôle d'intégrité :**
    - Schéma : Menu `Design` → `Check ERC` (doit retourner 0 erreur, 0 avertissement).
    - PCB : Menu `Design` → `Check DRC` (doit retourner 0 erreur).
-3. **Pilotage IA :** Démarrer le pont local via le skill EasyEDA pour activer la manipulation automatisée (voir [AUTOMATION.md](AUTOMATION.md)).
+3. **Pilotage IA :** Le pont local `easyeda-api` (port 49620) est automatiquement géré en tâche de fond par Antigravity via son hook de cycle de vie ([`.agents/hooks.json`](.agents/hooks.json)). Il suffit d'avoir importé l'extension `run-api-gateway.eext` dans EasyEDA Pro (voir [easyeda-api](.agents/skills/easyeda-api/SKILL.md)).

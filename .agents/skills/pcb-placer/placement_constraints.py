@@ -163,6 +163,10 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
     # Détection automatique du circuit_manifest pour enrichir les règles CEM et clusters
     manifest_path = None
     possible_manifests = [
+        p.parent / "documents" / "pcb" / "manifest.json",
+        Path("documents/pcb/manifest.json"),
+        p.parent / "documents" / "schema" / "semantics.json",
+        Path("documents/schema/semantics.json"),
         p.parent / "circuit_manifest.json",
         p.parent / "circuit_semantics.json",
         Path("circuit_manifest.json"),
@@ -178,6 +182,20 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
         try:
             with open(manifest_path, "r", encoding="utf-8") as mf:
                 manifest_data = json.load(mf)
+            # Résolution de la sémantique schéma liée pour éliminer toute redondance
+            sem_ref = manifest_data.get("schema_semantics")
+            if sem_ref:
+                sem_path = (manifest_path.parent / sem_ref).resolve()
+                if sem_path.exists():
+                    with open(sem_path, "r", encoding="utf-8") as sf:
+                        sem_data = json.load(sf)
+                    if "functional_blocks" not in manifest_data and "functional_blocks" in sem_data:
+                        manifest_data["functional_blocks"] = sem_data["functional_blocks"]
+                    for des, s_comp in sem_data.get("components", {}).items():
+                        if des in manifest_data.get("components", {}):
+                            for k, v in s_comp.items():
+                                if k not in manifest_data["components"][des]:
+                                    manifest_data["components"][des][k] = v
             logger.info(f"Manifeste de circuit détecté et chargé : {manifest_path}")
         except Exception as e:
             logger.warning(f"Impossible de lire le manifeste {manifest_path} : {e}")

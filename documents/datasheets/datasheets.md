@@ -1,6 +1,6 @@
 # Référentiel Technique des Circuits Intégrés & Audit de Conformité (DATASHEETS)
 
-Ce document constitue la **source de vérité technique** du projet **Scanner OBD-II ESP32**. Il synthétise les spécifications officielles des constructeurs (Espressif, NXP, STMicroelectronics, Texas Instruments, onsemi) issues des documents PDF archivés dans le répertoire [`datasheet/`](datasheet/), extrait les exigences rigoureuses d'implémentation électronique et de routage PCB, et audite la conformité point par point du circuit actuel.
+Ce document constitue la **source de vérité technique** du projet **Scanner OBD-II ESP32**. Il synthétise les spécifications officielles des constructeurs (Espressif, NXP, STMicroelectronics, Texas Instruments, onsemi) issues des documents PDF archivés dans le répertoire [`references/`](references/), extrait les exigences rigoureuses d'implémentation électronique et de routage PCB, et audite la conformité point par point du circuit actuel.
 
 ---
 
@@ -8,14 +8,14 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 | Repère | Circuit Intégré | Fabricant | Rôle Fonctionnel | Fichier PDF Source Archivé |
 | :--- | :--- | :--- | :--- | :--- |
-| **`U1`** | **ESP32-S3-WROOM-1-N16R2** | Espressif Systems | SoC Dual-Core 240 MHz, Wi-Fi 2.4 GHz, BLE 5.0, USB natif, TWAI (–40°C à +85°C) | [`datasheet/ESP32-S3-WROOM-1.pdf`](datasheet/ESP32-S3-WROOM-1.pdf) |
-| **`U2`** | **TJA1051T/3/1J** | NXP Semiconductors | Transceiver CAN haute vitesse (5 Mbit/s) avec translation VIO 3.3V | [`datasheet/TJA1051T.pdf`](datasheet/TJA1051T.pdf) |
-| **`U3`** | **E-L9637D013TR (L9637D)** | STMicroelectronics | Transceiver ligne K-Line ISO 9141 / KWP2000 bidirectionnel 12V | [`datasheet/E-L9637D013TR (L9637).pdf`](datasheet/E-L9637D013TR%20(L9637).pdf) |
-| **`U4`** | **TPS54331DR** | Texas Instruments | Convertisseur Buck Step-Down 12V → 5V (3A, 570 kHz, Eco-mode) | [`datasheet/TPS54331.pdf`](datasheet/TPS54331.pdf) |
-| **`U5`** | **LDL1117S33R** | STMicroelectronics | Régulateur linéaire LDO 5V → 3.3V faible bruit, PSRR 87 dB, 1.2A | [`datasheet/LDL1117S33R(DS_ldl1117).pdf`](datasheet/LDL1117S33R(DS_ldl1117).pdf) |
-| **`U8`** | **NUP2105LT1G** | onsemi | Double diode TVS 24V différentielle protection transitoire bus CAN | [`datasheet/NUP2105L-D.PDF`](datasheet/NUP2105L-D.PDF) |
-| **`J1`** | **WJ250B-3.5-05P-11-00A** | Ningbo Kangnex | Bornier à ressort PCB sans vis 5 contacts (pas 3.5 mm, 250V 8A, –40°C à +105°C) | [`datasheet/WJ250B-3.5-06P.pdf`](datasheet/WJ250B-3.5-06P.pdf) |
-| **`U6`/`U7`** | **SESD05C** | Semiware | Diodes discrètes TVS 5V bidirectionnelles protection ESD USB D+/D- | Catalogue constructeur LCSC [`C720025`](BOM.md#L75-L76) |
+| **`U1`** | **ESP32-S3-WROOM-1-N16R2** | Espressif Systems | SoC Dual-Core 240 MHz, Wi-Fi 2.4 GHz, BLE 5.0, USB natif, TWAI (–40°C à +85°C) | [`references/ESP32-S3-WROOM-1.pdf`](references/ESP32-S3-WROOM-1.pdf) |
+| **`U2`** | **TJA1051T/3/1J** | NXP Semiconductors | Transceiver CAN haute vitesse (5 Mbit/s) avec translation VIO 3.3V | [`references/TJA1051T.pdf`](references/TJA1051T.pdf) |
+| **`U3`** | **E-L9637D013TR (L9637D)** | STMicroelectronics | Transceiver ligne K-Line ISO 9141 / KWP2000 bidirectionnel 12V | [`references/E-L9637D013TR (L9637).pdf`](references/E-L9637D013TR%20(L9637).pdf) |
+| **`U4`** | **TPS54331DR** | Texas Instruments | Convertisseur Buck Step-Down 12V → 5V (3A, 570 kHz, Eco-mode) | [`references/TPS54331.pdf`](references/TPS54331.pdf) |
+| **`U5`** | **LDL1117S33R** | STMicroelectronics | Régulateur linéaire LDO 5V → 3.3V faible bruit, PSRR 87 dB, 1.2A | [`references/LDL1117S33R(DS_ldl1117).pdf`](references/LDL1117S33R(DS_ldl1117).pdf) |
+| **`U8`** | **NUP2105LT1G** | onsemi | Double diode TVS 24V différentielle protection transitoire bus CAN | [`references/NUP2105L-D.PDF`](references/NUP2105L-D.PDF) |
+| **`J1`** | **WJ250B-3.5-05P-11-00A** | Ningbo Kangnex | Bornier à ressort PCB sans vis 5 contacts (pas 3.5 mm, 250V 8A, –40°C à +105°C) | [`references/WJ250B-3.5-06P.pdf`](references/WJ250B-3.5-06P.pdf) |
+| **`U6`/`U7`** | **SESD05C** | Semiware | Diodes discrètes TVS 5V bidirectionnelles protection ESD USB D+/D- | Catalogue constructeur LCSC [`C720025`](../schema/bom.json) |
 
 ---
 
@@ -25,7 +25,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U1 — SoC Wi-Fi & BLE : ESP32-S3-WROOM-1-N16R2
 
-* **Fichier constructeur :** [`datasheet/ESP32-S3-WROOM-1.pdf`](datasheet/ESP32-S3-WROOM-1.pdf) (Espressif Systems)
+* **Fichier constructeur :** [`references/ESP32-S3-WROOM-1.pdf`](references/ESP32-S3-WROOM-1.pdf) (Espressif Systems)
 * **Boîtier :** Module SMD 41 broches + Pad thermique central (25.5 × 18.0 mm).
 * **Rôle électrique :** Traitement principal, protocole OBD-II, Wi-Fi 802.11 b/g/n, Bluetooth LE 5.0, contrôleur TWAI (CAN 2.0B), interface USB OTG native.
 
@@ -69,7 +69,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U2 — Transceiver CAN Haute Vitesse : TJA1051T/3/1J
 
-* **Fichier constructeur :** [`datasheet/TJA1051T.pdf`](datasheet/TJA1051T.pdf) (NXP Semiconductors)
+* **Fichier constructeur :** [`references/TJA1051T.pdf`](references/TJA1051T.pdf) (NXP Semiconductors)
 * **Boîtier :** SOIC-8 (150 mil).
 * **Rôle électrique :** Transceiver physique CAN haute vitesse ISO 11898-2:2016 et CAN FD (jusqu'à 5 Mbit/s) assurant l'interfaçage différentiel 5V du véhicule avec le domaine logique 3.3V de l'ESP32 via sa broche d'adaptation VIO.
 
@@ -115,7 +115,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U3 — Transceiver K-Line ISO 9141 : E-L9637D013TR (L9637D)
 
-* **Fichier constructeur :** [`datasheet/E-L9637D013TR (L9637).pdf`](datasheet/E-L9637D013TR%20(L9637).pdf) (STMicroelectronics)
+* **Fichier constructeur :** [`references/E-L9637D013TR (L9637).pdf`](references/E-L9637D013TR%20(L9637).pdf) (STMicroelectronics)
 * **Boîtier :** SOIC-8.
 * **Rôle électrique :** Transceiver spécifique assurant la transmission bidirectionnelle semi-duplex (Half-Duplex) sur la ligne mono-fil K-Line 12V (ISO 9141-2 et ISO 14230 KWP2000).
 
@@ -174,7 +174,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U4 — Régulateur Buck Step-Down : TPS54331DR
 
-* **Fichier constructeur :** [`datasheet/TPS54331.pdf`](datasheet/TPS54331.pdf) (Texas Instruments)
+* **Fichier constructeur :** [`references/TPS54331.pdf`](references/TPS54331.pdf) (Texas Instruments)
 * **Boîtier :** SOIC-8.
 * **Rôle électrique :** Abaisseur de tension à découpage haute fréquence (570 kHz, 3A) convertissant le 12V automobile en +5V régulé pour alimenter le transceiver CAN et le régulateur LDO 3.3V avec un rendement supérieur à 85%.
 
@@ -234,7 +234,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U5 — Régulateur LDO Faible Bruit : LDL1117S33R
 
-* **Fichier constructeur :** [`datasheet/LDL1117S33R(DS_ldl1117).pdf`](datasheet/LDL1117S33R(DS_ldl1117).pdf) (STMicroelectronics)
+* **Fichier constructeur :** [`references/LDL1117S33R(DS_ldl1117).pdf`](references/LDL1117S33R(DS_ldl1117).pdf) (STMicroelectronics)
 * **Boîtier :** SOT-223.
 * **Rôle électrique :** Régulateur linéaire Low Dropout (LDO) abaissant le rail +5V (Buck) vers le rail 3.3V logique avec une réjection d'alimentation remarquable (PSRR 87 dB @ 120 Hz, > 60 dB @ 100 kHz) éliminant l'ondulation résiduelle 570 kHz pour purifier l'alimentation du SoC ESP32 et de son émetteur-récepteur radio 2.4 GHz.
 
@@ -278,7 +278,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U8 — Réseau Double TVS Bus CAN : NUP2105LT1G
 
-* **Fichier constructeur :** [`datasheet/NUP2105L-D.PDF`](datasheet/NUP2105L-D.PDF) (onsemi)
+* **Fichier constructeur :** [`references/NUP2105L-D.PDF`](references/NUP2105L-D.PDF) (onsemi)
 * **Boîtier :** SOT-23 (Pin 1: CANH, Pin 2: CANL, Pin 3: GND).
 * **Rôle électrique :** Protection antistatique (ESD) et absorption des surtensions transitoires différentielles et de mode commun sur le bus CAN automobile selon les normes IEC 61000-4-2 et ISO 7637-3.
 
@@ -308,7 +308,7 @@ Ce document constitue la **source de vérité technique** du projet **Scanner OB
 
 ### U6 / U7 — Diodes ESD USB : SESD05C
 
-* **Référence constructeur :** `SESD05C` (Semiware) / LCSC [`C720025`](BOM.md#L75-L76).
+* **Référence constructeur :** `SESD05C` (Semiware) / LCSC [`C720025`](documents/schema/bom.json).
 * **Boîtier :** SOD-323 (composant discret 2 broches).
 * **Rôle électrique :** Diodes TVS bidirectionnelles assurant la protection antistatique (ESD) des lignes de données USB Full-Speed `USB_D+` et `USB_D-`.
 * **Spécifications clés :**

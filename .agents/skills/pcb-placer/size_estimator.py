@@ -190,13 +190,28 @@ class PCBSizeEstimator:
         rf_keepout_mm2: float = 120.0,
         edge_clearance_mm: float = 1.0
     ) -> SizingEstimate:
-        """Estime les dimensions à partir d'un fichier Markdown de nomenclature (BOM.md)."""
+        """Estime les dimensions à partir d'un fichier JSON ou Markdown de nomenclature (bom.json / bom.md)."""
         p = Path(bom_path)
         if not p.exists():
             raise FileNotFoundError(f"Fichier BOM introuvable : {bom_path}")
 
+        if p.suffix.lower() == ".json":
+            with open(p, "r", encoding="utf-8") as f:
+                bom_data = json.load(f)
+            components = []
+            for des, c in bom_data.get("components", {}).items():
+                pkg = c.get("package") or ""
+                components.append({"designator": des, "package": pkg})
+            return self.estimate_from_components(
+                components=components,
+                layers=layers,
+                aspect_ratio=aspect_ratio,
+                rf_keepout_mm2=rf_keepout_mm2,
+                edge_clearance_mm=edge_clearance_mm
+            )
+
         text = p.read_text(encoding="utf-8")
-        # Format attendu du tableau BOM: | **Désignateur** | Valeur | MPN | LCSC | Statut | Empreinte | Rôle |
+        # Format attendu du tableau BOM Markdown: | **Désignateur** | Valeur | MPN | LCSC | Statut | Empreinte |
         pattern = r"\|\s*\*\*([A-Z0-9]+)\*\*\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*`?([^`|\n]+)`?\s*\|"
         matches = re.findall(pattern, text)
 
@@ -238,8 +253,14 @@ class PCBSizeEstimator:
             kh_mil = abs(k.get("y_max_mil", 0) - k.get("y_min_mil", 0))
             keepouts_mm2 += (kw_mil * MIL_TO_MM) * (kh_mil * MIL_TO_MM)
 
-        # Liste des composants et recherche des boîtiers dans circuit_manifest.json ou BOM.md
-        manifest_path = p.parent / "circuit_manifest.json"
+        # Liste des composants et recherche des boîtiers dans manifest.json ou bom.md
+        manifest_candidates = [
+            p.parent / "documents" / "pcb" / "manifest.json",
+            Path("documents/pcb/manifest.json"),
+            p.parent / "circuit_manifest.json",
+            Path("circuit_manifest.json")
+        ]
+        manifest_path = next((m for m in manifest_candidates if m.exists()), manifest_candidates[0])
         manifest_comps = {}
         if manifest_path.exists():
             try:
@@ -248,12 +269,27 @@ class PCBSizeEstimator:
             except Exception:
                 pass
 
-        bom_path = p.parent / "BOM.md"
+        bom_candidates = [
+            p.parent / "documents" / "schema" / "bom.json",
+            Path("documents/schema/bom.json"),
+            p.parent / "documents" / "schema" / "bom.md",
+            Path("documents/schema/bom.md"),
+            p.parent / "BOM.md",
+            Path("BOM.md")
+        ]
+        bom_path = next((b for b in bom_candidates if b.exists()), bom_candidates[0])
         bom_pkg_map = {}
         if bom_path.exists():
-            text = bom_path.read_text(encoding="utf-8")
-            pattern = r"\|\s*\*\*([A-Z0-9]+)\*\*\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*`?([^`|\n]+)`?\s*\|"
-            bom_pkg_map = {des: pkg.strip() for des, pkg in re.findall(pattern, text)}
+            if bom_path.suffix.lower() == ".json":
+                try:
+                    with open(bom_path, "r", encoding="utf-8") as bf:
+                        bom_pkg_map = {des: c.get("package", "") for des, c in json.load(bf).get("components", {}).items()}
+                except Exception:
+                    pass
+            else:
+                text = bom_path.read_text(encoding="utf-8")
+                pattern = r"\|\s*\*\*([A-Z0-9]+)\*\*\s*\|[^|]*\|[^|]*\|[^|]*\|[^|]*\|\s*`?([^`|\n]+)`?\s*\|"
+                bom_pkg_map = {des: pkg.strip() for des, pkg in re.findall(pattern, text)}
 
         raw_comps = data.get("components", {}) or manifest_comps
 
@@ -427,13 +463,17 @@ def main():
     args = parser.parse_args()
 
     if not args.config and not args.bom:
-        # Si aucun argument n'est fourni, tenter de localiser floorplan.json ou BOM.md localement
+        # Si aucun argument n'est fourni, tenter de localiser floorplan.json ou bom.md localement
         if Path("floorplan.json").exists():
             args.config = "floorplan.json"
+        elif Path("documents/schema/bom.json").exists():
+            args.bom = "documents/schema/bom.json"
+        elif Path("documents/schema/bom.md").exists():
+            args.bom = "documents/schema/bom.md"
         elif Path("BOM.md").exists():
             args.bom = "BOM.md"
         else:
-            parser.error("Veuillez spécifier soit --config <floorplan.json>, soit --bom <BOM.md>.")
+            parser.error("Veuillez spécifier soit --config <floorplan.json>, soit --bom <bom.json>.")
 
     estimator = PCBSizeEstimator()
 

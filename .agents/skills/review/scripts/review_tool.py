@@ -169,7 +169,7 @@ class ReviewValidator:
 
 
 class ReviewTriager:
-    """Dépouilleur de revue : convertit les remarques en items actionnables pour TODO.md."""
+    """Dépouilleur de revue : convertit les remarques en items actionnables pour todo.md."""
 
     @staticmethod
     def format_todo_item(obs: Observation) -> str:
@@ -373,9 +373,9 @@ def main() -> int:
     # Commande triage
     p_tri = subparsers.add_parser("triage", help="Dépouiller une revue et convertir les observations en checklist TODO.")
     p_tri.add_argument("file", help="Chemin du fichier de revue à dépouiller.")
-    p_tri.add_argument("--todo-file", help="Chemin vers le fichier TODO.md cible pour détection de collisions et insertion.")
+    p_tri.add_argument("--todo-file", help="Chemin vers le fichier todo.md cible pour détection de collisions et insertion.")
     p_tri.add_argument("--section", help="En-tête Markdown de la section sous laquelle insérer (ex: '### 1.1 Correctifs').")
-    p_tri.add_argument("--apply", action="store_true", help="Appliquer l'insertion dans le fichier TODO.md.")
+    p_tri.add_argument("--apply", action="store_true", help="Appliquer l'insertion dans le fichier todo.md.")
     p_tri.add_argument("--delete-review", action="store_true", help="Supprimer définitivement le fichier de revue après dépouillement.")
 
     args = parser.parse_args()
