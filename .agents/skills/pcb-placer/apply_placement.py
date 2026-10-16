@@ -33,16 +33,28 @@ logger = logging.getLogger("PlacementApplier")
 MM_TO_MIL = 1.0 / 0.0254
 
 
+class DRCOnPlacementError(RuntimeError):
+    """Exception levée en cas de violations DRC après injection du placement."""
+    def __init__(self, message: str, error_count: int = 0, warning_count: int = 0):
+        super().__init__(message)
+        self.error_count = error_count
+        self.warning_count = warning_count
+
+
 def apply_placement_to_pcb(
     placement_path: Path,
     dry_run: bool = False,
     run_drc: bool = True,
     save: bool = True,
+    rollback_on_drc_error: bool = True,
+    ignore_drc_errors: bool = False,
+    force_save: bool = False,
     client: Optional[EasyEDAClient] = None
 ) -> Dict[str, Any]:
     """
     Lit un fichier de placement JSON (contenant les coordonnées x_mm, y_mm, rotation)
     et applique en une transaction par lot les nouvelles positions dans EasyEDA Pro.
+    Effectue un snapshot initial pour rollback automatique en cas de violations DRC.
     """
     if not placement_path.is_file():
         raise FileNotFoundError(f"Fichier de placement introuvable : {placement_path}")
@@ -66,6 +78,23 @@ def apply_placement_to_pcb(
     logger.info(f"Composants détectés sur le PCB : {len(current_map)}")
     logger.info(f"Composants à appliquer depuis {placement_path.name} : {len(comps_to_place)}")
 
+    # Snapshot des positions initiales pour rollback en cas d'échec DRC
+    snapshot = []
+    for des in comps_to_place.keys():
+        if des in current_map:
+            c = current_map[des]
+            snap_item: Dict[str, Any] = {
+                "designator": des,
+                "x": c.get("x"),
+                "y": c.get("y"),
+                "rotation": c.get("rotation", 0)
+            }
+            if "layer" in c:
+                snap_item["layer"] = c["layer"]
+            if "locked" in c:
+                snap_item["locked"] = c["locked"]
+            snapshot.append(snap_item)
+
     adjustments = []
     skipped = []
 
@@ -74,9 +103,9 @@ def apply_placement_to_pcb(
             skipped.append(des)
             continue
 
-        x_mm = float(target.get("x_mm", 0.0))
-        y_mm = float(target.get("y_mm", 0.0))
-        rot_deg = float(target.get("rotation", 0.0))
+        x_mm = float(target.get("x_mm", target.get("x", 0.0)))
+        y_mm = float(target.get("y_mm", target.get("y", 0.0)))
+        rot_deg = float(target.get("rotation", target.get("rot", 0.0)))
 
         # Conversion mm vers mil
         x_mil = round(x_mm * MM_TO_MIL, 1)
@@ -111,27 +140,58 @@ def apply_placement_to_pcb(
     logger.info(f"✅ {modified_count} composants repositionnés avec succès en {elapsed:.2f} s !")
 
     drc_summary = {}
+    drc_failed = False
     if run_drc:
         logger.info("🔍 Exécution du contrôle DRC natif EasyEDA Pro...")
         drc_res = client.run_drc()
         error_count = drc_res.get("errorCount", 0)
         warning_count = drc_res.get("warningCount", 0)
-        drc_summary = {"errorCount": error_count, "warningCount": warning_count}
+        drc_summary = {"errorCount": error_count, "warningCount": warning_count, "raw": drc_res}
         logger.info(f"   Résultat DRC : {error_count} erreur(s), {warning_count} avertissement(s)")
 
+        if error_count > 0:
+            drc_failed = True
+            logger.error(f"❌ Violation DRC bloquante : {error_count} erreur(s) détectée(s) après injection !")
+
+            if not ignore_drc_errors:
+                if rollback_on_drc_error:
+                    logger.warning(f"🔄 Déclenchement du ROLLBACK : restauration de {len(snapshot)} composants...")
+                    try:
+                        rb_res = client.batch_move_components(snapshot)
+                        if rb_res.get("success"):
+                            logger.info("✅ Rollback terminé : état d'origine rétabli sur le PCB.")
+                        else:
+                            logger.error(f"❌ Échec de la restauration par rollback : {rb_res.get('error')}")
+                    except Exception as e_rb:
+                        logger.error(f"❌ Erreur critique lors du rollback : {e_rb}")
+                else:
+                    logger.warning("⚠️ Option --no-rollback active : positions en violation maintenues pour analyse.")
+
+                logger.warning("⛔ Sauvegarde automatique bloquée (Règles 2 & 5 AGENTS.md).")
+                raise DRCOnPlacementError(
+                    f"DRC bloquant : {error_count} erreur(s) détectée(s) après injection du placement. "
+                    f"Sauvegarde annulée{' et rollback appliqué' if rollback_on_drc_error else ''}.",
+                    error_count=error_count,
+                    warning_count=warning_count
+                )
+
     if save:
-        logger.info("💾 Sauvegarde du document PCB actif...")
-        saved = client.save_pcb()
-        if saved:
-            logger.info("✅ Document PCB sauvegardé.")
+        if drc_failed and not force_save and not ignore_drc_errors:
+            logger.warning("⛔ Sauvegarde automatique annulée en raison d'erreurs DRC non résolues.")
         else:
-            logger.warning("⚠️ Impossible de confirmer la sauvegarde automatique du document.")
+            logger.info("💾 Sauvegarde du document PCB actif...")
+            saved = client.save_pcb()
+            if saved:
+                logger.info("✅ Document PCB sauvegardé.")
+            else:
+                logger.warning("⚠️ Impossible de confirmer la sauvegarde automatique du document.")
 
     return {
-        "success": True,
+        "success": not drc_failed,
         "modifiedCount": modified_count,
         "elapsed_sec": elapsed,
-        "drc": drc_summary
+        "drc": drc_summary,
+        "rolled_back": drc_failed and rollback_on_drc_error and not ignore_drc_errors
     }
 
 
@@ -156,6 +216,21 @@ def main():
         help="Ne pas exécuter le DRC natif après injection"
     )
     parser.add_argument(
+        "--no-rollback",
+        action="store_true",
+        help="Désactiver le rollback automatique en cas de violations DRC (conserve l'état pour inspection)"
+    )
+    parser.add_argument(
+        "--ignore-drc-errors",
+        action="store_true",
+        help="Tolérer les erreurs DRC sans interrompre l'exécution ni effectuer de rollback"
+    )
+    parser.add_argument(
+        "--force-save",
+        action="store_true",
+        help="Forcer la sauvegarde du document PCB même si des erreurs DRC subsistent"
+    )
+    parser.add_argument(
         "--no-save",
         action="store_true",
         help="Ne pas sauvegarder automatiquement le document PCB"
@@ -168,8 +243,14 @@ def main():
             placement_path=args.placement,
             dry_run=args.dry_run,
             run_drc=not args.no_drc,
-            save=not args.no_save
+            save=not args.no_save,
+            rollback_on_drc_error=not args.no_rollback,
+            ignore_drc_errors=args.ignore_drc_errors,
+            force_save=args.force_save
         )
+    except DRCOnPlacementError as e:
+        logger.error(f"❌ {e}")
+        sys.exit(2)
     except Exception as e:
         logger.error(f"❌ Erreur : {e}")
         sys.exit(1)

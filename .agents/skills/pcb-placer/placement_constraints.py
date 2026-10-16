@@ -121,6 +121,8 @@ class FloorplanConfig:
     functional_clusters: Dict[str, List[str]]
     proximity_rules: List[ProximityRule]
     components: Dict[str, ComponentPlacement]
+    manifest: Dict[str, Any] = field(default_factory=dict)
+    raw_data: Dict[str, Any] = field(default_factory=dict)
 
 
 def load_floorplan(config_path: str) -> FloorplanConfig:
@@ -292,5 +294,7 @@ def load_floorplan(config_path: str) -> FloorplanConfig:
         keepout_zones=keepout_zones,
         functional_clusters=functional_clusters,
         proximity_rules=proximity_rules,
-        components=components
+        components=components,
+        manifest=manifest_data,
+        raw_data=data
     )

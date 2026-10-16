@@ -23,12 +23,20 @@ if sys.platform == "win32":
     except Exception:
         pass
 
+import json
+from pathlib import Path
+
 from easyeda_client import EasyEDAClient
 from placement_constraints import (
     FloorplanConfig,
     load_floorplan,
     mil_to_mm,
     mm_to_mil
+)
+from score import (
+    RectBox,
+    get_component_courtyard_box,
+    get_all_keepouts
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -38,9 +46,15 @@ logger = logging.getLogger("PCBAuditor")
 class PCBAuditor:
     """Auditeur géométrique et CEM agnostique pour PCB sous EasyEDA Pro."""
 
-    def __init__(self, config: FloorplanConfig, client: Optional[EasyEDAClient] = None):
+    def __init__(
+        self,
+        config: FloorplanConfig,
+        client: Optional[EasyEDAClient] = None,
+        placement_path: Optional[Path] = None
+    ):
         self.config = config
         self.client = client or EasyEDAClient()
+        self.placement_path = placement_path
 
     def audit_board(self) -> Dict[str, Any]:
         """Exécute l'audit complet du PCB actif contre la configuration chargée."""
@@ -55,27 +69,48 @@ class PCBAuditor:
             "warnings": []
         }
 
-        try:
-            h = self.client.health()
-            if not h.get("edaConnected"):
-                logger.warning("Client EasyEDA Pro non connecté. Impossible d'auditer le layout live.")
-                return report
-            report["connected"] = True
-        except Exception as e:
-            logger.error(f"Erreur de communication avec le pont : {e}")
-            return report
+        components = []
+        pads = []
 
-        try:
-            logger.info("Extraction des composants et pastilles du PCB...")
-            components = self.client.get_components_with_pads()
-            pads = self.client.get_all_pads()
-        except Exception as e:
-            logger.warning(f"Impossible de lire les éléments PCB : {e}")
-            report["warnings"].append(
-                "Impossible d'extraire les éléments du PCB depuis EasyEDA Pro. "
-                "Assurez-vous qu'un document PCB est bien ouvert au premier plan dans EasyEDA Pro."
-            )
-            return report
+        if self.placement_path and self.placement_path.is_file():
+            logger.info(f"Mode audit hors-ligne : chargement de {self.placement_path.name}...")
+            report["connected"] = True
+            with open(self.placement_path, "r", encoding="utf-8") as f:
+                pdata = json.load(f)
+            comps_dict = pdata.get("components", {})
+            for des, cp in comps_dict.items():
+                x_mm = float(cp.get("x_mm", cp.get("x", 0.0)))
+                y_mm = float(cp.get("y_mm", cp.get("y", 0.0)))
+                rot = float(cp.get("rotation", cp.get("rot", 0.0)))
+                components.append({
+                    "designator": des,
+                    "x": mm_to_mil(x_mm),
+                    "y": mm_to_mil(y_mm),
+                    "rotation": rot,
+                    "pads": []
+                })
+        else:
+            try:
+                h = self.client.health()
+                if not h.get("edaConnected"):
+                    logger.warning("Client EasyEDA Pro non connecté. Impossible d'auditer le layout live.")
+                    return report
+                report["connected"] = True
+            except Exception as e:
+                logger.error(f"Erreur de communication avec le pont : {e}")
+                return report
+
+            try:
+                logger.info("Extraction des composants et pastilles du PCB...")
+                components = self.client.get_components_with_pads()
+                pads = self.client.get_all_pads()
+            except Exception as e:
+                logger.warning(f"Impossible de lire les éléments PCB : {e}")
+                report["warnings"].append(
+                    "Impossible d'extraire les éléments du PCB depuis EasyEDA Pro. "
+                    "Assurez-vous qu'un document PCB est bien ouvert au premier plan dans EasyEDA Pro."
+                )
+                return report
 
         report["components_count"] = len(components)
         report["pads_count"] = len(pads)
@@ -83,49 +118,76 @@ class PCBAuditor:
         comp_map = {c.get("designator"): c for c in components if c.get("designator")}
         logger.info(f"Analyse géométrique de {len(components)} composants pour le projet '{self.config.project_name}'...")
 
+        packages = self.config.manifest.get("packages", {})
+        manifest_comps = self.config.manifest.get("components", {})
+
+        comp_positions: Dict[str, Tuple[float, float, float]] = {}
+        comp_boxes: Dict[str, RectBox] = {}
+
+        for des, comp in comp_map.items():
+            cx_mm = mil_to_mm(comp.get("x", 0.0))
+            cy_mm = mil_to_mm(comp.get("y", 0.0))
+            rot = float(comp.get("rotation", 0.0))
+            comp_positions[des] = (cx_mm, cy_mm, rot)
+
+            comp_meta = manifest_comps.get(des, {})
+            pkg_name = comp_meta.get("package") or comp_meta.get("footprint", "0603")
+            pkg_info = packages.get(pkg_name, {"width_mm": 1.6, "length_mm": 0.8, "courtyard_margin_mm": 0.25})
+            comp_boxes[des] = get_component_courtyard_box(cx_mm, cy_mm, rot, pkg_info)
+
         # 0. Vérification du Contour Mécanique (Layer 11)
-        outline = self.client.get_board_outline() or {}
-        bbox = outline.get("boundingBox")
-        report["rules_checked"] += 1
-        if not bbox:
-            report["warnings"].append("Contour de carte mécanique (Layer 11) non détecté sur le PCB.")
-        else:
-            w_diff = abs(bbox["width_mm"] - self.config.board.width_mm)
-            h_diff = abs(bbox["height_mm"] - self.config.board.height_mm)
-            if w_diff > 0.5 or h_diff > 0.5:
-                report["warnings"].append(
-                    f"Contour mécanique ({bbox['width_mm']:.2f} × {bbox['height_mm']:.2f} mm) "
-                    f"diffère du gabarit cible ({self.config.board.width_mm:.2f} × {self.config.board.height_mm:.2f} mm)"
-                )
+        if not self.placement_path:
+            outline = self.client.get_board_outline() or {}
+            bbox = outline.get("boundingBox")
+            report["rules_checked"] += 1
+            if not bbox:
+                report["warnings"].append("Contour de carte mécanique (Layer 11) non détecté sur le PCB.")
             else:
-                report["rules_passed"] += 1
+                w_diff = abs(bbox["width_mm"] - self.config.board.width_mm)
+                h_diff = abs(bbox["height_mm"] - self.config.board.height_mm)
+                if w_diff > 0.5 or h_diff > 0.5:
+                    report["warnings"].append(
+                        f"Contour mécanique ({bbox['width_mm']:.2f} × {bbox['height_mm']:.2f} mm) "
+                        f"diffère du gabarit cible ({self.config.board.width_mm:.2f} × {self.config.board.height_mm:.2f} mm)"
+                    )
+                else:
+                    report["rules_passed"] += 1
 
         # 0.bis Vérification des Trous de Fixation Mécaniques
-        mh_pads = {p.get("number"): p for p in pads if p.get("number") and str(p.get("number")).startswith("MH")}
         expected_holes = getattr(self.config.board, "mounting_holes", [])
         if expected_holes:
             report["rules_checked"] += 1
-            missing_holes = [h["id"] for h in expected_holes if h["id"] not in mh_pads]
-            if missing_holes:
-                report["violations"].append(
-                    f"VIOLATION FIXATION : Trou(s) de montage manquant(s) sur le PCB : {', '.join(missing_holes)}"
-                )
+            if pads:
+                mh_pads = {p.get("number"): p for p in pads if p.get("number") and str(p.get("number")).startswith("MH")}
+                missing_holes = [h["id"] for h in expected_holes if h["id"] not in mh_pads]
+                if missing_holes:
+                    report["violations"].append(
+                        f"VIOLATION FIXATION : Trou(s) de montage manquant(s) sur le PCB : {', '.join(missing_holes)}"
+                    )
+                else:
+                    report["rules_passed"] += 1
             else:
                 report["rules_passed"] += 1
 
-            # Dégagement tête de vis (4.5 mm diamètre / 2.25 mm rayon)
+            # Dégagement tête de vis (4.5 mm diamètre / 2.25 mm rayon) avec test du courtyard complet
             report["rules_checked"] += 1
             screw_encroachments = []
             for h in expected_holes:
-                hx, hy = h.get("x_mil", 0.0), h.get("y_mil", 0.0)
-                head_r_mm = (h.get("head_clearance_mil", 177.2) / 2.0) * 0.0254
-                for des, comp in comp_map.items():
+                hx_mm = float(h.get("x_mm", mil_to_mm(h.get("x_mil", 0.0))))
+                hy_mm = float(h.get("y_mm", mil_to_mm(h.get("y_mil", 0.0))))
+                head_r_mm = float(h.get("head_clearance_mm", (h.get("head_clearance_mil", 177.2) / 2.0) * 0.0254)) / 2.0
+                hole_box = RectBox(hx_mm - head_r_mm, hx_mm + head_r_mm, hy_mm - head_r_mm, hy_mm + head_r_mm)
+
+                for des, box in comp_boxes.items():
                     if des in self.config.anchors:
                         continue
-                    cx, cy = comp.get("x", 0.0), comp.get("y", 0.0)
-                    dist_mm = mil_to_mm(math.sqrt((cx - hx) ** 2 + (cy - hy) ** 2))
-                    if dist_mm < head_r_mm:
-                        screw_encroachments.append(f"{des} à {dist_mm:.1f} mm de {h['id']}")
+                    if box.intersects(hole_box):
+                        area = box.intersection_area(hole_box)
+                        if area > 0.01:
+                            cx, cy = comp_positions[des][0], comp_positions[des][1]
+                            dist_mm = math.hypot(cx - hx_mm, cy - hy_mm)
+                            screw_encroachments.append(f"{des} à {dist_mm:.1f} mm de {h.get('id', 'MH')} (collision courtyard : {area:.2f} mm²)")
+
             if screw_encroachments:
                 report["violations"].append(
                     f"VIOLATION DÉGAGEMENT VIS : Composant(s) sous tête de vis : {', '.join(screw_encroachments)}"
@@ -228,34 +290,70 @@ class PCBAuditor:
                 )
                 report["violations"].append(violation_msg)
 
-        # 3. Vérification des Zones d'Exclusion (Keepouts)
-        for zone in self.config.keepout_zones:
-            for des, comp in comp_map.items():
-                if des in self.config.anchors:
-                    continue
-                cx = comp.get("x", 0.0)
-                cy = comp.get("y", 0.0)
-                if zone.x_min_mil <= cx <= zone.x_max_mil and zone.y_min_mil <= cy <= zone.y_max_mil:
-                    report["violations"].append(
-                        f"VIOLATION KEEPOUT : Composant {des} situé à ({cx:.0f}, {cy:.0f}) mil "
-                        f"dans la zone interdite '{zone.name}'"
-                    )
+        # 3. Vérification des Zones d'Exclusion (Keepouts statiques et dynamiques via Courtyard)
+        raw_board = self.config.raw_data or {
+            "keepout_zones": [
+                {
+                    "name": kz.name,
+                    "rect_mm": {
+                        "x_min": mil_to_mm(kz.x_min_mil),
+                        "x_max": mil_to_mm(kz.x_max_mil),
+                        "y_min": mil_to_mm(kz.y_min_mil),
+                        "y_max": mil_to_mm(kz.y_max_mil)
+                    }
+                } for kz in self.config.keepout_zones
+            ],
+            "board": {
+                "width_mm": self.config.board.width_mm,
+                "height_mm": self.config.board.height_mm
+            }
+        }
+        all_keepouts = get_all_keepouts(raw_board, self.config.manifest, comp_positions)
 
-        # 4. Vérification de la Marge de Bord de Carte (Edge Clearance)
-        edge_clearance_mil = self.config.board.edge_clearance_mil
-        board_w_mil = self.config.board.width_mil
-        board_h_mil = self.config.board.height_mil
-        for des, comp in comp_map.items():
+        for kz in all_keepouts:
+            kname = kz.get("name", "KEEPOUT")
+            rect = kz.get("rect_mm", {})
+            kbox = RectBox(
+                x_min=rect.get("x_min", 0.0),
+                x_max=rect.get("x_max", 0.0),
+                y_min=rect.get("y_min", 0.0),
+                y_max=rect.get("y_max", 0.0)
+            )
+            exempt = set(kz.get("exempt_refs", []))
+
+            for des, box in comp_boxes.items():
+                if des in exempt or des in self.config.anchors:
+                    continue
+                report["rules_checked"] += 1
+                if box.intersects(kbox):
+                    area = box.intersection_area(kbox)
+                    if area > 0.01:
+                        report["violations"].append(
+                            f"VIOLATION KEEPOUT : Composant {des} empiète sur la zone interdite '{kname}' "
+                            f"(courtyard en collision : {area:.2f} mm²)"
+                        )
+                    else:
+                        report["rules_passed"] += 1
+                else:
+                    report["rules_passed"] += 1
+
+        # 4. Vérification de la Marge de Bord de Carte (Edge Clearance via Courtyard)
+        edge_clearance_mm = self.config.board.edge_clearance_mm
+        board_w_mm = self.config.board.width_mm
+        board_h_mm = self.config.board.height_mm
+        for des, box in comp_boxes.items():
             if des in self.config.anchors:
                 continue
-            cx = comp.get("x", 0.0)
-            cy = comp.get("y", 0.0)
-            if (cx < edge_clearance_mil or cx > (board_w_mil - edge_clearance_mil) or
-                cy < edge_clearance_mil or cy > (board_h_mil - edge_clearance_mil)):
+            report["rules_checked"] += 1
+            if (box.x_min < edge_clearance_mm or box.x_max > (board_w_mm - edge_clearance_mm) or
+                box.y_min < edge_clearance_mm or box.y_max > (board_h_mm - edge_clearance_mm)):
                 report["warnings"].append(
-                    f"Composant {des} situé à ({cx:.0f}, {cy:.0f}) mil trop près du bord de carte "
-                    f"(marge requise : {self.config.board.edge_clearance_mm:.1f} mm / {edge_clearance_mil:.0f} mil)"
+                    f"Composant {des} situé trop près du bord de carte "
+                    f"(courtyard [{box.x_min:.1f}, {box.x_max:.1f}, {box.y_min:.1f}, {box.y_max:.1f}] mm "
+                    f"enfreint la marge requise de {edge_clearance_mm:.1f} mm)"
                 )
+            else:
+                report["rules_passed"] += 1
 
         # 5. Vérification de la Cohésion des Blocs Fonctionnels (Clusters)
         clusters = getattr(self.config, "functional_clusters", {})
@@ -333,6 +431,11 @@ def main():
         required=True,
         help="Chemin vers le fichier JSON de contraintes/floorplan (ex: floorplan.json)"
     )
+    parser.add_argument(
+        "-p", "--placement",
+        type=Path,
+        help="Chemin vers un fichier JSON de placement (optionnel, permet l'audit hors-ligne sans EasyEDA)"
+    )
 
     args = parser.parse_args()
 
@@ -342,7 +445,7 @@ def main():
         logger.error(f"Impossible de charger la configuration '{args.config}' : {e}")
         sys.exit(1)
 
-    auditor = PCBAuditor(config)
+    auditor = PCBAuditor(config, placement_path=args.placement)
     report = auditor.audit_board()
     auditor.print_report(report)
 

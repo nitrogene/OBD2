@@ -105,7 +105,7 @@ L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`do
   - Dériver la boucle chaude Buck dynamiquement depuis le manifeste au lieu de la liste figée `["U4", "C14", "C7", "D2", "L1"]` dans [`render_svg.py`](.agents/skills/pcb-placer/render_svg.py).
   - Injecter `power_ground_nets` via la configuration globale au lieu des ensembles figés dans [`score.py`](.agents/skills/pcb-placer/score.py) et [`simulated_annealing.py`](.agents/skills/pcb-placer/simulated_annealing.py).
   - Supprimer l'inférence par motif de désignateur dans [`placement_resolver.py`](.agents/skills/pcb-placer/placement_resolver.py) au profit d'une lecture stricte des dimensions IPC.
-- [ ] **[IMPORTANT] Sécurisation DRC & Unification Géométrique des Keepouts :**
+- [x] **[IMPORTANT] Sécurisation DRC & Unification Géométrique des Keepouts :**
   - Rendre le DRC EasyEDA bloquant dans [`apply_placement.py`](.agents/skills/pcb-placer/apply_placement.py) (rollback / code de sortie d'erreur si violations).
   - Aligner [`audit_placement.py`](.agents/skills/pcb-placer/audit_placement.py) sur [`score.py`](.agents/skills/pcb-placer/score.py) en testant le courtyard complet face aux keepouts (et non le seul centre du composant).
 - [ ] **[MINEUR] Modèle CEM v2 & Tests Unitaires (Feuille de route) :**
