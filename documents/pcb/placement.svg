@@ -35,11 +35,10 @@
 <circle cx="1615.6" cy="230.0" r="45.0" fill="#fbbf24" fill-opacity="0.15" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3"/>
 <circle cx="1615.6" cy="230.0" r="22.0" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>
 <text x="1615.6" y="287.0" fill="#cbd5e1" font-size="10" text-anchor="middle">MH4</text>
-<!-- Vecteurs boucle chaude Buck -->
-<line x1="558.5" y1="296.55" x2="559.72" y2="408.158" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<!-- Vecteurs boucle PC_BUCK_HOT_LOOP -->
 <line x1="559.72" y1="408.158" x2="596.092" y2="474.85800000000006" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
-<line x1="596.092" y1="474.85800000000006" x2="505.72" y2="452.25200000000007" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
-<line x1="505.72" y1="452.25200000000007" x2="915.98" y2="265.0040000000001" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<line x1="596.092" y1="474.85800000000006" x2="558.5" y2="296.55" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
+<line x1="558.5" y1="296.55" x2="505.72" y2="452.25200000000007" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>
 <!-- Composants & Courtyards -->
 <g id="comp_C1">
   <rect x="862.998" y="599.8340000000001" width="31.999999999999886" height="57.99999999999997" rx="2" fill="#3b82f6" fill-opacity="0.8" stroke="#000000" stroke-width="1.0"/>

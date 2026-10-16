@@ -30,6 +30,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
+from placement_constraints import get_power_nets
 from score import (
     PCBScorer,
     PlacementEvaluation,
@@ -189,7 +190,7 @@ class FastAnnealingEngine:
         # Item index -> list of net indices containing it
         self.item_to_nets: List[List[int]] = [[] for _ in range(self.n_items)]
 
-        power_ground = {"GND", "+12V", "+5V", "3.3V"}
+        power_ground = get_power_nets(manifest, board_constraints)
         net_idx = 0
         for net_name, pins in geometry.nets.items():
             if net_name in power_ground or len(pins) < 2:

@@ -42,6 +42,7 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8")
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
+from placement_constraints import get_power_nets
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("PCBScorer")
@@ -269,6 +270,7 @@ class PCBScorer:
 
         # Échelle de référence pour normaliser le câblage : demi-périmètre de carte
         self.half_perimeter = self.board_width + self.board_height
+        self.power_ground_nets = get_power_nets(self.manifest, self.board)
 
     def evaluate(
         self,
@@ -457,7 +459,7 @@ class PCBScorer:
 
         # A. Longueur totale de câblage HPWL (hors gros plans GND/Power)
         total_hpwl = 0.0
-        power_ground_nets = {"GND", "+12V", "+5V", "3.3V"}
+        power_ground_nets = self.power_ground_nets
 
         for net_name, pins in self.geom.nets.items():
             if net_name in power_ground_nets or len(pins) < 2:

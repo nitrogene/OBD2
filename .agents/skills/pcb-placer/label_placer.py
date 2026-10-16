@@ -789,10 +789,12 @@ def optimize_labels(
     # Keepouts mécaniques : trous de fixation (cylindres) et antenne RF / zones déclarées (boîtes)
     keepout_boxes: List[BoundingBox] = []
     mounting_holes: List[Tuple[float, float, float]] = []
+    anchors: Dict[str, Any] = {}
     if board_constraints_path and board_constraints_path.is_file():
         try:
             with open(board_constraints_path, "r", encoding="utf-8") as f:
                 bc = json.load(f)
+            anchors = bc.get("anchors", {})
 
             # Trous de fixation mécaniques : extraction de la garde circulaire
             board_data = bc.get("board", {})
@@ -803,19 +805,15 @@ def optimize_labels(
                 r = (head_clr / 2.0 + 0.35) if head_clr is not None else hole_exclusion_radius_mm
                 mounting_holes.append((hx, hy, r))
 
-            # Antenne radio U1 (keepout Est)
-            u1_anchor = bc.get("anchors", {}).get("U1", {})
-            if u1_anchor:
-                keepout_boxes.append(BoundingBox(75.5, 81.28, 8.5, 27.0))
-
-            # Zones keepout déclarées
+            # Zones keepout déclarées (format rect_mm ou min_x_mm)
             for ko in bc.get("keepout_zones", []):
-                keepout_boxes.append(BoundingBox(
-                    ko.get("min_x_mm", 0.0),
-                    ko.get("max_x_mm", 0.0),
-                    ko.get("min_y_mm", 0.0),
-                    ko.get("max_y_mm", 0.0)
-                ))
+                rect = ko.get("rect_mm") or {}
+                x_min = rect.get("x_min", ko.get("min_x_mm", 0.0))
+                x_max = rect.get("x_max", ko.get("max_x_mm", 0.0))
+                y_min = rect.get("y_min", ko.get("min_y_mm", 0.0))
+                y_max = rect.get("y_max", ko.get("max_y_mm", 0.0))
+                if x_max > x_min and y_max > y_min:
+                    keepout_boxes.append(BoundingBox(x_min, x_max, y_min, y_max))
         except Exception as e:
             logger.warning(f"⚠️ Impossible de charger les keepouts de {board_constraints_path} : {e}")
 
@@ -902,9 +900,23 @@ def optimize_labels(
         t3d = c.get("t3d", "")
         box_3d = compute_3d_bbox(cx_mm, cy_mm, crot, t3d)
 
-        # Détection des connecteurs d'interface mécanique et des composants discrets sensibles
-        is_edge_connector = (des in ("J1", "J2"))
-        is_discrete_diode_led = (des.startswith("LED") or des in ("D4", "D5"))
+        # Détection agnostique des connecteurs d'interface mécanique et des composants discrets sensibles
+        c_meta = comps_manifest.get(des, {})
+        pkg_name = (c_meta.get("package") or c_meta.get("footprint") or "").upper()
+        emc_class = c_meta.get("emc_class", "")
+
+        is_edge_connector = (
+            emc_class == "mechanical_connector"
+            or (des in anchors and anchors[des].get("edge_flush"))
+            or any(pkg_name.startswith(p) for p in ("CONN", "USB", "HEADER", "TERM", "JST", "BARRETTE"))
+            or des.startswith(("J", "P", "CN"))
+        )
+        is_discrete_diode_led = (
+            des.startswith("LED")
+            or des.startswith("D")
+            or any(pkg_name.startswith(p) for p in ("SOD", "SMA", "SMB", "SMC", "DO-214"))
+            or c_meta.get("silkscreen_clearance_boost_mm") is not None
+        )
 
         if is_edge_connector and box_3d:
             # Connecteurs physiques d'interface : boîte 3D réelle prioritaire avec garde mécanique

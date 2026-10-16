@@ -17,7 +17,7 @@ import logging
 import math
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
 from score import PCBScorer, PlacementEvaluation, RectBox, get_component_courtyard_box, get_all_keepouts
@@ -181,18 +181,24 @@ def generate_svg_view(
         svg_lines.append(f'<circle cx="{hx}" cy="{hy}" r="{drill_r}" fill="#0f172a" stroke="#cbd5e1" stroke-width="1.5"/>')
         svg_lines.append(f'<text x="{hx}" y="{hy + head_r + 12}" fill="#cbd5e1" font-size="10" text-anchor="middle">{h.get("id")}</text>')
 
-    # 5. Chevelu élastique pour la boucle chaude Buck
-    hot_loop_comps = ["U4", "C14", "C7", "D2", "L1"]
-    loop_coords = [comp_positions[d] for d in hot_loop_comps if d in comp_positions]
-    if len(loop_coords) >= 2:
-        svg_lines.append('<!-- Vecteurs boucle chaude Buck -->')
-        for k in range(len(hot_loop_comps) - 1):
-            d1 = hot_loop_comps[k]
-            d2 = hot_loop_comps[k + 1]
-            if d1 in comp_positions and d2 in comp_positions:
-                x1, y1 = to_svg_x(comp_positions[d1][0]), to_svg_y(comp_positions[d1][1])
-                x2, y2 = to_svg_x(comp_positions[d2][0]), to_svg_y(comp_positions[d2][1])
-                svg_lines.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>')
+    # 5. Chevelu élastique pour les boucles critiques déclarées dans le manifeste
+    loop_constraints = [c for c in manifest.get("placement_constraints", []) if c.get("type") == "loop"]
+    for lc in loop_constraints:
+        loop_refs = []
+        for m in lc.get("members", []):
+            ref = m.get("ref")
+            if ref and ref not in loop_refs:
+                loop_refs.append(ref)
+        if len(loop_refs) >= 2:
+            loop_id = lc.get("id", "LOOP")
+            svg_lines.append(f'<!-- Vecteurs boucle {loop_id} -->')
+            for k in range(len(loop_refs) - 1):
+                d1 = loop_refs[k]
+                d2 = loop_refs[k + 1]
+                if d1 in comp_positions and d2 in comp_positions:
+                    x1, y1 = to_svg_x(comp_positions[d1][0]), to_svg_y(comp_positions[d1][1])
+                    x2, y2 = to_svg_x(comp_positions[d2][0]), to_svg_y(comp_positions[d2][1])
+                    svg_lines.append(f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,2" opacity="0.75"/>')
 
     # 6. Courtyards des composants
     svg_lines.append('<!-- Composants & Courtyards -->')

@@ -81,7 +81,7 @@ class PlacementResolver:
         self.max_displacement_mil = max_displacement_mil
 
     def _infer_node_size(self, des: str, comp_data: Optional[Dict[str, Any]] = None) -> Tuple[float, float]:
-        """Déduit la taille englobante du composant depuis ses pastilles ou sa dénomination."""
+        """Déduit la taille englobante du composant depuis ses pastilles ou son empreinte."""
         if comp_data and comp_data.get("pads"):
             pads = comp_data["pads"]
             xs = [p["x"] for p in pads]
@@ -91,20 +91,12 @@ class PlacementResolver:
             # Ajouter une marge moyenne de taille de pastille (~35 mil)
             return max(span_x + 35.0, 40.0), max(span_y + 35.0, 40.0)
 
-        # Recherche par motif dans le désignateur / description
-        d_upper = des.upper()
-        if "U1" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["ESP32-S3"]
-        if "J1" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["TERMINAL_5P"]
-        if "J2" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["USB-C"]
-        if "L1" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["IND_7X7"]
-        if "U4" in d_upper or "U2" in d_upper or "U3" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["SOIC-8"]
-        if "D2" in d_upper:
-            return DEFAULT_FOOTPRINT_SIZES_MIL["SMA"]
+        # Recherche par correspondance d'empreinte / boîtier IPC
+        if comp_data:
+            fp_raw = str(comp_data.get("footprint") or comp_data.get("package") or "").upper()
+            for key, size in DEFAULT_FOOTPRINT_SIZES_MIL.items():
+                if key != "DEFAULT" and key in fp_raw:
+                    return size
 
         return DEFAULT_FOOTPRINT_SIZES_MIL["DEFAULT"]
 

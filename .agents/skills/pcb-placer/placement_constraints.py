@@ -11,7 +11,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 logger = logging.getLogger("PlacementConstraints")
 
@@ -27,6 +27,28 @@ def mm_to_mil(mm: float) -> float:
 
 def mil_to_mm(mil: float) -> float:
     return mil * MIL_TO_MM
+
+
+DEFAULT_POWER_NETS: Tuple[str, ...] = ("GND", "VCC", "+5V", "+3.3V", "3.3V", "+12V", "-12V", "+24V", "BAT+", "BAT-")
+
+
+def get_power_nets(
+    manifest: Optional[Dict[str, Any]] = None,
+    board_constraints: Optional[Dict[str, Any]] = None
+) -> Set[str]:
+    """
+    Extrait de manière agnostique la liste des rails d'alimentation et de masse à exclure du chevelu HPWL.
+    Priorité : manifest['project_profile']['power_nets'] -> manifest['power_nets'] -> board_constraints['power_nets'] -> DEFAULT_POWER_NETS.
+    """
+    if manifest:
+        nets = manifest.get("power_nets") or manifest.get("project_profile", {}).get("power_nets")
+        if nets:
+            return set(nets)
+    if board_constraints:
+        nets = board_constraints.get("power_nets")
+        if nets:
+            return set(nets)
+    return set(DEFAULT_POWER_NETS)
 
 
 # =============================================================================

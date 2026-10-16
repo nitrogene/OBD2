@@ -90,3 +90,24 @@ L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`do
   - Créer le dépôt Git distant.
   - Initialiser le projet avec [`documents/software.md`](documents/software.md) comme socle contractuel.
   - Configurer `sdkconfig.defaults` (TWAI, USB CDC, BLE 5.0, Flash 16 Mo, PSRAM 2 Mo).
+
+---
+
+## 5. Outillage & Fiabilisation du Skill `pcb-placer`
+
+<!-- Source : review/review_pcb-placer.md - Audit technique du skill d'auto-placement PCB v2.1.0 -->
+
+### Correctifs & Fiabilisation Algorithmique
+- [x] **[BLOQUANT] Correction du bug d'import dans `render_svg.py` :**
+  - Ajouter `Set` dans l'import `from typing import ...` de [`render_svg.py`](.agents/skills/pcb-placer/render_svg.py) pour sécuriser l'évaluation de types au runtime.
+- [x] **[IMPORTANT] Remise en conformité Règle 0 (« Zéro composant en dur ») :**
+  - Remplacer les désignateurs en dur (`U1`, `J1`, `J2`, `D4`, `D5`) par des classes sémantiques issues du manifeste [`manifest.json`](documents/pcb/manifest.json) (`emc_class: "mechanical_connector"`, `"rf_transceiver"`).
+  - Dériver la boucle chaude Buck dynamiquement depuis le manifeste au lieu de la liste figée `["U4", "C14", "C7", "D2", "L1"]` dans [`render_svg.py`](.agents/skills/pcb-placer/render_svg.py).
+  - Injecter `power_ground_nets` via la configuration globale au lieu des ensembles figés dans [`score.py`](.agents/skills/pcb-placer/score.py) et [`simulated_annealing.py`](.agents/skills/pcb-placer/simulated_annealing.py).
+  - Supprimer l'inférence par motif de désignateur dans [`placement_resolver.py`](.agents/skills/pcb-placer/placement_resolver.py) au profit d'une lecture stricte des dimensions IPC.
+- [ ] **[IMPORTANT] Sécurisation DRC & Unification Géométrique des Keepouts :**
+  - Rendre le DRC EasyEDA bloquant dans [`apply_placement.py`](.agents/skills/pcb-placer/apply_placement.py) (rollback / code de sortie d'erreur si violations).
+  - Aligner [`audit_placement.py`](.agents/skills/pcb-placer/audit_placement.py) sur [`score.py`](.agents/skills/pcb-placer/score.py) en testant le courtyard complet face aux keepouts (et non le seul centre du composant).
+- [ ] **[MINEUR] Modèle CEM v2 & Tests Unitaires (Feuille de route) :**
+  - Écrire les tests unitaires pytest sur les fonctions pures (`RectBox`, `legalize`).
+  - Intégrer la spécification d'inductance de boucle et `return_net` dans le modèle CEM v2.

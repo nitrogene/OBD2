@@ -5,6 +5,11 @@
   "date_modified": "2026-10-12",
   "description": "Manifeste de placement PCB : boîtiers IPC-7351, contraintes CEM de placement et groupes rigides.",
   "schema_semantics": "../schema/semantics.json",
+  "project_profile": {
+    "power_nets": ["GND", "+12V", "+5V", "3.3V"],
+    "ground_nets": ["GND"]
+  },
+  "power_nets": ["GND", "+12V", "+5V", "3.3V"],
   "packages": {
     "0603": {
       "width_mm": 2.3,
