@@ -32,9 +32,9 @@
   },
   "anchors": {
     "J1": {
-      "x_mm": 6.89,
+      "x_mm": 10.16,
       "y_mm": 17.78,
-      "rot_deg": 270.0,
+      "rot_deg": 90.0,
       "edge_flush": "west"
     },
     "J2": {

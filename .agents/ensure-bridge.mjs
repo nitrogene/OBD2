@@ -50,6 +50,7 @@ async function main() {
 
   try {
     const running = await isBridgeRunning();
+    fs.appendFileSync(path.resolve(__dirname, 'hook-audit.log'), `[${new Date().toISOString()}] PreInvocation hook triggered - bridge running: ${running}\n`);
     if (!running) {
       const bridgeScript = path.resolve(__dirname, 'skills', 'easyeda-api', 'scripts', 'bridge-server.mjs');
       const bridgeCwd = path.resolve(__dirname, 'skills', 'easyeda-api');

@@ -20,9 +20,9 @@ Projet de conception matérielle (schéma électrique, dimensionnement des compo
 > La tenue aux surtensions du circuit repose sur la présence d'un alternateur automobile moderne doté d'un écrêtage centralisé standard (*Centralized Load Dump Clamp* conforme ISO 16750-2 Test B, VL <= 35V). La diode TVS `D1` (SMBJ16A, Vcl = 26.0V max) et le régulateur Buck `U4` (TPS54331, Vin max 30.0V) procurent une marge de sécurité robuste de 4.0V. Les agressions hors spécification (démarrage forcé sur booster 24V et impulsion d'énergie brute non centralisée de 200J ISO 7637-2 / ISO 16750-2 Test A sans écrêtage alternateur) sont formellement exclues du périmètre contractuel.
 
 Le projet est conçu pour opérer et se qualifier selon **trois cas d'usage et de test opérationnels** :
-1. **Cas 1 : Nominal Véhicule (Usage Conducteur / Atelier) :** Diagnostic autonome enfiché sur la prise OBD-II SAE J1962 (12V) du véhicule, communication 100% sans fil (BLE 5.0 / Wi-Fi), alimentation directe par la batterie du véhicule avec coupure de sécurité UVLO à 8.01 V, cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` impérativement fermé (avec shunt) conformément au rôle de testeur ISO 9141-2.
-2. **Cas 2 : Nominal + Debug In Situ (Roulage d'Essai & Traces Brutes) :** Raccordé au véhicule avec câble USB-C vers PC portable de diagnostic sur batterie interne pour capture des traces en roulage, arbitrage d'alimentation prioritaire 12V via diode anti-retour `D4`, règle d'isolation de masse stricte (anti-boucle de terre), cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` fermé (avec shunt).
-3. **Cas 3 : Banc d'Essais Bi-Cartes Miroir (Qualification Labo & Simulation ECU) :** Deux cartes face à face interconnectées via leurs borniers 5 contacts `J1` (Carte Scanner face à Carte Simulateur d'ECU) sous alimentation de laboratoire 12V DC et double liaison USB-C, terminaison CAN `JP1` fermée à 120 Ω sur les deux cartes (60 Ω équivalents) et pull-up K-Line 500 Ω activée sur le scanner via `JP2` (cavalier `JP2` ouvert sur le simulateur).
+1. **Cas 1 : Nominal Véhicule (Usage Conducteur / Atelier) :** Diagnostic autonome enfiché sur la prise OBD-II SAE J1962 (12V) du véhicule via connecteur verrouillable JST-XH 5 broches `J1`, communication 100% sans fil (BLE 5.0 / Wi-Fi), alimentation directe par la batterie du véhicule avec coupure de sécurité UVLO à 8.01 V, cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` impérativement fermé (avec shunt) conformément au rôle de testeur ISO 9141-2.
+2. **Cas 2 : Nominal + Debug In Situ (Roulage d'Essai & Traces Brutes) :** Raccordé au véhicule via `J1` avec câble USB-C vers PC portable de diagnostic sur batterie interne pour capture des traces en roulage, arbitrage d'alimentation prioritaire 12V via diode anti-retour `D4`, règle d'isolation de masse stricte (anti-boucle de terre), cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` fermé (avec shunt).
+3. **Cas 3 : Banc d'Essais Bi-Cartes Miroir (Qualification Labo & Simulation ECU) :** Deux cartes face à face interconnectées via leurs connecteurs JST-XH 5 contacts `J1` (Carte Scanner face à Carte Simulateur d'ECU), l'alimentation de laboratoire 12V DC étant connectée sur l'embase dédiée `H3` du banc simulateur, avec double liaison USB-C, terminaison CAN `JP1` fermée à 120 Ω sur les deux cartes (60 Ω équivalents) et pull-up K-Line 500 Ω activée sur le scanner via `JP2` (cavalier `JP2` ouvert sur le simulateur).
 
 ---
 
@@ -44,11 +44,11 @@ Module autonome compact venant s'enficher directement sur la prise diagnostic du
 
 Pour le détail exhaustif des schémas de câblage, des règles de sécurité électrique et des diagrammes d'interconnexion, consulter le **[Guide d'Architecture des Cas d'Usage (documents/hardware.md §8)](documents/hardware.md#8-architecture-des-cas-dusage-cibles--câblage-opérationnel)** :
 
-| Cas d'Usage Cible | Bornier 5P (`J1`) | Port USB-C (`J2`) | Cavalier CAN (`JP1` 120 Ω) | Cavalier K-Line (`JP2` 500 Ω) | Canaux de Communication | Source d'Alimentation |
+| Cas d'Usage Cible | Connecteur 5P (`J1`) & Embase Labo (`H3`) | Port USB-C (`J2`) | Cavalier CAN (`JP1` 120 Ω) | Cavalier K-Line (`JP2` 500 Ω) | Canaux de Communication | Source d'Alimentation |
 | :--- | :---: | :---: | :---: | :---: | :--- | :--- |
-| **Cas 1 : Nominal Véhicule** | Faisceau pigtail vers prise SAE J1962 | **DÉCONNECTÉ** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | BLE 5.0 (App smartphone) / Wi-Fi | 100% Batterie véhicule 12V |
-| **Cas 2 : Nominal + Debug In Situ** | Faisceau pigtail vers prise SAE J1962 | Relié au **PC sur batterie** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | USB Série (Logs PC) + BLE 5.0 (App) | 12V véhicule prioritaire (anti-retour `D4`) |
-| **Cas 3 : Banc d'Essais Bi-Cartes Miroir** | Relié au Banc ECU + Alim Labo 12V | Relié au PC dev | **FERMÉ** *(Shunt 120 Ω)* | **FERMÉ** *(Scanner)* / **OUVERT** *(ECU)* | USB Série natif / JTAG + Headers `H1`/`H2` | Alim Labo 12V (relais USB-C via `D4`) |
+| **Cas 1 : Nominal Véhicule** | Faisceau pigtail JST-XH vers prise SAE J1962 (`H3` libre) | **DÉCONNECTÉ** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | BLE 5.0 (App smartphone) / Wi-Fi | 100% Batterie véhicule 12V |
+| **Cas 2 : Nominal + Debug In Situ** | Faisceau pigtail JST-XH vers prise SAE J1962 (`H3` libre) | Relié au **PC sur batterie** | **OUVERT** *(Sans shunt)* | **FERMÉ** *(Shunt 500 Ω Tester)* | USB Série (Logs PC) + BLE 5.0 (App) | 12V véhicule prioritaire (anti-retour `D4`) |
+| **Cas 3 : Banc d'Essais Bi-Cartes Miroir** | Faisceau `J1` inter-cartes + Alim Labo 12V sur `H3` | Relié au PC dev | **FERMÉ** *(Shunt 120 Ω)* | **FERMÉ** *(Scanner)* / **OUVERT** *(ECU)* | USB Série natif / JTAG + Headers `H1`/`H2` | Alim Labo 12V sur `H3` (relais USB-C via `D4`) |
 
 > [!CAUTION]
 > **Règle vitale d'isolation de masse (Cas 2) :** Lors d'une session de débogage in situ sur véhicule, le PC portable relié au port USB-C `J2` doit fonctionner **exclusivement sur sa batterie interne**. Le branchement sur secteur 230V avec terre est strictement interdit (danger de destruction immédiate par boucle de terre entre la prise murale et la carrosserie du véhicule).
@@ -66,7 +66,7 @@ Dans le **Cas 3 (Banc d'Essais Bi-Cartes Miroir)**, une seconde carte configuré
 * **Configuration Matérielle Dédiée au Rôle Simulateur d'ECU :**
   * **Cavalier CAN `JP1` (Terminaison 120 Ω) : FERMÉ (avec shunt)** — Fournit la terminaison de ligne indispensable à l'extrémité du bus CAN simulé (la carte Scanner fournissant les autres 120 Ω, formant les 60 Ω équivalents de la norme ISO 11898-2).
   * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : OUVERT (sans shunt)** — Laisse la ligne en haute impédance passive ($R_{in} \ge 100\,\text{k}\Omega$), rôle normalisé de l'ECU du véhicule (le scanner fournissant la polarisation active 500 Ω).
-  * **Bornier 5 contacts `J1` :** Raccordé en direct au bornier `J1` de la carte Scanner (lignes CANH, CANL, K_LINE) et alimenté par une alimentation 12V DC de laboratoire (rails +12V et GND).
+  * **Connecteur JST-XH 5 contacts `J1` & Embase Labo `H3` :** `J1` raccordé en direct au connecteur `J1` de la carte Scanner (lignes CANH, CANL, K_LINE, +12V, GND), le rail +12V pouvant être alimenté directement par l'alimentation de laboratoire via l'embase dédiée 1x2 broches `H3`.
   * **Port USB-C `J2` :** Relié au PC de développement pour le pilotage interactif (CLI / logs) et l'injection dynamique de scénarios de panne.
   * **Embases de Diagnostic (`H1` et `H2`) :** Permettent le branchement d'un analyseur logique USB pour espionner simultanément les trames CAN et UART au niveau logique 3.3V.
 * **Spécifications logicielles associées :** Voir [`documents/software.md §6`](documents/software.md#6-simulateur-decu-embarqué-banc-dessais-sur-table) pour l'émulation des trames cycliques, le répondeur ISO-TP et les commandes CLI d'injection de pannes (`set rpm`, `fault inject P0300`).
@@ -83,13 +83,13 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 
 | Domaine | Norme / Standard | Titre & Périmètre Couvert | Statut | Justification Matérielle & Choix de Conception | Limite / Condition d'Usage |
 | :--- | :--- | :--- | :---: | :--- | :--- |
-| **Connectique** | **SAE J1962 / ISO 15031-3** | Bornier de diagnostic & banc | 🟢 **100%** | • Bornier PCB à ressort sans vis 5 contacts au pas 3.5 mm (`WJ250B-3.5-05P-11-00A`, 250V 8A) pour raccordement faisceau véhicule pigtail ou banc d'essais.<br>• Brochage direct : 4 (+12V), 8 (GND), 1 (K_LINE), 5 (CANH), 9 (CANL). | Raccordement direct par fils dénudés ou nappe. |
+| **Connectique** | **SAE J1962 / ISO 15031-3** | Connecteur diagnostic & banc | 🟢 **100%** | • Connecteur PCB JST-XH 5 contacts coudé à 90° au pas 2.50 mm (`S5B-XH-A-1(LF)(SN)`, LCSC `C163038`) pour raccordement faisceau véhicule pigtail ou banc d'essais.<br>• Brochage direct `J1` : 1 (+12V), 2 (GND), 3 (CANH), 4 (CANL), 5 (K_LINE).<br>• Embase mâle 1x2 broches pas 2.54 mm `H3` (LCSC `C124375`) dédiée à l'injection 12V laboratoire en mode simulateur ECU. | Raccordement sécurisé par connecteur verrouillable ou embase de banc. |
 | **Bus CAN** | **ISO 11898-2** | Couche physique différentielle CAN High-Speed | 🟢 **100%** | • Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique `VIO` (3.3V).<br>• Paires différentielles symétriques 120 Ω.<br>• Terminaison 120 Ω (`R8`) commutable par cavalier `JP1` (obligatoire). | Cavalier `JP1` impérativement **ouvert** sur véhicule. |
 | **Bus K-Line** | **ISO 9141-2 & ISO 14230 (KWP2000)** | Ligne K-Line mono-fil bidirectionnelle 12V | 🟢 **100%** | • Transceiver dédié STMicroelectronics **L9637D** conforme ISO 9141.<br>• Pull-up normalisée à 500 Ω (`R16` // `R18` boîtiers 1206) garantissant tr < 2 µs sur 2 nF.<br>• Compatible init lente 5-baud et *Fast-Init* 25 ms. | Débit limité à 10.4 kbps (spécification ISO). |
 | **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Matériel dimensionné ; stack firmware déportée dans le dépôt dédié (spécifiée dans [`documents/software.md`](documents/software.md)). |
-| **Transitoires 12V** | **ISO 7637-2** | Perturbations électriques conduites sur faisceau 12V | 🟢 **95%** *(Niveau III / Classe A)* | • **Impulsion 1 (–100 V inductif) :** Bloqué par MOSFET P-MOS `Q1` (tenue 60V, Vgs borné par `D3` 12V et diviseur `R5`/`R17`).<br>• **Impulsion 2a (+50 V) :** Écrêté sous 26.0 V par TVS `D1` (SMBJ16A).<br>• **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtré par TVS `D1` + capacités d'entrée `C14`, `C7`. | Conçu pour impédance de source automobile standard. |
+| **Transitoires 12V** | **ISO 7637-2** | Perturbations électriques conduites sur faisceau 12V | 🟢 **95%** *(Niveau III / Classe A)* | • **Impulsion 1 (–100 V inductif) :** Écrêtée en conduction directe sous ≈ –1 V par la TVS `D1` (`SMBJ16A`) et bloquée en tension inverse par le P-MOSFET `Q1` (tenue 60V, Vgs borné par `D3` 12V et diviseur `R5`/`R17`).<br>• **Impulsion 2a (+50 V) :** Écrêtée sous 26.0 V par TVS `D1` (SMBJ16A).<br>• **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtrées par TVS `D1` + capacités d'entrée `C14`, `C7`. | Conçu pour impédance de source automobile standard. |
 | **Environnement VL** | **ISO 16750-2** | Contraintes électriques pour véhicules légers (12V) | 🟡 **90%** *(Ciblé 12V)* | • **Inversion polarité (§4.7, –14 V) :** Bloqué à 100% par P-MOS `Q1` (aucun courant inverse).<br>• **Démarrage / Cranking (§4.6.3) :** Coupure sous 8.01 V via pont UVLO `R19`/`R20` et démarrage progressif 4.0 ms (`C17`) pour protéger la Flash NVS.<br>• **Load-Dump centralisé (§4.6.4, 35 V) :** Écrêté à 26.0 V par `D1` sous la limite absolue de 30.0 V du Buck TPS54331. | Interdiction formelle du réseau 24V et surtensions *Jump-Start* 24V prolongées (> quelques s). |
-| **Immunité ESD** | **ISO 10605 / IEC 61000-4-2** | Décharges électrostatiques (Contact & Air) | 🟢 **100%** *(Niveau 4 : ±8 kV contact / ±15 kV air)* | • Bus CAN : Diode double TVS `U8` (NUP2105L, qualifiée ISO 10605 jusqu'à ±30 kV).<br>• K-Line : Diode TVS `D5` (SMF24CA 24V bidirectionnelle, 400 W crête).<br>• Port USB-C : Diodes ESD ultra-rapides `U6`, `U7` (SESD05C, Cj < 1.0 pF). | Nécessite un plan de masse PCB continu avec vias de couture. |
+| **Immunité ESD** | **ISO 10605 / IEC 61000-4-2** | Décharges électrostatiques (Contact & Air) | 🟢 **100%** *(Niveau 4 : ±8 kV contact / ±15 kV air)* | • Bus CAN : Diode double TVS `U8` (NUP2105L, qualifiée IEC 61000-4-2 Level 4 Contact ±30 kV, Air ±30 kV).<br>• K-Line : Diode TVS unidirectionnelle `D5` (`SMF24A` 24V, 200 W crête, clamp direct sous –1.0 V face aux transitoires négatifs).<br>• Port USB-C : Diodes ESD ultra-rapides `U6`, `U7` (SESD05C, Cj < 1.0 pF). | Nécessite un plan de masse PCB continu avec vias de couture. |
 | **Radiofréquence** | **IEEE 802.11 b/g/n & BLE 5.0** | Connectivité sans fil 2.4 GHz et Bluetooth Low Energy | 🟢 **100%** *(Certifié)* | • Module pré-certifié FCC/CE/SRRC par Espressif Systems.<br>• Antenne méandre PCB intégrée accordée à 50 Ω. | Respect rigoureux du Keepout RF PCB (zone sans cuivre multicouche). |
 
 ---
@@ -109,12 +109,17 @@ Le matériel et le firmware sont développés en référence stricte aux standar
   }
 }}%%
 flowchart TD
-    subgraph J1_BLOCK["BORNIER D'ENTRÉE J1 (5 CONTACTS - PAS 3.5 MM)"]
-        PIN4["Broche 4 (+12V Batterie / Alim Labo)"]
-        PIN8["Broche 8 (Masse Générale / GND)"]
-        PIN1["Broche 1 (Ligne K-Line 12V)"]
-        PIN5["Broche 5 (Bus CANH Différentiel)"]
-        PIN9["Broche 9 (Bus CANL Différentiel)"]
+    subgraph J1_BLOCK["CONNECTEUR DIAGNOSTIC J1 (JST-XH 5P COUDÉ 90°)"]
+        PIN1["Broche 1 (+12V Batterie / Alim Labo)"]
+        PIN2["Broche 2 (Masse Générale / GND)"]
+        PIN3["Broche 3 (Bus CANH Différentiel)"]
+        PIN4["Broche 4 (Bus CANL Différentiel)"]
+        PIN5["Broche 5 (Ligne K-Line 12V)"]
+    end
+
+    subgraph H3_BLOCK["EMBASE LABO H3 (1x2P 2.54 MM)"]
+        H3_1["Broche 1 (+12V Labo / Simulation ECU)"]
+        H3_2["Broche 2 (Masse Labo / GND)"]
     end
 
     subgraph POWER["ÉTAGE D'ALIMENTATION & PROTECTIONS"]
@@ -128,7 +133,7 @@ flowchart TD
 
     subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
         CAN_IC["5. Transceiver CAN (U2 - TJA1051T) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8 (NUP2105L)\n• Broche d'adaptation VIO 3.3V"]
-        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Pull-up 500Ω commutable (JP2)\n• Protection transitoire/ESD D5 (SMF24CA)\n• Amortisseurs de ligne R1/R2"]
+        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Pull-up 500Ω commutable (JP2)\n• Protection transitoire/ESD D5 (SMF24A)\n• Amortisseurs de ligne R1/R2"]
     end
 
     subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
@@ -138,17 +143,19 @@ flowchart TD
 
     subgraph USB_DEBUG["INTERFACE USB-C & BANC DE TEST"]
         USBC["4. Port USB-C (J2) + ESD U6/U7"]
-        D4["Alimentation autonome banc :\nDiode Schottky anti-retour D4 (1A)"]
+        D4["Alimentation autonome banc :\nDiode Schottky simple anti-retour D4 (1A)"]
         USBC -->|"+5V VBUS"| D4
         D4 -.->|Alimentation banc| BUCK
         USBC <-->|"USB D+ / D-"| ESP
     end
 
-    PIN4 --> F1
-    PIN8 ===>|"Masse retour GND"| POWER
-    PIN5 <==>|"Ligne CANH"| CAN_IC
-    PIN9 <==>|"Ligne CANL"| CAN_IC
-    PIN1 <==>|"Ligne K-Line (12V)"| KLINE_IC
+    PIN1 --> F1
+    H3_1 --> F1
+    PIN2 ===>|"Masse retour GND"| POWER
+    H3_2 ===>|"Masse retour GND"| POWER
+    PIN3 <==>|"Ligne CANH"| CAN_IC
+    PIN4 <==>|"Ligne CANL"| CAN_IC
+    PIN5 <==>|"Ligne K-Line (12V)"| KLINE_IC
 
     LDO -->|"+3.3V Logique"| ESP
     LDO -->|"+3.3V Logique"| CAN_IC
@@ -189,7 +196,7 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
 | **Compacité boucle Buck** | Non contrainte | **0.7449** (boucle SW-L1-D2 compacte) | **Boucle de commutation minimale** |
 | **Zone RF Antenne ESP32** | Keepout statique désaligné | **Zone d'exclusion dérivée dynamiquement (Est)** | **Antenne 2.4 GHz 100% dégagée** |
 | **Chevelu total (HPWL)** | 580.7 mm (non routable) | **679.4 mm** (corridors de routage libérés) | **Chevelu aéré et routable** |
-| **Composants implantés** | 84 composants | **84 composants** (69 physiques + 15 mires TP) | **100% de la BOM couverte** |
+| **Composants implantés** | 84 composants | **85 composants** (70 physiques + 15 mires TP) | **100% de la BOM couverte** |
 
 #### 1. Placement des composants optimisé (Phase 2)
 > **Statut :** ✅ Valide — 0 chevauchement (0.0 mm²), 0 violation dure, Score : 8.2732.
@@ -213,7 +220,7 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
 
 ## 4. État d'Avancement & Prochaine Étape Immédiate
 
-* **Phase 1 : Schématique & Nomenclature (Validée) :** Schéma complet modulaire en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 84 composants validés, nomenclature 100% optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json)), cavaliers de configuration bi-mode intégrés (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle strict **ERC = 0** sous EasyEDA Pro.
+* **Phase 1 : Schématique & Nomenclature (Validée) :** Schéma complet modulaire en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 85 composants validés (70 physiques + 15 mires TP), nomenclature 100% optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json)), cavaliers de configuration bi-mode intégrés (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), embase d'alimentation labo (`H3`), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle strict **ERC = 0** sous EasyEDA Pro.
 * **Phase 2 : Placement PCB & Sérigraphie (Validée) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, courtyards et dégagements pastilles IPC-7351 respectés, sérigraphie optimisée par *Line-of-Sight* sans texte inversé ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
 * **Phase 3.1 : Auto-Routage Headless (Validée) :** 100% des pistes actives routées (219/219 connexions) via le skill `freerouting` (FreeRouting v2.4.1 sous OpenJDK 25 portable) avec réimport automatique et **DRC EasyEDA Pro = 0 violation**.
 * **Phase 3.2 : Plans de Masse & Stitching (En cours de finalisation) :** Plans de masse `GND` continus TopLayer (`POUR1`) et BottomLayer (`POUR2`) coulés, 34 vias de couture implantés (**0 Connection Error**).
@@ -229,13 +236,13 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | :--- | :--- |
 | 📖 **[readme.md](readme.md)** | **Présentation générale du projet matériel** : architecture, cas d'usage, référentiel normatif, visuels schémas et PCB, guide de navigation. |
 | 📋 **[todo.md](todo.md)** | **Feuille de route active & checklist complète** : suivi détaillé des étapes de conception (mécanique, schéma, floorplanning, routage, plans de masse, contrôles, firmware et fabrication). |
-| 📦 **[bom.json](documents/schema/bom.json)** | **Nomenclature PCBA structurée des 84 composants** : références fabricants (MPN), codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
+| 📦 **[bom.json](documents/schema/bom.json)** | **Nomenclature PCBA structurée des 85 composants** : références fabricants (MPN), codes LCSC, boîtiers d'empreinte et sélection des pièces de base JLCPCB (*Basic Parts*). |
 | 🧠 **[semantics.json](documents/schema/semantics.json)** | **Intention sémantique et électrique de schéma** : rôles précis, contraintes électriques (tensions minimales, tolérances, dissipation), blocs fonctionnels et politique de substitution. |
 | 📑 **[datasheets.md](documents/datasheets/datasheets.md)** | **Référentiel constructeur & Audit de conformité des ICs** : synthèse des 6 datasheets officielles ([`documents/datasheets/references/`](documents/datasheets/references/)), caractéristiques électriques, limites absolues, règles d'implantation PCB et matrice de conformité. |
 | 📐 **[constraints.json](documents/pcb/constraints.json)** | **Contraintes mécaniques de carte et de routage** : dimensions 100% mm, ancres mécaniques (`J1`, `J2`, `U1`), 4 trous M2 de fixation, keepouts et classes de routage FreeRouting. |
 | 🧩 **[manifest.json](documents/pcb/manifest.json)** | **Manifeste physique et géométrique PCB** : boîtiers normalisés IPC-7351, règles de découplage, micro-clusters et contraintes CEM de placement. |
 | 🔬 **[hardware.md](documents/hardware.md)** | **Architecture matérielle & anatomie détaillée** : guide pédagogique des 11 blocs, calculs théoriques (Buck, LDO, pont diviseur, Zener), table complète des nets, répertoire des points de test (`TP1` à `TP15`) et règles de layout. |
-| 💻 **[software.md](documents/software.md)** | **Cahier des charges & Handover Firmware** : guide d'amorçage pour le dépôt logiciel dédié, mappage GPIOs, protocoles (TWAI CAN, K-Line KWP2000 Daewoo), formule ADC batterie, veille < 1 mA et simulateur d'ECU. |
+| 💻 **[software.md](documents/software.md)** | **Cahier des charges & Handover Firmware** : guide d'amorçage pour le dépôt logiciel dédié, mappage GPIOs, protocoles (TWAI CAN, K-Line KWP2000 Daewoo), formule ADC batterie, veille basse consommation (~8–15 mA) et simulateur d'ECU. |
 | 📜 **[agents.md](agents.md)** | **Règles directrices des agents IA** : modularité agnostique, sécurité du pont EasyEDA, méthode séquentielle, post-validation et typographie. |
 | 💡 **[learnings.md](learnings.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
 | 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `todo.md`. |

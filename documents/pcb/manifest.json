@@ -120,12 +120,19 @@
       "courtyard_margin_mm": 0.4,
       "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte réelle 9.85x6.50 mm)"
     },
-    "TERMINAL_5P_3.5MM": {
-      "width_mm": 19.0,
-      "length_mm": 12.5,
-      "height_mm": 12.0,
+    "CONN_JST_XH_5P_90": {
+      "width_mm": 14.9,
+      "length_mm": 11.5,
+      "height_mm": 7.0,
       "courtyard_margin_mm": 0.5,
-      "description": "Bornier à ressort sans vis 5 contacts WJ250B (corps réel 19.0x12.5 mm)"
+      "description": "Embase mâle JST-XH 5 contacts coudée à 90° S5B-XH-A (corps 14.9x11.5 mm)"
+    },
+    "HEADER_1X2_2.54": {
+      "width_mm": 5.08,
+      "length_mm": 2.54,
+      "height_mm": 8.5,
+      "courtyard_margin_mm": 0.4,
+      "description": "Barrette mâle 1x2 pas 2.54 mm (corps plastique 5.08x2.54 mm)"
     },
     "HEADER_1X3_2.54": {
       "width_mm": 7.62,
@@ -481,8 +488,11 @@
     "H2": {
       "package": "HEADER_1X3_2.54"
     },
+    "H3": {
+      "package": "HEADER_1X2_2.54"
+    },
     "J1": {
-      "package": "TERMINAL_5P_3.5MM"
+      "package": "CONN_JST_XH_5P_90"
     },
     "J2": {
       "package": "USB_C_16P"

@@ -2,7 +2,6 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "project": "Scanner OBD-II ESP32",
   "version": "2.0.0",
-  "total_components": 84,
   "components": {
     "C1": {
       "value": "100nF",
@@ -207,12 +206,19 @@
       "type": "Extended Part",
       "package": "插件,P=2.54mm"
     },
+    "H3": {
+      "value": "2.54-1*2P",
+      "mpn": "2.54-1*2P针",
+      "lcsc": "C124375",
+      "type": "Extended Part",
+      "package": "HDR-TH_2P-P2.54-V-M-1"
+    },
     "J1": {
       "value": null,
-      "mpn": "WJ250B-3.5-05P-11-00A",
-      "lcsc": "C8453",
+      "mpn": "S5B-XH-A-1(LF)(SN)",
+      "lcsc": "C163038",
       "type": "Extended Part",
-      "package": "CONN-TH_5P-P3.50_WJ250B-3.50-5P"
+      "package": "CONN-TH_S5B-XH-A-1-LF-SN"
     },
     "J2": {
       "value": null,

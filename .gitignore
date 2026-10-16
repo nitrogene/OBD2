@@ -1,6 +1,7 @@
 /documents/easyeda/run-api-gateway_v1.0.5.eext
 /.agents/skills/easyeda-api/
 /.agents/easyeda-bridge.log
+/.agents/*.log
 
 # Python
 __pycache__/

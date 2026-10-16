@@ -7,7 +7,7 @@ Il recense les jalons majeurs validés et détaille les tâches restantes à acc
 
 ## 🏁 Jalons Validés
 
-- ✅ **Phase 1 : Schéma Électrique & Nomenclature (BOM)** : 84 composants validés, ERC = 0 strict, nomenclature optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json), [`documents/schema/semantics.json`](documents/schema/semantics.json)).
+- ✅ **Phase 1 : Schéma Électrique & Nomenclature (BOM)** : 85 composants validés (70 physiques + 15 mires TP), ERC = 0 strict, nomenclature optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json), [`documents/schema/semantics.json`](documents/schema/semantics.json)).
 - ✅ **Phase 2 : Auto-Placement PCB & Sérigraphie (`pcb-placer`)** : 84 composants et labels orientés sans collision, dégagements pastilles et courtyards IPC-7351 validés, rendu unique [`documents/pcb/placement.svg`](documents/pcb/placement.svg).
 - ✅ **Phase 3.1 : Auto-Routage Headless (`freerouting`)** : 100% des connexions de signaux et rails d'alimentation routées (219/219), impédance différentielle USB/CAN respectée, isolation RF 2.4 GHz garantie.
 
@@ -48,7 +48,7 @@ Il recense les jalons majeurs validés et détaille les tâches restantes à acc
 
 ## 3. Conception du Boîtier & Intégration Mécanique
 
-- [ ] **Maintien mécanique du faisceau OBD-II :** Concevoir le serre-câble / passe-fil pour décharger mécaniquement les contraintes de traction sur le bornier à vis `J1`.
+- [ ] **Maintien mécanique du faisceau OBD-II :** Concevoir le serre-câble / passe-fil pour décharger mécaniquement les contraintes de traction sur le connecteur `J1` (JST-XH 5P coudé).
 - [ ] **Accès connectique & interfaces :** Dégager les ouvertures pour le connecteur USB-C `J2`, le bouton Flash `SW1` et le guide de lumière de `LED1`.
 - [ ] **Fixation carte :** Intégrer les 4 bossages de fixation M2 alignés avec les perçages du PCB.
 - [ ] **Modélisation 3D (STEP / STL) :** Export et validation des tolérances d'assemblage pour impression 3D / usinage.
@@ -56,6 +56,26 @@ Il recense les jalons majeurs validés et détaille les tâches restantes à acc
 ---
 
 ## 4. Transition Firmware & Dépôt Logiciel Dédié
+
+### Actions issues de la revue du 2026-10-12 (Kimi Chat (Moonshot AI) — méthodologie Tabula Rasa & Preuve Matérielle Exclusive)
+<!-- Source : review\review007_schema_electrique.md - Verdict : 🟢 **Approuvé avec réserves** — Aucune modification de schéma matériel requise. 3 remarques Importantes de cohérence spécification/firmware et 8 remarques Mineures d'alignement documentaire. -->
+
+#### Améliorations de Robustesse & CEM (Importants)
+- [x] **[IMPORTANT] Cible de veille < 1 mA inatteignable avec le schéma actuel :** (a) Réaligner la cible firmware dans `TODO.md` et `documents/software.md` sur « plancher de veille ~8 à 15 mA » avec calcul d'autonomie associé ; (b) rectifier dans `HARDWARE.md` la mention « < 25 µA » en précisant qu'elle ne concerne que le diviseur UVLO ; (c) si une veille < 1 mA devenait un impératif absolu futur, prévoir un interrupteur High-Side commandé par GPIO sur le rail 5V de `U2` (`U2` (TJA1051T/3), `U3` (L9637D), `U5` (LDL1117), rail `+5V`, rail `3.3V`).
+- [x] **[IMPORTANT] Signature « USB seule » de VBAT_SENSE erronée et rétro-alimentation K-Line :** (a) Corriger le seuil de détection firmware USB-seule à `VBAT_SENSE < 0.3 V` (tension batterie équivalente < 2.8 V) ; (b) expliciter dans `HARDWARE.md` la règle de câblage sur banc : toujours relier le 12V et la masse avant les lignes de bus ; (c) documenter l'interdiction du câblage partiel sans masse/12V (`R12`, `R13`, `D6`, net `VBAT_SENSE`, `U3` pin 7 (VS), `J1`).
+- [x] **[IMPORTANT] Incohérence de référence pour D5 : SMF24A vs SMF24CA :** Aligner `README.md` (§1.3 et §4) sur la référence réelle `SMF24A` (unidirectionnelle, 200 W crête) en reprenant la justification physique de `HARDWARE.md` (`D5` (TVS K-Line), net `K_LINE`).
+
+#### Optimisations de Nomenclature & DFM (Mineurs)
+- [x] **[MINEUR] Capacité PSRAM de l'ESP32-S3 dans README :** Exactitude technique des spécifications pour le développement firmware (`U1` (`ESP32-S3-WROOM-1-N16R2`)).
+- [x] **[MINEUR] Alignement diélectrique C0G vs X7R pour C13 :** Cohérence stricte entre la nomenclature BOM et la documentation matérielle (`C13` (220 pF, compensation Buck pin COMP)).
+- [x] **[MINEUR] Décompte des composants dans les en-têtes documentaires :** Élimination des écarts résiduels de décompte dans les fichiers markdown (Documentation générale (`README.md`, `BOM.md`)).
+- [x] **[MINEUR] Justification constructeur pour le condensateur bootstrap C5 :** Rigueur métrologique et traçabilité constructeur irréprochable (`C5` (100 nF, broches BOOT-PH de `U4`)).
+- [x] **[MINEUR] Précision physique sur l'écrêtage ISO 7637-2 pulse 1 (−100 V) :** Fidélité physique de la documentation d'homologation automobile (`D1` (`SMBJ16A`), `Q1` (`CJ2309A`)).
+- [x] **[MINEUR] Rectification du libellé de D4 dans le synoptique Mermaid :** Exactitude du schéma synoptique (`D4` (`B5819W SL`, SOD-123)).
+- [x] **[MINEUR] Normalisation de la tenue ESD de U8 :** Conformité aux termes exacts de la datasheet onsemi (`U8` (`NUP2105LT1G`)).
+- [x] **[MINEUR] Mesure de validation sur banc pour la chaîne VBUS → D4 → U5 :** Confirmation expérimentale de l'absence de brownout en mode flash/banc USB (`D4`, `U5`, points de test `TP1` (VBUS) et `TP6` (3.3V)).
+
+
 
 Le développement du firmware est déporté dans un dépôt Git dédié (`obd2-esp32-firmware`).
 L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`documents/software.md`](documents/software.md).

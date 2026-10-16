@@ -2,13 +2,13 @@
   "$schema": "./schemas/circuit_semantics.schema.json",
   "project": "OBD2-Scanner-ESP32",
   "version": "1.0",
-  "date_modified": "2026-09-26",
+  "date_modified": "2026-10-15",
   "description": "Référentiel sémantique exhaustif des rôles, contraintes et politiques de substituabilité des composants du Scanner OBD-II ESP32.",
   "power_rails": {
     "+12V": {
       "nominal_v": 12.0,
       "max_v": 16.0,
-      "source": "J1.4",
+      "source": "J1.1, H3.1",
       "type": "battery_raw"
     },
     "+12V_FUSED": {
@@ -54,7 +54,7 @@
     "protection_12v": {
       "title": "Protection 12V, Filtrage & Anti-Inversion",
       "description": "Protection contre les surtensions d'alternateur (Load-Dump), inversion de polarité et surintensités habitacle.",
-      "components": ["J1", "F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
+      "components": ["J1", "H3", "F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
     },
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
@@ -503,12 +503,23 @@
         "mechanical": true
       }
     },
+    "H3": {
+      "block": "protection_12v",
+      "role": "bench_power_header",
+      "description": "Embase mâle 1x2 au pas 2.54 mm pour alimentation 12V de laboratoire (simulant la batterie véhicule en mode simulateur ECU)",
+      "value": "2.54-1*2P",
+      "footprint": "HDR-TH_2P-P2.54-V-M-1",
+      "substitutability": "locked",
+      "constraints": {
+        "mechanical": true
+      }
+    },
     "J1": {
       "block": "protection_12v",
-      "role": "main_terminal_block",
-      "description": "Bornier à ressort PCB sans vis 5 contacts au pas 3.5 mm (WJ250B-3.5-05P-11-00A) pour alimentation 12V labo et bus diagnostic",
-      "value": "WJ250B-3.5-05P-11-00A",
-      "footprint": "CONN-TH_5P-P3.50_WJ250B-3.50-5P",
+      "role": "main_diagnostic_connector",
+      "description": "Connecteur JST-XH 5 contacts coudé à 90° au pas 2.50 mm (S5B-XH-A-1(LF)(SN)) pour liaison diagnostic véhicule ou interconnexion banc ECU/Scanner (Pin 1: +12V, 2: K_LINE, 3: CANH, 4: CANL, 5: GND)",
+      "value": "S5B-XH-A-1(LF)(SN)",
+      "footprint": "CONN-TH_S5B-XH-A-1-LF-SN",
       "substitutability": "locked",
       "constraints": {
         "mechanical": true

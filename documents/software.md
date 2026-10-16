@@ -32,10 +32,10 @@ Le matériel est une **carte universelle** capable d'assumer deux rôles selon s
 1. **Rôle 1 : Scanner OBD-II (Mode Nominal Véhicule) :**
    - Connecté sur la prise diagnostic SAE J1962 d'une voiture 12V.
    - Initialise et interroge les calculateurs via TWAI/CAN (ISO 15765-4) et K-Line (ISO 9141-2 / ISO 14230 KWP2000).
-   - Mesure en continu la tension batterie (`VBAT_SENSE`), gère la veille basse consommation (< 1 mA).
+   - Mesure en continu la tension batterie (`VBAT_SENSE`), gère la veille basse consommation (plancher matériel réaliste ~8 à 15 mA).
    - Diffuse les données télémétriques vers un smartphone / tablette via BLE 5.0 ou Wi-Fi, ou vers un PC via USB-C.
 2. **Rôle 2 : Simulateur d'ECU Automobile (Mode Qualification sur Table / Banc Miroir) :**
-   - Flashé sur une seconde carte identique interconnectée via son bornier 5 broches `J1` à la carte Scanner.
+   - Flashé sur une seconde carte identique interconnectée via son connecteur JST-XH 5 broches `J1` (et embase labo `H3`) à la carte Scanner.
    - Simule un calculateur moteur (ECM) et ses périphériques (TCM, ABS).
    - Émet des trames périodiques TWAI/CAN (régime moteur RPM, vitesse véhicule, température d'eau).
    - Répond aux requêtes OBD-II (Modes 01, 02, 03, 04, 07, 09) et aux initialisations K-Line 5-baud / Fast-Init.
@@ -95,7 +95,7 @@ $$V_{BAT} = \frac{V_{ADC}}{k} = V_{ADC} \times 9.3333$$
 
 | État Véhicule / Condition | Tension Batterie $V_{BAT}$ | Tension sur Broche ADC $V_{ADC}$ | Comportement Firmware Attendu |
 | :--- | :---: | :---: | :--- |
-| **Alimentation USB seule (sur PC)** | **~4.0 V à 4.3 V** | **~0.43 V à 0.46 V** | Signature détectée : mode debug banc / déconnexion prise OBD. Inhiber les alertes batterie basse. |
+| **Alimentation USB seule (sur PC)** | **0.0 V (< 2.8 V)** | **< 0.300 V (≈ 0 V)** | Signature détectée : mode debug banc / déconnexion prise OBD (+12V_PROT à 0V isolé par Q1). Inhiber les alertes batterie basse. |
 | **Coupure UVLO matérielle Buck** | **<= 8.01 V** | **<= 0.858 V** | Le régulateur Buck U4 se coupe matériellement. Flash NVS protégée. |
 | **Batterie déchargée critique** | **< 11.8 V** | **< 1.264 V** | Alerte utilisateur, refuser les opérations d'écriture lourdes. |
 | **Batterie nominale au repos** | **12.4 V à 12.8 V** | **1.328 V à 1.371 V** | Fonctionnement nominal moteur coupé. Armer le timer de veille auto (10 min). |
@@ -103,12 +103,15 @@ $$V_{BAT} = \frac{V_{ADC}}{k} = V_{ADC} \times 9.3333$$
 | **Surtension alternateur / Régulateur HS** | **> 15.5 V** | **> 1.660 V** | Alerte surtension, notification MIL rouge. |
 | **Plafond transitoire (écrêtage TVS D1)** | **26.0 V** | **2.785 V** | Pleine échelle couverte sans saturation de l'ADC ($< 3.1\,\text{V}$). |
 
-### 3.3 Recommandations d'Implémentation ADC
+### 3.3 Recommandations d'Implémentation ADC & Bilan Énergétique
 - Utiliser l'API de calibration ESP-IDF (`esp_adc_cal` / `adc_oneshot`).
 - Atténuation ADC recommandée : `ADC_ATTEN_DB_12` (plage pleine échelle ~0 mV à 3100 mV).
 - Moyennage glissant sur 32 ou 64 échantillons pour éliminer le bruit résiduel d'allumage.
-- Veille automatique (*Deep Sleep* / *Light Sleep*) :
-  - Si $V_{BAT} \le 12.8\,\text{V}$ pendant plus de 10 minutes consécutives et absence de trame sur les bus $\rightarrow$ passage en veille profonde ($I_{tot} < 1\,\text{mA}$).
+- **Veille automatique (*Deep Sleep* / *Light Sleep*) & Plancher de Consommation :**
+  - Si $V_{BAT} \le 12.8\,\text{V}$ pendant plus de 10 minutes consécutives et absence de trame sur les bus $\rightarrow$ passage en veille basse consommation ($I_{tot} \approx 8 \text{ à } 15\,\text{mA}$).
+  - *Analyse matérielle du plancher de veille :* Les transceivers physiques `U2` (TJA1051T/3) et `U3` (L9637D), ainsi que le régulateur LDO `U5` (LDL1117) et le Buck `U4` (TPS54331), restent sous tension tant que le 12V batterie est présent. En veille profonde de l'ESP32-S3 ($I_{ESP} < 20\,\mu\text{A}$), le courant quiescent résiduel global de la carte se situe entre 8 et 15 mA.
+  - *Impact sur la batterie :* Une consommation de 10 mA représente $0.24\,\text{Ah/jour}$, soit environ $7.2\,\text{Ah/mois}$ (décharge < 15% sur batterie 60 Ah après 30 jours), ce qui est parfaitement sécuritaire pour un outil de diagnostic occasionnel ou d'atelier.
+  - *Évolution matérielle future :* Si une veille stricte $< 1\,\text{mA}$ était exigée pour un équipement télématique permanent (tracker 24h/24), prévoir un interrupteur High-Side commandé par GPIO sur le rail 5V coupant `U2` et `U3`.
   - Réveil configuré sur front GPIO (`ext0` / `ext1`) lors de l'activité CAN/K-Line ou via seuil comparateur ULP sur montée de tension (> 13.2V au démarrage moteur).
 
 ---
@@ -199,6 +202,12 @@ Pour qualifier le système sans véhicule, le firmware peut être compilé ou co
 // Configuration de compilation
 #define MODE_ECU_SIMULATOR 1
 ```
+
+> [!CAUTION]
+> **Règle absolue d'ordonnancement de câblage sur banc (Anti-rétroalimentation) :**
+> Lors des tests sur table avec le simulateur d'ECU ou une alimentation externe :
+> 1. **Toujours relier et alimenter les broches d'alimentation (+12V et GND via `H3` ou les broches 1 (+12V) et 5 (GND) de `J1`) AVANT de relier les lignes de signaux/bus (`CANH`, `CANL`, `K_LINE`).**
+> 2. *Interdiction formelle du câblage partiel sans masse ou sans 12V :* Si la ligne `K_LINE` est raccordée à une source active 12V alors que le `+12V` ou la masse `GND` de la carte n'est pas connectée, un courant parasite transite par les résistances de pull-up (`R16` // `R18`) et les diodes de clamp internes du transceiver `U3` (L9637D), ce qui rétro-alimente le rail `+12V_PROT` et le système de manière anormale, risquant d'endommager `U3` ou de fausser la surveillance de tension `VBAT_SENSE`.
 
 ### 6.1 Services Émulés par le Simulateur
 1. **Émulation TWAI CAN :**
