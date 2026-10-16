@@ -215,11 +215,32 @@
           "pin": "7"
         }
       ],
-      "metric": "bbox_half_perimeter",
+      "return_net": "GND",
+      "return_members": [
+        {
+          "ref": "D2",
+          "pin": "A"
+        },
+        {
+          "ref": "C14",
+          "pin": "2"
+        },
+        {
+          "ref": "C7",
+          "pin": "2"
+        },
+        {
+          "ref": "U4",
+          "pin": "7"
+        }
+      ],
+      "metric": "polygon_area_shoelace",
+      "target_max_area_mm2": 25.0,
+      "target_max_inductance_nH": 8.0,
       "target_max_mm": 25.0,
       "hard": false,
       "weight": 8,
-      "rationale": "Boucle chaude de découpage di/dt minimale"
+      "rationale": "Boucle chaude de découpage di/dt minimale fermée sur le plan GND"
     },
     {
       "id": "PC_PH_NODE_COMPACT",
@@ -230,6 +251,15 @@
       "hard": false,
       "weight": 6,
       "rationale": "Nœud de commutation PH haute fréquence compact pour limiter le rayonnement"
+    },
+    {
+      "id": "PC_PH_RETURN_PATH",
+      "type": "return_path_proximity",
+      "signal_net": "PH_BUCK",
+      "reference_net": "GND",
+      "max_distance_to_reference_mm": 3.0,
+      "weight": 7,
+      "rationale": "Proximité immédiate du plan de référence GND pour le nœud de commutation PH à fort dv/dt"
     },
     {
       "id": "PC_SW1_EDGE",

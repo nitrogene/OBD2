@@ -148,6 +148,17 @@ def validate_board_constraints(board_data: Dict[str, Any], report: ValidationRep
         if not (0 <= xmin <= width_mm and 0 <= xmax <= width_mm and 0 <= ymin <= height_mm and 0 <= ymax <= height_mm):
             report.warnings.append(f"[Board] Keepout {kname} déborde ou est en bordure extrême du gabarit.")
 
+    # 5. Règles de séparation CEM v2
+    separation_rules = board_data.get("separation_rules", [])
+    for sep in separation_rules:
+        sid = sep.get("id", "ANONYMOUS")
+        d = sep.get("min_distance_mm")
+        if d is None or d <= 0:
+            report.errors.append(f"[Board] Règle de séparation {sid} : min_distance_mm doit être strictement positif.")
+        coupling = sep.get("coupling")
+        if coupling and coupling not in ("H_field", "E_field", "conducted"):
+            report.errors.append(f"[Board] Règle de séparation {sid} : mécanisme de couplage '{coupling}' invalide (attendu: H_field, E_field, conducted).")
+
     return width_mm, height_mm
 
 
@@ -232,6 +243,15 @@ def validate_circuit_manifest(
                 mref = m.get("ref")
                 if mref and mref not in components:
                     report.errors.append(f"[Contrainte {cid}] Membre de boucle '{mref}' non trouvé.")
+            for rm in c.get("return_members", []):
+                rmref = rm.get("ref")
+                if rmref and rmref not in components:
+                    report.errors.append(f"[Contrainte {cid}] Membre de retour '{rmref}' non trouvé.")
+        elif ctype == "return_path_proximity":
+            sig = c.get("signal_net")
+            ref = c.get("reference_net")
+            if not sig or not ref:
+                report.errors.append(f"[Contrainte {cid}] signal_net et reference_net sont obligatoires.")
         elif ctype == "edge_access":
             sub = c.get("subject", {}).get("ref")
             if sub and sub not in components:

@@ -108,6 +108,31 @@ L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`do
 - [x] **[IMPORTANT] Sécurisation DRC & Unification Géométrique des Keepouts :**
   - Rendre le DRC EasyEDA bloquant dans [`apply_placement.py`](.agents/skills/pcb-placer/apply_placement.py) (rollback / code de sortie d'erreur si violations).
   - Aligner [`audit_placement.py`](.agents/skills/pcb-placer/audit_placement.py) sur [`score.py`](.agents/skills/pcb-placer/score.py) en testant le courtyard complet face aux keepouts (et non le seul centre du composant).
-- [ ] **[MINEUR] Modèle CEM v2 & Tests Unitaires (Feuille de route) :**
-  - Écrire les tests unitaires pytest sur les fonctions pures (`RectBox`, `legalize`).
-  - Intégrer la spécification d'inductance de boucle et `return_net` dans le modèle CEM v2.
+### Évolution vers le Moteur CEM v2 & Modélisation Physique
+- [x] **[FONDAMENTAL] Banc de Tests Unitaires Algorithmiques (Pytest) :**
+  - Mettre en place la suite de tests automatisés dans `.agents/skills/pcb-placer/tests/` (exécutable via `uv run pytest`).
+  - Tester les primitives géométriques `RectBox` : intersections, aires de chevauchement, rotations (0°, 90°, 180°, 270°), calculs de courtyards IPC.
+  - Tester le légalisateur déterministe `legalize()` : résolution de chevauchements artificiels, non-déplacement des ancres, respect des marges.
+  - Tester les calculs géométriques d'aires de boucles (formule du lacet de Gauss / Shoelace).
+- [x] **[FONDAMENTAL] DSL Sémantique CEM v2 & Contraintes Physiques :**
+  - Étendre le schéma des contraintes de boucle (`loop`) dans [`manifest.json`](documents/pcb/manifest.json) et [`constraints.json`](documents/pcb/constraints.json) : déclaration obligatoire du réseau de retour (`return_net: "GND"`), seuil d'aire maximale ($S_{loop}$ en mm²) et inductance cible ($L_{loop}$ en nH).
+  - Étendre les règles de séparation (`separation_rules`) : ajout du mécanisme de couplage (`coupling: "H_field" | "E_field"`), fréquence caractéristique (`frequency_mhz`) et atténuation angulaire relative.
+  - Déclarer les contraintes de proximité au plan de référence (`return_path_proximity`) pour les signaux à commutation rapide (nœud PH Buck, horloges, bus CAN).
+- [x] **[FONDAMENTAL] Évaluation Physique & Modélisation Quantitative ([`score.py`](.agents/skills/pcb-placer/score.py)) :**
+  - Remplacer l'heuristique HPWL par l'aire polygonale réelle (Shoelace) et l'inductance de boucle fermée aller-retour (formule de Rosa/Grover).
+  - Remplacer le hack de séparation 1D en X par une évaluation 2D isotrope inter-clusters avec fonctions de décroissance physiques ($1/r^3$ pour champ H, $1/r^2$ pour champ E).
+  - Remplacer les seuils de distance euclidienne de découplage par une pénalité d'inductance parasite équivalente ($L_{par} \propto d$).
+- [x] **[FONDAMENTAL] Optimisation Énergétique dans le Recuit Simulé ([`simulated_annealing.py`](.agents/skills/pcb-placer/simulated_annealing.py)) :**
+  - Intégrer les nouvelles énergies physiques (aire de boucle fermée, inductance, décroissance de champ 2D) dans la fonction de coût du recuit.
+  - Maintenir un calcul incrémental $\Delta E$ rapide pour préserver les performances de convergence du solveur.
+- [x] **[FONDAMENTAL] Validation & Benchmark Physique sur le PCB OBD-II :**
+  - Comparer quantitativement le layout avant / après modèle CEM v2 (réduction de l'aire de boucle chaude Buck, isolation Buck-ADC, etc.).
+  - Certifier la non-régression DRC (DRC = 0) et l'intégrité globale du placement.
+
+### Synthèse en Boucle Fermée (Co-Design Placement-Routage-CEM)
+- [ ] **[FONDAMENTAL] Nouveau Skill Orchestrateur `pcb-synthesizer` :**
+  - Créer le skill `.agents/skills/pcb-synthesizer/` orchestrant la chaîne fermée en une commande autonome.
+  - Chaîner de manière transactionnelle : `pcb-placer` -> `apply_placement` -> `freerouting` -> `audit post-routage DSN` -> `pcb-stitcher`.
+  - Implémenter l'analyseur métrologique DSN/SES post-routage : extraction des pistes réelles de boucles et des vias de retour.
+  - Implémenter la rétroaction itérative (max 3 cycles) : resserrement automatique des contraintes locales si une boucle dépasse sa cible.
+  - Valider l'exécution de bout en bout avec rapport de synthèse complet et certification DRC = 0.

@@ -43,6 +43,13 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
 from placement_constraints import get_power_nets
+from emc_physics import (
+    polygon_area_shoelace,
+    estimate_loop_inductance_nh,
+    magnetic_field_coupling,
+    electric_field_coupling,
+    decoupling_effective_inductance_nh,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("PCBScorer")
@@ -84,10 +91,22 @@ class RectBox:
         dy = max(0.0, min(self.y_max, other.y_max) - max(self.y_min, other.y_min))
         return dx * dy
 
+    def distance_to_box(self, other: RectBox) -> float:
+        """Calcule la distance euclidienne minimale entre deux boîtes alignées avec les axes (0.0 si contact ou chevauchement)."""
+        dx = max(0.0, max(self.x_min - other.x_max, other.x_min - self.x_max))
+        dy = max(0.0, max(self.y_min - other.y_max, other.y_min - self.y_max))
+        return math.hypot(dx, dy)
+
+    def distance_to_point(self, px: float, py: float) -> float:
+        """Calcule la distance euclidienne minimale entre un point et la boîte."""
+        dx = max(0.0, self.x_min - px, px - self.x_max)
+        dy = max(0.0, self.y_min - py, py - self.y_max)
+        return math.hypot(dx, dy)
+
 
 @dataclass
 class HardViolation:
-    violation_type: str  # "out_of_board", "overlap", "keepout", "mounting_hole", "anchor", "proximity"
+    violation_type: str  # "out_of_board", "overlap", "keepout", "mounting_hole", "anchor", "proximity", "loop", "separation", "return_path"
     subject: str
     target: Optional[str] = None
     details: str = ""
@@ -107,7 +126,10 @@ class ScoreMetrics:
     
     f_proximity_cem: float = 0.0
     f_loops_compactness: float = 0.0
+    loop_area_mm2: float = 0.0
+    loop_inductance_nh: float = 0.0
     f_switching_nets: float = 0.0
+    f_return_path: float = 0.0
     f_separation_emc: float = 0.0
     f_edge_access: float = 0.0
     f_density_uniformity: float = 0.0
@@ -255,10 +277,31 @@ class PCBScorer:
         self.board = board_constraints
         self.geom = geometry
 
+        # Résolution de la sémantique liée si functional_blocks est absent
+        sem_ref = manifest.get("schema_semantics")
+        if sem_ref and "functional_blocks" not in self.manifest:
+            candidate_paths = [
+                Path("documents/schema/semantics.json"),
+                Path("documents/pcb") / sem_ref,
+                Path(sem_ref)
+            ]
+            for cp in candidate_paths:
+                if cp.exists():
+                    try:
+                        with open(cp, "r", encoding="utf-8") as sf:
+                            sdata = json.load(sf)
+                            if "functional_blocks" in sdata:
+                                self.manifest["functional_blocks"] = sdata["functional_blocks"]
+                            break
+                    except Exception:
+                        pass
+
         self.packages = manifest.get("packages", {})
         self.manifest_comps = manifest.get("components", {})
         self.rigid_groups = manifest.get("rigid_groups", [])
         self.placement_constraints = manifest.get("placement_constraints", [])
+        self.functional_blocks = self.manifest.get("functional_blocks", {})
+        self.net_classes = board_constraints.get("net_classes", {})
 
         self.board_width = board_constraints.get("board", {}).get("width_mm", 81.28)
         self.board_height = board_constraints.get("board", {}).get("height_mm", 35.56)
@@ -271,6 +314,25 @@ class PCBScorer:
         # Échelle de référence pour normaliser le câblage : demi-périmètre de carte
         self.half_perimeter = self.board_width + self.board_height
         self.power_ground_nets = get_power_nets(self.manifest, self.board)
+
+    def _get_components_by_emc_class(self, emc_class: str) -> Set[str]:
+        """Identifie agnostiquement les composants rattachés à une classe CEM."""
+        result = set()
+        # 1. Vérification métadonnées directes
+        for des, meta in self.manifest_comps.items():
+            if meta.get("emc_class") == emc_class:
+                result.add(des)
+        # 2. Vérification par classes de nets
+        target_nets = set()
+        for nc_info in self.net_classes.values():
+            if nc_info.get("emc_class") == emc_class:
+                for n in nc_info.get("nets", []):
+                    target_nets.add(n)
+        for net_name in target_nets:
+            if net_name in self.geom.nets:
+                for des, _ in self.geom.nets[net_name]:
+                    result.add(des)
+        return result
 
     def evaluate(
         self,
@@ -512,15 +574,20 @@ class PCBScorer:
 
                 if p1 and p2:
                     dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                    l_eff_nh = decoupling_effective_inductance_nh(dist)
                     if dist > max_d:
                         penalty = (dist - max_d) / max_d
+                        # Sur-pénalité si l'inductance parasite excède le budget acceptable
+                        l_target_nh = decoupling_effective_inductance_nh(max_d)
+                        if l_eff_nh > l_target_nh:
+                            penalty += ((l_eff_nh - l_target_nh) / max(0.1, l_target_nh)) ** 1.5
                         prox_penalty_sum += weight * penalty
                         if is_hard:
                             hard_violations.append(HardViolation(
                                 violation_type="proximity",
                                 subject=sub_ref,
                                 target=tgt_ref,
-                                details=f"Règle dure {cid} violée : distance {dist:.2f} mm > max {max_d:.2f} mm",
+                                details=f"Règle dure {cid} violée : distance {dist:.2f} mm > max {max_d:.2f} mm (L_eff={l_eff_nh:.1f} nH)",
                                 amount=dist - max_d
                             ))
                     metrics.constraint_details.append({
@@ -528,36 +595,68 @@ class PCBScorer:
                         "type": "proximity",
                         "dist_mm": round(dist, 2),
                         "max_mm": max_d,
+                        "effective_inductance_nh": round(l_eff_nh, 2),
                         "ok": dist <= max_d
                     })
                 prox_weights_sum += weight
 
             elif ctype == "loop":
-                # Compacité de boucle di/dt
+                # Compacité physique de boucle di/dt fermée (Shoelace + Inductance de boucle)
                 members = c.get("members", [])
-                target_max = c.get("target_max_mm", 25.0)
+                return_members = c.get("return_members", [])
+                target_max_area = c.get("target_max_area_mm2", c.get("target_max_mm", 25.0))
+                target_max_ind = c.get("target_max_inductance_nH", 8.0)
+
+                ordered_members = list(members) + list(return_members)
                 loop_points: List[Tuple[float, float]] = []
 
-                for m in members:
+                for m in ordered_members:
                     mref = m.get("ref")
                     mpin = m.get("pin")
+                    pt = None
                     if mref in comp_pads_abs and mpin in comp_pads_abs[mref]:
-                        loop_points.append(comp_pads_abs[mref][mpin])
+                        pt = comp_pads_abs[mref][mpin]
                     elif mref in comp_positions:
-                        loop_points.append((comp_positions[mref][0], comp_positions[mref][1]))
+                        pt = (comp_positions[mref][0], comp_positions[mref][1])
+                    if pt:
+                        if not loop_points or (abs(loop_points[-1][0] - pt[0]) > 1e-4 or abs(loop_points[-1][1] - pt[1]) > 1e-4):
+                            loop_points.append(pt)
 
-                if loop_points:
-                    l_xs = [pt[0] for pt in loop_points]
-                    l_ys = [pt[1] for pt in loop_points]
-                    loop_hpwl = (max(l_xs) - min(l_xs)) + (max(l_ys) - min(l_ys))
-                    metrics.f_loops_compactness = round(loop_hpwl / target_max, 4)
+                if len(loop_points) >= 3:
+                    area = polygon_area_shoelace(loop_points)
+                    inductance = estimate_loop_inductance_nh(loop_points, trace_width_mm=0.8, reference_plane_height_mm=0.2)
+                    metrics.loop_area_mm2 = round(area, 2)
+                    metrics.loop_inductance_nh = round(inductance, 2)
+
+                    pen_area = max(0.0, (area - target_max_area) / max(1.0, target_max_area))
+                    pen_ind = max(0.0, (inductance - target_max_ind) / max(1.0, target_max_ind))
+
+                    loop_norm = (area / max(1.0, target_max_area)) + (inductance / max(1.0, target_max_ind)) + 3.0 * (pen_area ** 2 + pen_ind ** 2)
+                    metrics.f_loops_compactness = round(loop_norm, 4)
+
+                    is_ok = (area <= target_max_area) and (inductance <= target_max_ind)
+                    if is_hard and not is_ok:
+                        hard_violations.append(HardViolation(
+                            violation_type="loop",
+                            subject=cid,
+                            details=f"Boucle di/dt {cid} non conforme : S={area:.1f} mm² (max {target_max_area}), L={inductance:.1f} nH (max {target_max_ind})",
+                            amount=max(area - target_max_area, inductance - target_max_ind)
+                        ))
+
                     metrics.constraint_details.append({
                         "id": cid,
                         "type": "loop",
-                        "loop_hpwl_mm": round(loop_hpwl, 2),
-                        "target_max_mm": target_max,
-                        "ok": loop_hpwl <= target_max
+                        "area_mm2": round(area, 2),
+                        "target_max_area_mm2": target_max_area,
+                        "inductance_nh": round(inductance, 2),
+                        "target_max_inductance_nH": target_max_ind,
+                        "ok": is_ok
                     })
+                elif loop_points:
+                    l_xs = [pt[0] for pt in loop_points]
+                    l_ys = [pt[1] for pt in loop_points]
+                    loop_hpwl = (max(l_xs) - min(l_xs)) + (max(l_ys) - min(l_ys))
+                    metrics.f_loops_compactness = round(loop_hpwl / target_max_area, 4)
 
             elif ctype == "net_compact":
                 # Compacité d'un nœud rayonnant (ex: PH_BUCK)
@@ -582,6 +681,57 @@ class PCBScorer:
                             "target_max_mm": target_max,
                             "ok": net_hpwl <= target_max
                         })
+
+            elif ctype == "return_path_proximity":
+                # Proximité du chemin de retour vers le plan ou broches de masse GND
+                sig_net = c.get("signal_net")
+                ref_net = c.get("reference_net", "GND")
+                max_ret_d = c.get("max_distance_to_reference_mm", 3.0)
+
+                sig_pins = self.geom.nets.get(sig_net, []) if sig_net else []
+                ref_pins = self.geom.nets.get(ref_net, []) if ref_net else []
+
+                sig_pts = []
+                for d, p in sig_pins:
+                    if d in comp_pads_abs and p in comp_pads_abs[d]:
+                        sig_pts.append(comp_pads_abs[d][p])
+                    elif d in comp_positions:
+                        sig_pts.append((comp_positions[d][0], comp_positions[d][1]))
+
+                ref_pts = []
+                for d, p in ref_pins:
+                    if d in comp_pads_abs and p in comp_pads_abs[d]:
+                        ref_pts.append(comp_pads_abs[d][p])
+                    elif d in comp_positions:
+                        ref_pts.append((comp_positions[d][0], comp_positions[d][1]))
+
+                if sig_pts and ref_pts:
+                    max_nearest_dist = 0.0
+                    for sp in sig_pts:
+                        d_nearest = min(math.hypot(sp[0] - rp[0], sp[1] - rp[1]) for rp in ref_pts)
+                        if d_nearest > max_nearest_dist:
+                            max_nearest_dist = d_nearest
+
+                    pen_ret = max(0.0, (max_nearest_dist - max_ret_d) / max(0.1, max_ret_d))
+                    metrics.f_return_path = round(pen_ret, 4)
+
+                    if is_hard and max_nearest_dist > max_ret_d:
+                        hard_violations.append(HardViolation(
+                            violation_type="return_path",
+                            subject=cid,
+                            details=f"Chemin de retour {cid} trop éloigné du plan {ref_net} : {max_nearest_dist:.2f} mm > {max_ret_d:.2f} mm",
+                            amount=max_nearest_dist - max_ret_d
+                        ))
+
+                    metrics.constraint_details.append({
+                        "id": cid,
+                        "type": "return_path_proximity",
+                        "signal_net": sig_net,
+                        "reference_net": ref_net,
+                        "dist_mm": round(max_nearest_dist, 2),
+                        "max_mm": max_ret_d,
+                        "ok": max_nearest_dist <= max_ret_d
+                    })
 
             elif ctype == "edge_access":
                 # Accessibilité bord de carte
@@ -614,37 +764,92 @@ class PCBScorer:
 
         metrics.f_proximity_cem = round(prox_penalty_sum / max(1.0, prox_weights_sum), 4)
 
-        # C. Règles de séparation CEM (Agressor vs Victim / Antenne)
+        # C. Règles de séparation CEM isotropes 2D avec lois physiques de couplage
         sep_penalty_sum = 0.0
         for rule in self.separation_rules:
             rid = rule.get("id", "SEP")
             req_d = rule.get("min_distance_mm", 10.0)
+            coupling_type = rule.get("coupling", "H_field")
             weight = rule.get("weight", 5)
+            is_hard = rule.get("hard", False)
 
+            # Résolution de group_a
             group_a_cfg = rule.get("group_a", {})
-            target_cluster = group_a_cfg.get("cluster")
-            emc_cls = group_a_cfg.get("emc_class")
-            pts_a = []
-            if target_cluster:
-                fb_comps = self.manifest.get("functional_blocks", {}).get(target_cluster, {}).get("components", [])
-                pts_a = [comp_positions[d] for d in fb_comps if d in comp_positions]
-            elif emc_cls:
-                pts_a = [comp_positions[d] for d, c in self.manifest_comps.items() if c.get("emc_class") == emc_cls and d in comp_positions]
+            comps_a: Set[str] = set()
+            if "cluster" in group_a_cfg:
+                c_name = group_a_cfg["cluster"]
+                comps_a.update(self.functional_blocks.get(c_name, {}).get("components", []))
+            if "emc_class" in group_a_cfg:
+                cls_name = group_a_cfg["emc_class"]
+                comps_a.update(self._get_components_by_emc_class(cls_name))
 
-            if pts_a and all_keepouts:
-                # Distance au premier keepout (ou antenne RF)
-                ko_rect = all_keepouts[0].get("rect_mm", {})
-                ko_x_min = ko_rect.get("x_min", self.board_width)
-                closest_x = max(p[0] for p in pts_a)
-                dist_to_ant = ko_x_min - closest_x
-                if dist_to_ant < req_d:
-                    sep_penalty_sum += weight * ((req_d - dist_to_ant) / req_d)
+            # Résolution de group_b (soit zone de keepout, soit cluster, soit emc_class)
+            group_b_cfg = rule.get("group_b", {})
+            target_zone_box: Optional[RectBox] = None
+            comps_b: Set[str] = set()
+
+            if "zone" in group_b_cfg:
+                z_name = group_b_cfg["zone"]
+                for kz in all_keepouts:
+                    if kz.get("id") == z_name or kz.get("name") == z_name:
+                        r = kz.get("rect_mm", {})
+                        target_zone_box = RectBox(r.get("x_min", 0.0), r.get("x_max", 0.0), r.get("y_min", 0.0), r.get("y_max", 0.0))
+                        break
+            if "cluster" in group_b_cfg:
+                c_name = group_b_cfg["cluster"]
+                comps_b.update(self.functional_blocks.get(c_name, {}).get("components", []))
+            if "emc_class" in group_b_cfg:
+                cls_name = group_b_cfg["emc_class"]
+                comps_b.update(self._get_components_by_emc_class(cls_name))
+
+            # Calcul de la distance 2D euclidienne minimale
+            min_dist_2d = float("inf")
+            valid_comps_a = [c for c in comps_a if c in comp_boxes]
+
+            if valid_comps_a and target_zone_box:
+                for ca in valid_comps_a:
+                    d = comp_boxes[ca].distance_to_box(target_zone_box)
+                    if d < min_dist_2d:
+                        min_dist_2d = d
+            elif valid_comps_a and comps_b:
+                valid_comps_b = [c for c in comps_b if c in comp_boxes and c not in comps_a]
+                for ca in valid_comps_a:
+                    for cb in valid_comps_b:
+                        d = comp_boxes[ca].distance_to_box(comp_boxes[cb])
+                        if d < min_dist_2d:
+                            min_dist_2d = d
+
+            if min_dist_2d < float("inf"):
+                rule_penalty = 0.0
+                if min_dist_2d < req_d:
+                    if coupling_type == "H_field":
+                        # Décroissance dipolaire magnétique en 1/r³
+                        coupling_factor = (req_d / max(0.5, min_dist_2d)) ** 3 - 1.0
+                    elif coupling_type == "E_field":
+                        # Décroissance capacitive électrique en 1/r²
+                        coupling_factor = (req_d / max(0.5, min_dist_2d)) ** 2 - 1.0
+                    else:
+                        coupling_factor = (req_d - min_dist_2d) / req_d
+
+                    rule_penalty = weight * max(0.0, coupling_factor)
+                    sep_penalty_sum += rule_penalty
+
+                    if is_hard:
+                        hard_violations.append(HardViolation(
+                            violation_type="separation",
+                            subject=rid,
+                            details=f"Violation règle CEM {rid} : distance {min_dist_2d:.2f} mm < min requis {req_d:.2f} mm",
+                            amount=req_d - min_dist_2d
+                        ))
+
                 metrics.constraint_details.append({
                     "id": rid,
                     "type": "separation",
-                    "dist_mm": round(dist_to_ant, 2),
+                    "coupling": coupling_type,
+                    "dist_mm": round(min_dist_2d, 2),
                     "req_mm": req_d,
-                    "ok": dist_to_ant >= req_d
+                    "penalty": round(rule_penalty, 4),
+                    "ok": min_dist_2d >= req_d
                 })
 
         metrics.f_separation_emc = round(sep_penalty_sum, 4)
@@ -776,14 +981,15 @@ class PCBScorer:
         metrics.f_spacing_comfort = round(spacing_penalty / max(1, len(comp_keys)), 4)
 
         # Calcul du score global pondéré
-        # Score = w1 * f_wire + w2 * f_prox + w3 * f_loop + w4 * f_net + w5 * f_sep + w6 * f_edge + w7 * f_density + w8 * f_spacing
+        # Score = w1 * f_wire + w2 * f_prox + w3 * f_loop + w4 * f_net + w5 * f_ret + w6 * f_sep + w7 * f_edge + w8 * f_density + w9 * f_spacing
         metrics.hard_violations_count = len(hard_violations)
         total_score = (
             1.0 * metrics.f_wire_hpwl +
             2.5 * metrics.f_proximity_cem +
             3.0 * metrics.f_loops_compactness +
             2.0 * metrics.f_switching_nets +
-            1.5 * metrics.f_separation_emc +
+            2.0 * metrics.f_return_path +
+            2.0 * metrics.f_separation_emc +
             2.0 * metrics.f_cluster_cohesion +
             0.5 * metrics.f_edge_access +
             2.0 * metrics.f_density_uniformity +
@@ -821,9 +1027,11 @@ def print_evaluation_report(eval_res: PlacementEvaluation):
     logger.info(f"  • Score global pondéré     : {score.weighted_total_score:.4f}")
     logger.info(f"  • Chevelu total (HPWL)     : {score.total_hpwl_mm:.2f} mm  (f_wire: {score.f_wire_hpwl:.4f})")
     logger.info(f"  • Pénalité proximité CEM   : {score.f_proximity_cem:.4f}")
-    logger.info(f"  • Compacité boucle Buck    : {score.f_loops_compactness:.4f}")
+    logger.info(f"  • Boucle Buck di/dt        : {score.loop_area_mm2:.2f} mm² / {score.loop_inductance_nh:.2f} nH (f_loop: {score.f_loops_compactness:.4f})")
     logger.info(f"  • Compacité nœud rayonnant : {score.f_switching_nets:.4f}")
+    logger.info(f"  • Chemin de retour GND     : {score.f_return_path:.4f}")
     logger.info(f"  • Pénalité séparation CEM  : {score.f_separation_emc:.4f}")
+    logger.info(f"  • Cohésion des clusters    : {score.f_cluster_cohesion:.4f}")
     logger.info(f"  • Accessibilité bords      : {score.f_edge_access:.4f}")
     logger.info(f"  • Densité uniforme (8x4)   : {score.f_density_uniformity:.4f}")
     logger.info(f"  • Aération / Confort       : {score.f_spacing_comfort:.4f}")

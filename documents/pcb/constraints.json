@@ -60,6 +60,7 @@
         "y_min": 8.78,
         "y_max": 26.78
       },
+      "exempt_refs": ["U1"],
       "rules": ["no_wires", "no_vias", "no_pours"]
     }
   ],
@@ -75,18 +76,22 @@
       "group_a": { "cluster": "buck_5v" },
       "group_b": { "zone": "RF_ANTENNA_KEEPOUT" },
       "min_distance_mm": 15.0,
+      "coupling": "H_field",
+      "frequency_mhz": 0.57,
       "hard": false,
       "weight": 6,
-      "rationale": "Découpage Buck 570 kHz éloigné de l'antenne radio 2.4 GHz"
+      "rationale": "Découpage Buck 570 kHz éloigné de l'antenne radio 2.4 GHz (décroissance dipolaire H en 1/r³)"
     },
     {
       "id": "SEP_AGGRESSOR_VICTIM",
       "group_a": { "emc_class": "aggressor" },
       "group_b": { "emc_class": "victim" },
       "min_distance_mm": 8.0,
+      "coupling": "E_field",
+      "frequency_mhz": 50.0,
       "hard": false,
       "weight": 5,
-      "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance"
+      "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance (décroissance capacitive E en 1/r²)"
     }
   ],
   "plane_nets": ["GND"],

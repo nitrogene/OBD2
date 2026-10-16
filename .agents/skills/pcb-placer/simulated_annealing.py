@@ -31,6 +31,11 @@ if hasattr(sys.stderr, "reconfigure"):
 
 from export_geometry import BoardGeometrySnapshot, extract_board_geometry
 from placement_constraints import get_power_nets
+from emc_physics import (
+    polygon_area_shoelace,
+    estimate_loop_inductance_nh,
+    decoupling_effective_inductance_nh,
+)
 from score import (
     PCBScorer,
     PlacementEvaluation,
@@ -214,10 +219,31 @@ class FastAnnealingEngine:
                     if a != b:
                         self.neighbors[a].add(b)
 
+        # Résolution de la sémantique liée si functional_blocks est absent
+        sem_ref = manifest.get("schema_semantics")
+        if sem_ref and "functional_blocks" not in manifest:
+            candidate_paths = [
+                Path("documents/schema/semantics.json"),
+                Path("documents/pcb") / sem_ref,
+                Path(sem_ref)
+            ]
+            for cp in candidate_paths:
+                if cp.exists():
+                    try:
+                        with open(cp, "r", encoding="utf-8") as sf:
+                            sdata = json.load(sf)
+                            if "functional_blocks" in sdata:
+                                manifest["functional_blocks"] = sdata["functional_blocks"]
+                            break
+                    except Exception:
+                        pass
+        self.functional_blocks = manifest.get("functional_blocks", {})
+        self.net_classes = board_constraints.get("net_classes", {})
+
         # Contraintes de proximité CEM indexées
         self.hard_proximities: List[Tuple[int, str, int, str, float]] = []
         self.soft_proximities: List[Tuple[int, str, int, str, float, float]] = []
-        self.loop_constraints: List[Tuple[List[Tuple[int, str]], float, float]] = []
+        self.loop_constraints: List[Tuple[List[Tuple[int, str]], float, float, float]] = []
 
         for c in self.placement_constraints:
             ctype = c.get("type")
@@ -239,16 +265,17 @@ class FastAnnealingEngine:
                         self.soft_proximities.append((s_idx, s_pin, t_idx, t_pin, max_d, w))
 
             elif ctype == "loop":
-                members = []
-                for m in c.get("members", []):
+                ordered_members = []
+                for m in c.get("members", []) + c.get("return_members", []):
                     mref = m.get("ref")
                     mpin = m.get("pin")
                     if mref in self.des_to_index:
-                        members.append((self.des_to_index[mref], mpin))
-                target_max = c.get("target_max_mm", 25.0)
+                        ordered_members.append((self.des_to_index[mref], mpin))
+                target_max_area = c.get("target_max_area_mm2", c.get("target_max_mm", 25.0))
+                target_max_ind = c.get("target_max_inductance_nH", 8.0)
                 w = c.get("weight", 8.0)
-                if len(members) >= 2:
-                    self.loop_constraints.append((members, target_max, w))
+                if len(ordered_members) >= 2:
+                    self.loop_constraints.append((ordered_members, target_max_area, target_max_ind, w))
 
         # Indexation des proximités dures par composant
         self.item_to_hard_proximities: Dict[int, List[Tuple[int, str, int, str, float]]] = {i: [] for i in range(self.n_items)}
@@ -264,11 +291,36 @@ class FastAnnealingEngine:
             self.item_to_soft_proximities[s_idx].append(sp)
             self.item_to_soft_proximities[t_idx].append(sp)
 
-        self.item_to_loops: Dict[int, List[Tuple[List[Tuple[int, str]], float, float]]] = {i: [] for i in range(self.n_items)}
+        self.item_to_loops: Dict[int, List[Tuple[List[Tuple[int, str]], float, float, float]]] = {i: [] for i in range(self.n_items)}
         for lp in self.loop_constraints:
-            members, target_max, w = lp
-            for m_idx, _ in members:
+            ordered_members, target_max_area, target_max_ind, w = lp
+            for m_idx, _ in ordered_members:
                 self.item_to_loops[m_idx].append(lp)
+
+        # Indexation des chemins de retour GND (return_path_proximity)
+        self.item_to_return_paths: Dict[int, List[Tuple[List[int], float, float]]] = {i: [] for i in range(self.n_items)}
+        for c in self.placement_constraints:
+            if c.get("type") == "return_path_proximity":
+                sig_net = c.get("signal_net")
+                ref_net = c.get("reference_net", "GND")
+                max_d = c.get("max_distance_to_reference_mm", 3.0)
+                w = c.get("weight", 7.0)
+
+                sig_items = set()
+                if sig_net in geometry.nets:
+                    for des, _ in geometry.nets[sig_net]:
+                        if des in self.des_to_index:
+                            sig_items.add(self.des_to_index[des])
+
+                ref_items = set()
+                if ref_net in geometry.nets:
+                    for des, _ in geometry.nets[ref_net]:
+                        if des in self.des_to_index:
+                            ref_items.add(self.des_to_index[des])
+
+                if sig_items and ref_items:
+                    for s_idx in sig_items:
+                        self.item_to_return_paths[s_idx].append((list(ref_items), max_d, w))
 
         # Indexation des contraintes d'accès bord (ex: SW1 au bord Nord)
         self.item_to_edge_access: Dict[int, List[Tuple[str, float, float]]] = {i: [] for i in range(self.n_items)}
@@ -285,6 +337,70 @@ class FastAnnealingEngine:
         # Résolution des keepouts dynamiques (packages + carte)
         init_pos_map = {it.designator: (it.x, it.y, it.rotation) for it in self.items}
         self.keepouts = get_all_keepouts(board_constraints, manifest, init_pos_map)
+
+        # Indexation des règles de séparation CEM 2D (Agressors vs Victims / Zones)
+        self.item_to_separations: Dict[int, List[Tuple[str, Any, float, str, float]]] = {i: [] for i in range(self.n_items)}
+        self.separation_rules = board_constraints.get("separation_rules", [])
+
+        for rule in self.separation_rules:
+            req_d = rule.get("min_distance_mm", 10.0)
+            coupling = rule.get("coupling", "H_field")
+            w = rule.get("weight", 5.0)
+
+            # Résolution de group_a
+            group_a_cfg = rule.get("group_a", {})
+            comps_a: Set[str] = set()
+            if "cluster" in group_a_cfg:
+                comps_a.update(self.functional_blocks.get(group_a_cfg["cluster"], {}).get("components", []))
+            if "emc_class" in group_a_cfg:
+                cls_name = group_a_cfg["emc_class"]
+                for des, meta in self.manifest_comps.items():
+                    if meta.get("emc_class") == cls_name:
+                        comps_a.add(des)
+                for nc_info in self.net_classes.values():
+                    if nc_info.get("emc_class") == cls_name:
+                        for n in nc_info.get("nets", []):
+                            if n in geometry.nets:
+                                for des, _ in geometry.nets[n]:
+                                    comps_a.add(des)
+
+            group_b_cfg = rule.get("group_b", {})
+            target_type = None
+            target_data = None
+
+            if "zone" in group_b_cfg:
+                z_name = group_b_cfg["zone"]
+                for kz in self.keepouts:
+                    if kz.get("id") == z_name or kz.get("name") == z_name:
+                        r = kz.get("rect_mm", {})
+                        target_type = "zone"
+                        target_data = RectBox(r.get("x_min", 0.0), r.get("x_max", 0.0), r.get("y_min", 0.0), r.get("y_max", 0.0))
+                        break
+            elif "emc_class" in group_b_cfg or "cluster" in group_b_cfg:
+                comps_b: Set[str] = set()
+                if "cluster" in group_b_cfg:
+                    comps_b.update(self.functional_blocks.get(group_b_cfg["cluster"], {}).get("components", []))
+                if "emc_class" in group_b_cfg:
+                    cls_name = group_b_cfg["emc_class"]
+                    for des, meta in self.manifest_comps.items():
+                        if meta.get("emc_class") == cls_name:
+                            comps_b.add(des)
+                    for nc_info in self.net_classes.values():
+                        if nc_info.get("emc_class") == cls_name:
+                            for n in nc_info.get("nets", []):
+                                if n in geometry.nets:
+                                    for des, _ in geometry.nets[n]:
+                                        comps_b.add(des)
+                b_indices = [self.des_to_index[des] for des in comps_b if des in self.des_to_index]
+                if b_indices:
+                    target_type = "items"
+                    target_data = b_indices
+
+            if target_type and target_data:
+                for des_a in comps_a:
+                    if des_a in self.des_to_index:
+                        idx_a = self.des_to_index[des_a]
+                        self.item_to_separations[idx_a].append((target_type, target_data, req_d, coupling, w))
 
         # Configuration de la grille de densité 2D (8x4 Bins) pour homogénéité spatiale
         self.n_bins_x = 8
@@ -361,29 +477,73 @@ class FastAnnealingEngine:
         return res
 
     def compute_item_prox_and_loop(self, item_idx: int) -> float:
-        """Calcule les pénalités CEM de proximité douce et de compacité de boucles pour un composant."""
+        """Calcule les pénalités CEM physiques incrémentales (proximité, L_eff, boucle fermée Shoelace, retour GND, séparation 2D)."""
         pen = 0.0
+
+        # 1. Proximités douces (avec pénalité d'inductance parasite équivalente)
         for s_idx, s_pin, t_idx, t_pin, max_d, w in self.item_to_soft_proximities[item_idx]:
             p1 = self.items[s_idx].get_pad_abs(s_pin)
             p2 = self.items[t_idx].get_pad_abs(t_pin)
             if p1 and p2:
                 dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                l_eff = decoupling_effective_inductance_nh(dist)
+                l_target = decoupling_effective_inductance_nh(max_d)
                 if dist > max_d:
                     pen += (dist - max_d) * (w * 0.8)
+                    if l_eff > l_target:
+                        pen += (l_eff - l_target) * (w * 0.4)
 
-        for members, target_max, w in self.item_to_loops[item_idx]:
+        # 2. Boucles di/dt fermées (Aire réelle Shoelace + Inductance Grover/Paul)
+        for ordered_members, target_max_area, target_max_ind, w in self.item_to_loops[item_idx]:
             loop_pts = []
-            for m_idx, m_pin in members:
+            for m_idx, m_pin in ordered_members:
                 pt = self.items[m_idx].get_pad_abs(m_pin)
                 if pt:
-                    loop_pts.append(pt)
-            if len(loop_pts) >= 2:
+                    if not loop_pts or (abs(loop_pts[-1][0] - pt[0]) > 1e-4 or abs(loop_pts[-1][1] - pt[1]) > 1e-4):
+                        loop_pts.append(pt)
+            if len(loop_pts) >= 3:
+                area = polygon_area_shoelace(loop_pts)
+                ind = estimate_loop_inductance_nh(loop_pts, trace_width_mm=0.8, reference_plane_height_mm=0.2)
+                pen_area = max(0.0, area - target_max_area) / max(1.0, target_max_area)
+                pen_ind = max(0.0, ind - target_max_ind) / max(1.0, target_max_ind)
+                loop_pen = (area / max(1.0, target_max_area)) + (ind / max(1.0, target_max_ind)) + 3.0 * (pen_area ** 2 + pen_ind ** 2)
+                pen += loop_pen * (w * 1.5)
+            elif len(loop_pts) >= 2:
                 xs = [p[0] for p in loop_pts]
                 ys = [p[1] for p in loop_pts]
                 l_hpwl = (max(xs) - min(xs)) + (max(ys) - min(ys))
-                if l_hpwl > target_max:
-                    pen += (l_hpwl - target_max) * (w * 1.0)
+                if l_hpwl > target_max_area:
+                    pen += (l_hpwl - target_max_area) * (w * 1.0)
 
+        # 3. Chemin de retour vers la masse GND le plus proche
+        for ref_indices, max_d, w in self.item_to_return_paths.get(item_idx, []):
+            it = self.items[item_idx]
+            min_ret_d = min(math.hypot(it.x - self.items[r_idx].x, it.y - self.items[r_idx].y) for r_idx in ref_indices)
+            if min_ret_d > max_d:
+                pen += (min_ret_d - max_d) * (w * 1.2)
+
+        # 4. Règles de séparation CEM 2D (Champs H 1/r³ et E 1/r²)
+        for target_type, target_data, req_d, coupling, w in self.item_to_separations.get(item_idx, []):
+            it_box = self.items[item_idx].box
+            min_d = float("inf")
+            if target_type == "zone":
+                min_d = it_box.distance_to_box(target_data)
+            elif target_type == "items":
+                for other_idx in target_data:
+                    if other_idx != item_idx:
+                        d = it_box.distance_to_box(self.items[other_idx].box)
+                        if d < min_d:
+                            min_d = d
+            if min_d < req_d:
+                if coupling == "H_field":
+                    c_factor = (req_d / max(0.5, min_d)) ** 3 - 1.0
+                elif coupling == "E_field":
+                    c_factor = (req_d / max(0.5, min_d)) ** 2 - 1.0
+                else:
+                    c_factor = (req_d - min_d) / req_d
+                pen += max(0.0, c_factor) * (w * 2.0)
+
+        # 5. Accessibilité bord de carte
         for edge, max_d, w in self.item_to_edge_access.get(item_idx, []):
             it = self.items[item_idx]
             box = it.box
@@ -473,10 +633,10 @@ class FastAnnealingEngine:
         return penalty
 
     def compute_proximity_and_loop_penalties(self) -> float:
-        """Calcule les pénalités de proximité CEM et boucles critiques."""
+        """Calcule les pénalités globales de proximité CEM, boucles critiques, chemin de retour et séparation."""
         penalty = 0.0
 
-        # Proximités dures (ex: C14 < 3mm de U4 pin 2)
+        # 1. Proximités dures
         for s_idx, s_pin, t_idx, t_pin, max_d in self.hard_proximities:
             p1 = self.items[s_idx].get_pad_abs(s_pin)
             p2 = self.items[t_idx].get_pad_abs(t_pin)
@@ -485,30 +645,72 @@ class FastAnnealingEngine:
                 if dist > max_d:
                     penalty += (dist - max_d) * 50.0
 
-        # Proximités douces
+        # 2. Proximités douces
         for s_idx, s_pin, t_idx, t_pin, max_d, w in self.soft_proximities:
             p1 = self.items[s_idx].get_pad_abs(s_pin)
             p2 = self.items[t_idx].get_pad_abs(t_pin)
             if p1 and p2:
                 dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                l_eff = decoupling_effective_inductance_nh(dist)
+                l_target = decoupling_effective_inductance_nh(max_d)
                 if dist > max_d:
-                    penalty += (dist - max_d) * (w * 0.5)
+                    penalty += (dist - max_d) * (w * 0.8)
+                    if l_eff > l_target:
+                        penalty += (l_eff - l_target) * (w * 0.4)
 
-        # Boucles critiques (ex: Buck hot loop)
-        for members, target_max, w in self.loop_constraints:
+        # 3. Boucles critiques fermées
+        for ordered_members, target_max_area, target_max_ind, w in self.loop_constraints:
             loop_pts = []
-            for m_idx, m_pin in members:
+            for m_idx, m_pin in ordered_members:
                 pt = self.items[m_idx].get_pad_abs(m_pin)
                 if pt:
-                    loop_pts.append(pt)
-            if len(loop_pts) >= 2:
+                    if not loop_pts or (abs(loop_pts[-1][0] - pt[0]) > 1e-4 or abs(loop_pts[-1][1] - pt[1]) > 1e-4):
+                        loop_pts.append(pt)
+            if len(loop_pts) >= 3:
+                area = polygon_area_shoelace(loop_pts)
+                ind = estimate_loop_inductance_nh(loop_pts, trace_width_mm=0.8, reference_plane_height_mm=0.2)
+                pen_area = max(0.0, area - target_max_area) / max(1.0, target_max_area)
+                pen_ind = max(0.0, ind - target_max_ind) / max(1.0, target_max_ind)
+                loop_pen = (area / max(1.0, target_max_area)) + (ind / max(1.0, target_max_ind)) + 3.0 * (pen_area ** 2 + pen_ind ** 2)
+                penalty += loop_pen * (w * 1.5)
+            elif len(loop_pts) >= 2:
                 xs = [p[0] for p in loop_pts]
                 ys = [p[1] for p in loop_pts]
                 l_hpwl = (max(xs) - min(xs)) + (max(ys) - min(ys))
-                if l_hpwl > target_max:
-                    penalty += (l_hpwl - target_max) * (w * 0.8)
+                if l_hpwl > target_max_area:
+                    penalty += (l_hpwl - target_max_area) * (w * 1.0)
 
-        # Accessibilité bord (ex: SW1 bord Nord)
+        # 4. Chemins de retour GND
+        for s_idx, ret_list in self.item_to_return_paths.items():
+            it = self.items[s_idx]
+            for ref_indices, max_d, w in ret_list:
+                min_ret_d = min(math.hypot(it.x - self.items[r_idx].x, it.y - self.items[r_idx].y) for r_idx in ref_indices)
+                if min_ret_d > max_d:
+                    penalty += (min_ret_d - max_d) * (w * 1.2)
+
+        # 5. Séparation CEM 2D
+        for idx in range(self.n_items):
+            for target_type, target_data, req_d, coupling, w in self.item_to_separations.get(idx, []):
+                it_box = self.items[idx].box
+                min_d = float("inf")
+                if target_type == "zone":
+                    min_d = it_box.distance_to_box(target_data)
+                elif target_type == "items":
+                    for other_idx in target_data:
+                        if other_idx != idx:
+                            d = it_box.distance_to_box(self.items[other_idx].box)
+                            if d < min_d:
+                                min_d = d
+                if min_d < req_d:
+                    if coupling == "H_field":
+                        c_factor = (req_d / max(0.5, min_d)) ** 3 - 1.0
+                    elif coupling == "E_field":
+                        c_factor = (req_d / max(0.5, min_d)) ** 2 - 1.0
+                    else:
+                        c_factor = (req_d - min_d) / req_d
+                    penalty += max(0.0, c_factor) * (w * 2.0)
+
+        # 6. Accessibilité bord
         for s_idx, access_list in self.item_to_edge_access.items():
             it = self.items[s_idx]
             box = it.box
@@ -523,7 +725,7 @@ class FastAnnealingEngine:
                 elif edge == "west":
                     d_edge = box.x_min
                 if d_edge > max_d:
-                    penalty += (d_edge - max_d) * (w * 1.0)
+                    penalty += (d_edge - max_d) * (w * 1.5)
 
         return penalty
 
