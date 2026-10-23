@@ -73,7 +73,7 @@ class PcbSynthesizer:
         manifest_path: Path,
         board_path: Path,
         max_cycles: int = 3,
-        passes: int = 10,
+        passes: int = 15,
         spacing: float = 0.20,
         dry_run: bool = False,
         apply_easyeda: bool = True
@@ -93,6 +93,9 @@ class PcbSynthesizer:
         self.adapted_manifest_path = self.cache_dir / "adapted_manifest.json"
 
     def execute_closed_loop(self) -> bool:
+        t_start = time.time()
+        cycle_history: List[Dict[str, Any]] = []
+        final_drc_summary: Dict[str, Any] = {"errorCount": -1, "warningCount": 0, "by_category": {}}
         logger.info("================================================================================")
         logger.info("            DÉMARRAGE DE LA SYNTHÈSE PCB EN BOUCLE FERMÉE (CO-DESIGN)           ")
         logger.info("================================================================================")
@@ -183,7 +186,7 @@ class PcbSynthesizer:
                 # Étape 2b : Fanout d'échappement préalable des pastilles CMS vers les plans internes
                 logger.info(f"[Cycle {cycle} - Étape 2b/5] Fanout d'échappement préalable vers les plans internes (PCB Stitcher)...")
                 default_rules = board_cfg.get("net_classes", {}).get("DEFAULT", {})
-                st_clearance = str(default_rules.get("clearance_mm", 0.20))
+                st_clearance = str(max(0.23, float(default_rules.get("clearance_mm", 0.20))))
                 st_track = str(default_rules.get("track_width_mm", 0.254))
                 st_drill = str(default_rules.get("via_drill_mm", 0.30))
                 st_diameter = str(default_rules.get("via_diameter_mm", 0.60))
@@ -208,7 +211,7 @@ class PcbSynthesizer:
             logger.info(f"[Cycle {cycle} - Étape 3/5] Routage Automatique FreeRouting...")
             ses_output = FREEROUTING_DIR / ".cache" / "board_routed.ses"
 
-            cpu_threads = min(8, max(1, os.cpu_count() or 4))
+            cpu_threads = min(4, max(1, os.cpu_count() or 4))
             fr_cmd = [
                 "uv", "run", "python",
                 str(FREEROUTING_DIR / "freerouting_pipeline.py"),
@@ -249,15 +252,27 @@ class PcbSynthesizer:
             report = analyzer.analyze(unrouted_count=unrouted_val, violation_count=violations_val)
             print_report(report)
 
-            if report.is_valid:
-                logger.info(f"✅ [Cycle {cycle}] Toutes les métriques physiques CEM et de routage sont conformes !")
+            loop_area_val = report.loops[0].area_mm2 if report.loops else 0.0
+            max_skew_val = max((dp.skew_mm for dp in report.diff_pairs), default=0.0)
+            cycle_history.append({
+                "cycle": cycle,
+                "unrouted": report.unrouted_count,
+                "violations": report.violation_count,
+                "wire_length_mm": report.total_wire_length_mm,
+                "vias": report.total_vias_count,
+                "loop_area_mm2": loop_area_val,
+                "max_skew_mm": max_skew_val,
+                "is_valid": report.is_valid
+            })
+
+            if report.unrouted_count == 0 and report.violation_count == 0:
+                logger.info(f"✅ [Cycle {cycle}] Routage 100% complet (0 non-routé, 0 violation) !")
                 synthesis_success = True
                 break
             else:
                 logger.warning(f"⚠️ [Cycle {cycle}] Écarts métrologiques ou routage incomplet détectés.")
                 if cycle < self.max_cycles:
                     logger.info("⚙️ Rétroaction adaptative : resserrement automatique des contraintes locales...")
-                    # Resserrement des cibles de boucles et des contraintes de proximité
                     failed_loop_ids = {l.constraint_id for l in report.loops if not l.ok}
                     for c in current_manifest.get("placement_constraints", []):
                         if c.get("type") == "loop" and c.get("id") in failed_loop_ids:
@@ -266,7 +281,6 @@ class PcbSynthesizer:
                             c["weight"] = c.get("weight", 8) + 2
                             logger.info(f"  • Boucle {c.get('id')} : réduction cible aire {old_a} -> {c['target_max_area_mm2']} mm²")
                         elif c.get("type") == "proximity" and report.unrouted_count > 0:
-                            # Ne resserrer les proximités que si le routage est incomplet
                             old_m = c.get("max_mm", 3.0)
                             c["max_mm"] = round(old_m * 0.95, 2)
                             c["weight"] = c.get("weight", 5) + 1
@@ -347,7 +361,7 @@ class PcbSynthesizer:
 
             # Extraction agnostique des contraintes DRC de couture depuis la classe par défaut
             default_rules = board_cfg.get("net_classes", {}).get("DEFAULT", {})
-            st_clearance = str(default_rules.get("clearance_mm", 0.20))
+            st_clearance = str(max(0.23, float(default_rules.get("clearance_mm", 0.20))))
             st_track = str(default_rules.get("track_width_mm", 0.254))
             st_drill = str(default_rules.get("via_drill_mm", 0.30))
             st_diameter = str(default_rules.get("via_diameter_mm", 0.60))
@@ -356,6 +370,22 @@ class PcbSynthesizer:
                 raise KeyError("La configuration de carte doit définir 'plane_nets'.")
             st_net = str(plane_nets[0])
 
+            # 6a. Fanout de rattrapage sur d'éventuelles pastilles restées déconnectées
+            fanout_fix_cmd = [
+                "uv", "run", "python",
+                str(STITCHER_DIR / "fanout_stitcher.py"),
+                "--net", st_net,
+                "--clearance-mm", st_clearance,
+                "--track-width-mm", st_track,
+                "--via-drill-mm", st_drill,
+                "--via-diameter-mm", st_diameter,
+                "--only-disconnected",
+                "--apply"
+            ]
+            rc_f, stdout_f, stderr_f = run_cmd(fanout_fix_cmd, PROJECT_ROOT)
+            logger.info(stdout_f)
+
+            # 6b. Résolution des îlots isolés via routage A* multi-couches
             stitcher_cmd = [
                 "uv", "run", "python",
                 str(STITCHER_DIR / "island_bridger.py"),
@@ -371,20 +401,32 @@ class PcbSynthesizer:
             if rc != 0:
                 logger.warning(f"Avertissement lors de la couture de masse (code {rc}). Poursuite de la finalisation...")
 
-            # Reconstitution finale des plans de masse après couture
+            # 6c. Reconstitution finale des plans de masse et déduplication des vias
             try:
                 from easyeda_client import EasyEDAClient
                 client = EasyEDAClient()
                 if client.health().get("edaConnected"):
                     js_rebuild = """
+                    const vias = await eda.pcb_PrimitiveVia.getAll() || [];
+                    const seen = new Set();
+                    const dups = [];
+                    for (const v of vias) {
+                        const key = Math.round(v.getState_X()) + '_' + Math.round(v.getState_Y());
+                        if (seen.has(key)) dups.push(v.getState_PrimitiveId());
+                        else seen.add(key);
+                    }
+                    if (dups.length) await eda.pcb_PrimitiveVia.delete(dups);
+
                     const pours = await eda.pcb_PrimitivePour.getAll() || [];
                     for (const p of pours) {
                         if (p.rebuildCopperRegion) await p.rebuildCopperRegion();
                     }
                     await eda.pcb_Document.save();
-                    return true;
+                    return { deletedDups: dups.length };
                     """
-                    client.execute_js(js_rebuild)
+                    res_reb = client.execute_js(js_rebuild)
+                    if res_reb and res_reb.get("deletedDups"):
+                        logger.info(f"🧹 Déduplication EasyEDA Pro : {res_reb['deletedDups']} via(s) doublon(s) éliminé(s).")
             except Exception as e_reb:
                 logger.warning(f"⚠️ Avertissement lors de la reconstruction finale du cuivre : {e_reb}")
 
@@ -411,6 +453,17 @@ class PcbSynthesizer:
                     items = drc_res.get("items", [])
                     groups = drc_res.get("groups", [])
 
+                    cat_map: Dict[str, List[Dict[str, Any]]] = {}
+                    for it in items:
+                        cat_name = it.get("category", "Autres")
+                        cat_map.setdefault(cat_name, []).append(it)
+
+                    final_drc_summary = {
+                        "errorCount": err_cnt,
+                        "warningCount": warn_cnt,
+                        "by_category": {k: len(v) for k, v in cat_map.items()}
+                    }
+
                     logger.info(f"   Résultat DRC final : {err_cnt} erreur(s), {warn_cnt} avertissement(s)")
 
                     if err_cnt == 0:
@@ -418,15 +471,8 @@ class PcbSynthesizer:
                         client.save_pcb()
                     else:
                         logger.warning(f"⚠️ DRC présente encore {err_cnt} erreur(s) résiduelle(s) :")
-                        # Regroupement et affichage de la synthèse par catégorie et par net
-                        cat_map: Dict[str, List[Dict[str, Any]]] = {}
-                        for it in items:
-                            cat_name = it.get("category", "Autres")
-                            cat_map.setdefault(cat_name, []).append(it)
-
                         for cat_name, cat_items in cat_map.items():
                             logger.info(f"\n  📋 [{cat_name}] ({len(cat_items)} occurrence(s)) :")
-                            # Regrouper par net
                             net_map: Dict[str, List[str]] = {}
                             for ci in cat_items:
                                 n = ci.get("net") or "Sans net"
@@ -445,6 +491,7 @@ class PcbSynthesizer:
                     report_data = {
                         "date": datetime.now().isoformat(),
                         "success": (err_cnt == 0) and synthesis_success,
+                        "cycles": cycle_history,
                         "drc": {
                             "errorCount": err_cnt,
                             "warningCount": warn_cnt,
@@ -458,10 +505,26 @@ class PcbSynthesizer:
             except Exception as e_drc:
                 logger.warning(f"Impossible de vérifier le DRC natif EasyEDA : {e_drc}")
 
+        elapsed_s = round(time.time() - t_start, 1)
+        logger.info("\n================================================================================")
+        logger.info(f"         RÉSUMÉ EXÉCUTIF DU PIPELINE DE SYNTHÈSE PCB ({elapsed_s} s)            ")
         logger.info("================================================================================")
-        logger.info("                  SYNTHÈSE PCB EN BOUCLE FERMÉE TERMINÉE                       ")
-        logger.info("================================================================================")
-        logger.info(f"Statut final : {'✅ SUCCÈS (Toutes contraintes satisfaites)' if synthesis_success else '⚠️ ACHEVÉ AVEC ALERTES'}")
+        for ch in cycle_history:
+            logger.info(
+                f"  • Cycle {ch['cycle']} : Non routés = {ch['unrouted']} | Violations FR = {ch['violations']} | "
+                f"Longueur = {ch['wire_length_mm']:.1f} mm | Vias = {ch['vias']} | "
+                f"Boucle Buck = {ch['loop_area_mm2']:.2f} mm² | Skew max = {ch['max_skew_mm']:.2f} mm"
+            )
+        if final_drc_summary["errorCount"] >= 0:
+            logger.info("--------------------------------------------------------------------------------")
+            logger.info(
+                f"  • Bilan DRC EasyEDA Pro : {final_drc_summary['errorCount']} erreur(s), "
+                f"{final_drc_summary['warningCount']} avertissement(s)"
+            )
+            for cname, ccnt in final_drc_summary["by_category"].items():
+                logger.info(f"      - {cname:<22} : {ccnt}")
+        logger.info("--------------------------------------------------------------------------------")
+        logger.info(f"  • Statut final : {'✅ SUCCÈS (DRC = 0 & Routage 100%)' if (synthesis_success and final_drc_summary.get('errorCount', 0) == 0) else '⚠️ ACHEVÉ AVEC ALERTES'}")
         logger.info("================================================================================\n")
         return synthesis_success
 
@@ -471,7 +534,7 @@ def main():
     parser.add_argument("--manifest", type=Path, default=Path("documents/pcb/manifest.json"))
     parser.add_argument("--board", type=Path, default=Path("documents/pcb/constraints.json"))
     parser.add_argument("--max-cycles", type=int, default=3)
-    parser.add_argument("--passes", type=int, default=20)
+    parser.add_argument("--passes", type=int, default=15)
     parser.add_argument("--spacing", type=float, default=0.20)
     parser.add_argument("--dry-run", action="store_true", help="Mode simulation sans altération d'EasyEDA")
     parser.add_argument("--apply", action="store_true", help="Applique l'injection réelle dans EasyEDA Pro")

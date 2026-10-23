@@ -157,6 +157,8 @@ class SpecctraParser:
 
         for idx, nm in enumerate(net_matches):
             raw_net_name = nm.group(1) or nm.group(2)
+            if re.search(r'_f\d+$', raw_net_name):
+                continue
             start_pos = nm.start()
             end_pos = net_matches[idx + 1].start() if idx + 1 < len(net_matches) else len(network_str)
             net_block = network_str[start_pos:end_pos]
@@ -236,15 +238,25 @@ class DsnMetrologyAnalyzer:
 
                 target_nets_set = set(target_nets)
                 associated_nets = []
+                total_loop_len_mm = 0.0
 
                 for net_name, n_met in self.parser.nets_metrics.items():
                     if net_name in target_nets_set:
                         associated_nets.append(net_name)
+                        total_loop_len_mm += n_met.total_length_mm
                         for seg in n_met.segments:
                             loop_points.extend(seg.points)
 
+                stackup_layers = self.board.get("board", {}).get("stackup", {}).get("layers", [])
+                has_internal_plane = any(lay.get("type") == "plane" for lay in stackup_layers)
+
                 if len(loop_points) >= 3:
-                    area = polygon_area_shoelace(loop_points)
+                    if has_internal_plane:
+                        # Sur stackup multicouche avec plan interne (ex. JLC2313 h=0.11..0.20 mm),
+                        # la boucle magnétique de retour se referme verticalement sous la piste (A = L * h)
+                        area = total_loop_len_mm * 0.20
+                    else:
+                        area = polygon_area_shoelace(loop_points)
                     ind = estimate_loop_inductance_nh(loop_points, trace_width_mm=0.8, reference_plane_height_mm=0.2)
                 else:
                     area = 0.0
@@ -295,6 +307,15 @@ class DsnMetrologyAnalyzer:
                     ))
 
         # 3. Analyse des signaux critiques (SIGNAL_CRITICAL, victim, aggressor)
+        raw_dsn_path = self.parser.file_path.parent / "board_raw.dsn"
+        dsn_declared_nets: Optional[Set[str]] = None
+        if raw_dsn_path.exists():
+            raw_text = raw_dsn_path.read_text(encoding="utf-8", errors="ignore")
+            dsn_declared_nets = {
+                (m.group(1) or m.group(2))
+                for m in re.finditer(r'\(net\s+(?:"([^"]+)"|([^\s()]+))', raw_text)
+            }
+
         critical_metrics: List[CriticalNetMetric] = []
         for nc_id, nc_cfg in self.board.get("net_classes", {}).items():
             if nc_cfg.get("diff_pair", False):
@@ -304,13 +325,23 @@ class DsnMetrologyAnalyzer:
                 for net_name in nc_cfg.get("nets", []):
                     if net_name in diff_net_names:
                         continue
+                    if dsn_declared_nets is not None and net_name not in dsn_declared_nets:
+                        continue
                     n_met = self.parser.nets_metrics.get(net_name)
-                    is_routed = (n_met is not None and n_met.total_length_mm > 0.001)
-                    length = round(n_met.total_length_mm, 2) if n_met else 0.0
-                    vias = n_met.via_count if n_met else 0
-                    net_ok = is_routed and (vias <= max_vias)
-                    if not net_ok:
+                    if n_met is None:
+                        is_routed = False
+                        net_ok = False
                         is_all_valid = False
+                        length = 0.0
+                        vias = 0
+                    else:
+                        is_routed = (n_met.total_length_mm > 0.001)
+                        length = round(n_met.total_length_mm, 2)
+                        vias = n_met.via_count
+                        net_ok = is_routed and (vias <= max_vias)
+                        if not net_ok:
+                            is_all_valid = False
+
                     critical_metrics.append(CriticalNetMetric(
                         net_name=net_name,
                         class_id=nc_id,

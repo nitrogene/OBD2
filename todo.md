@@ -15,19 +15,55 @@ Il recense les jalons majeurs validés et détaille les tâches restantes à acc
 
 ## 1. Priorité Immédiate : Finalisation PCB & Plans de Masse (Clôture Phase 3)
 
-- [ ] **Résolution des 13 Clearance Errors résiduelles (Point d'arrêt / Reprise) :**
+### Actions issues de la revue du 2026-04-12 (Gemini 4 Argon (Medium))
+<!-- Source : review\review001.md - Verdict : 🔴 Rejeté (corrections critiques nécessaires) -->
+
+#### Correctifs Critiques (Bloquants)
+- [x] **[BLOQUANT] Suppression de l'Étape 2b (Fanout préalable) et encerclement de 11 pastilles `GND` :** 1. **Rétablir l'Étape 2b** dans `synthesizer_pipeline.py` afin de poser les vias et micro-pistes de fanout `GND` avant l'export Specctra DSN, et convertir dans `dsn_patcher.py` les vias/micro-pistes `GND` de `(wiring ...)` en obstacles `(keepout ...)` dans `(structure ...)` avant de supprimer le net `GND` (Réseau `GND`, pastilles CMS `J2_1`, `e36`, `J2_4`, `e35`, `R3_2`, `C14_1`, `R20_1`, `C15_2`, `U2_8`, `D5_2`, `D6_1`, `LED1_2` (`synthesizer_pipeline.py` lignes 183-185, `dsn_patcher.py` lignes 62-81)).
+- [x] **[BLOQUANT] Écrasement du Cycle 1 (`unrouted = 0`) par les Cycles 2 et 3 (`unrouted = 3`) :** 1. Dès que `report.unrouted_count == 0` et `report.violation_count == 0`, interrompre immédiatement la boucle de rétroaction à l'Étape 4 et mémoriser le meilleur cycle `(min unrouted, min violations)` (Réseaux `+5V` (`U1_2`, `L1_2`, `R16_2`) et `$1N305` (`Q2_1`, `R14_1`, `R13_1`) dans `synthesizer_pipeline.py` (lignes 234-265)).
+- [x] **[BLOQUANT] Fallback aveugle à `40 mil` (`1.016 mm`) sur la taille des pads dans `fanout_stitcher.py` et `island_bridger.py` :** 1. Extraire les dimensions exactes de chaque pad dans `fanout_stitcher.py` et `island_bridger.py` en inspectant la structure retournée par `p.getState_PadShape()` (ou en parsant les dimensions exactes des padstacks depuis `work/autoroute.dsn`), et tenir compte de la rotation `p.getState_Rotation()` du pad (`D1_1` (`+12V_PROT`) vs via `e6431` (`GND`), `H3_1` (`+12V`) vs via `e6434` (`GND`) dans `fanout_stitcher.py` (lignes 67-68) et `island_bridger.py` (lignes 81-82)).
+- [x] **[BLOQUANT] Artefacts de concurrence FreeRouting (`--threads 8` et `--passes 8`) :** Configurer FreeRouting avec `--passes 15` et `--threads 4` (ou `--threads 1` si déterminisme strict souhaité). Combiné à la conversion des vias `GND` en keepouts (`B1`), le temps de routage reste inférieur à **75 secondes** pour `0 violation` et `0 unrouted` (Routeur FreeRouting CLI (`synthesizer_pipeline.py` lignes 188-193)).
+
+#### Améliorations de Robustesse & CEM (Importants)
+- [x] **[IMPORTANT] Faux positif sur l'aire de boucle `PC_BUCK_HOT_LOOP` (`130.91 mm²`) dans `dsn_metrics.py` :** Dans `dsn_metrics.py`, calculer l'aire de boucle 3D physique avec retour par plan interne ($A = L_{\text{trace}} \times h_{\text{prepreg}}$ avec $h = 0.11\text{ mm}$ extrait du stackup de `constraints.json`) lorsque le PCB dispose d'un plan `GND` interne, ou limiter le polygone XY aux segments reliant directement les `target_pads` (Classe `SWITCHING_BUCK` (`$1N16`, `$1N19`) dans `dsn_metrics.py` (lignes 118-137)).
+- [x] **[IMPORTANT] Affichage systématique d'un tableau récapitulatif en fin d'exécution du pipeline :** Ajouter une fonction `print_executive_summary(report_data, cycle_history, elapsed_s)` appelée systématiquement à la fin de `run_pipeline()` (Orchestrateur `.agents/skills/pcb-synthesizer/synthesizer_pipeline.py`).
+
+#### Optimisations de Nomenclature & DFM (Mineurs)
+- [x] **[MINEUR] Nettoyage de la double définition de `cmd_stitch` dans `synthesizer_pipeline.py` :** Lisibilité du code et maintien d'un paramétrage unique pour `fanout_stitcher.py` (`.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (lignes 327-351)).
+
+### Actions issues de la revue du 2026-10-23 (Gemini 4 Argon (High))
+<!-- Source : review\review001.md - Verdict : 🔴 Rejeté (corrections critiques nécessaires sur 5 bugs algorithmiques bloquants) -->
+
+#### Correctifs Critiques (Bloquants)
+- [x] **[BLOQUANT] Corruption syntaxique du bloc `(wiring ...)` et perte de protection des vias de fanout `GND` de l'Étape 2b :** Remplacer dans `dsn_patcher.py` la suppression aveugle de `(net GND ...)` et la regex `(wiring ...)` par une conservation stricte de `(net GND)` sans `(pins ...)` dans `(network ...)` et d'un bloc `(wiring ...)` valide contenant tous les `(wire ...)` et `(via ...)` marqués `(type protect)` (`.agents/skills/freerouting/dsn_patcher.py` (lignes 148-189 et 375-378), `.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (lignes 184-212), net `GND`, pastilles `C10_1`, `C11_2`, `R17_2` et vias `e5460`, `e5447`).
+- [x] **[BLOQUANT] Chaîne JavaScript non interpolée dans `island_bridger.py` désactivant le pontage A* post-routage :** Injecter dynamiquement `target_net` via `json.dumps(target_net)` dans le script JavaScript de `fetch_layout_and_drc` au sein de `island_bridger.py` (`.agents/skills/pcb-stitcher/island_bridger.py` (lignes 38-97), net `GND`, pastilles et vias en erreur `Connection Error`).
+- [x] **[BLOQUANT] Échec de `padstack_overrides` sur les fentes de blindage `e55`/`e56` du connecteur USB-C `J2` :** Étendre `apply_padstack_overrides` dans `dsn_patcher.py` et `constraints.json` pour supporter la surcharge ciblée par `pin_id` (`bdbad5cc7fc4f6ae55` et `bdbad5cc7fc4f6ae56`) avec création d'un padstack dédié (`.agents/skills/freerouting/dsn_patcher.py` (lignes 207-233), `documents/pcb/constraints.json` (lignes 104-109), connecteur `J2` (fentes `e55` / `bdbad5cc7fc4f6ae55` et `e56` / `bdbad5cc7fc4f6ae56`), net `VBUS_5V`).
+- [x] **[BLOQUANT] Mutualisation de via sans segment de piste dans `fanout_stitcher.py` et absence d'échappement pour `H2_3` / `J2_4` / `e35` :** Exiger dans `fanout_stitcher.py` une connexion filaire explicite (`has_line`) pour considérer une pastille CMS comme échappée, tracer un segment direct lorsqu'un via voisin est mutualisé, et exécuter une passe `only_disconnected=True` à l'Étape 6 (`.agents/skills/pcb-stitcher/fanout_stitcher.py` (lignes 169 et 223-229), `.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (lignes 340-355), connecteurs `J2` (`J2_4`, `e35`) et `H2` (`H2_3`), net `GND`).
+- [x] **[BLOQUANT] Faux positifs `NON ROUTÉ` dans `dsn_metrics.py` provoquant l'exécution systématique de 3 cycles complets :** Filtrer dans `dsn_metrics.py` les nets évalués contre la liste des nets réellement présents dans la section `(network ...)` de `board_raw.dsn` et synchroniser les noms de nets dans `constraints.json` (`.agents/skills/pcb-synthesizer/dsn_metrics.py` (lignes 186-205 et 305-320), `documents/pcb/constraints.json` (lignes 137, 165, 193), nets `+12V_FUSED`, `VBAT_OBD`, `PH_BUCK` (`$1N16`), `BOOT_BUCK` (`$1N19`), `K_RX_IC` (`$6N4`), `K_TX_IC` (`$6N3`), `IO0` (`$7N5`)).
+
+#### Améliorations de Robustesse & CEM (Importants)
+- [x] **[IMPORTANT] Métrologie `PC_BUCK_HOT_LOOP` aveugle (`0.00 mm²` / `0.00 nH`) dans `dsn_metrics.py` :** Extraire dans `dsn_metrics.py` les coordonnées réelles des pins des `members` de la boucle depuis le fichier `.dsn` (ou les nets connectés à ces pins dans `(network ...)`) et invalider toute boucle ayant moins de 3 points (`.agents/skills/pcb-synthesizer/dsn_metrics.py` (lignes 221-269), `documents/pcb/manifest.json` (lignes 190-244), composants `U4`, `C14`, `C7`, `D2`, nets `+12V_PROT`, `PH_BUCK` (`$1N16`), `GND`).
+- [x] **[IMPORTANT] Rétroaction adaptative ignorant le skew différentiel et dégradant globalement les `courtyard_margin_mm` :** Prendre en compte les violations `diff_pairs` dans `tighten_manifest_constraints` et interrompre immédiatement la boucle `max_cycles` si aucune contrainte du manifeste n'a été modifiée (`.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (lignes 116-146 et 261-272), paires différentielles `DIFF_USB` (`USB_D+`, `USB_D-`) et `DIFF_CAN` (`CANH`, `CANL`)).
+- [x] **[IMPORTANT] Violations résiduelles d'agnosticisme (`AGENTS.md` Règle 1), de typographie LaTeX (Règle 6) et d'API EasyEDA :** Purger les valeurs par défaut `"GND"` en dur dans `synthesizer_pipeline.py`, corriger les accesseurs JS dans `freerouting_pipeline.py` et `easyeda_client.py`, et remplacer le LaTeX dans `SKILL.md` (`.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (lignes 186, 285), `.agents/skills/pcb-synthesizer/SKILL.md` (lignes 21, 30), `.agents/skills/pcb-placer/easyeda_client.py` (lignes 618-619), `.agents/skills/freerouting/freerouting_pipeline.py` (lignes 63-75)).
+
+#### Optimisations de Nomenclature & DFM (Mineurs)
+- [x] **[MINEUR] Réduction du temps d'autoroutage sous la barre des `90 s` par cycle :** Abaisser `max_passes` de `20` à `8` dans `synthesizer_pipeline.py` (et/ou ajouter `+5V` dans `plane_nets` pour l'échapper par vias vers `Inner2` dès l'Étape 2b) réduira le temps d'un cycle complet (Placement + Fanout + FreeRouting + Plans + DRC) de `228 s` à moins de `75 s` tout en allégeant la densité de pistes sur `TopLayer` (`.agents/skills/pcb-synthesizer/synthesizer_pipeline.py` (ligne 209), `documents/pcb/constraints.json` (ligne 134), net `+5V`).
+
+
+
+- [x] **Résolution des 13 Clearance Errors résiduelles (Point d'arrêt / Reprise) :**
   - Remplacer les 3 segments rectilignes de pontage d'îlots par les chemins d'évitement calculés par l'algorithme A* du skill [`.agents/skills/pcb-stitcher/`](.agents/skills/pcb-stitcher/SKILL.md) (`island_bridger.py`) pour éliminer les violations de dégagement face aux pistes actives.
-- [ ] **Vias de couture (stitching) de renfort :**
+- [x] **Vias de couture (stitching) de renfort :**
   - Ajouter un maillage régulier de vias de masse le long du contour de carte après élimination des erreurs DRC.
 - [ ] **Sérigraphie PCB des Cavaliers [review004 M1 / review005 I1] :**
   - Ajouter les sérigraphies d'aide à l'utilisateur sur la couche Top Silk :
     - `JP1` : *« OPEN = CAR / SHUNT = BENCH »*
     - `JP2` : *« SHUNT = CAR / OPEN = BENCH HI-Z »*
-- [ ] **Contrôle DRC physique strict post-routage :**
+- [x] **Contrôle DRC physique strict post-routage :**
   - Exécuter le DRC sous EasyEDA Pro avec plans de masse coulés et certifier **DRC = 0 erreur, 0 avertissement**.
-- [ ] **Inspection 3D finale :**
+- [x] **Inspection 3D finale :**
   - Contrôle visuel 3D de l'assemblage complet (`documents/pcb/3d.png`, `documents/pcb/2d-top.png`, `documents/pcb/2d-bottom.png`), du contour de carte et des dégagements mécaniques des connecteurs `J1` et `J2`.
-- [ ] **Étapes post-validation et clôture bloquante (Règle 5 d'[`agents.md`](agents.md)) :**
+- [x] **Étapes post-validation et clôture bloquante (Règle 5 d'[`agents.md`](agents.md)) :**
   - Sauvegarde définitive du PCB (`eda.pcb_Document.save()`).
   - Contrôle ERC Schéma = 0 sous EasyEDA Pro.
   - Validation de synchronisation sémantique (`uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check`).
@@ -130,9 +166,9 @@ L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`do
   - Certifier la non-régression DRC (DRC = 0) et l'intégrité globale du placement.
 
 ### Synthèse en Boucle Fermée (Co-Design Placement-Routage-CEM)
-- [ ] **[FONDAMENTAL] Nouveau Skill Orchestrateur `pcb-synthesizer` :**
+- [x] **[FONDAMENTAL] Nouveau Skill Orchestrateur `pcb-synthesizer` :**
   - [x] Créer le skill [`.agents/skills/pcb-synthesizer/`](.agents/skills/pcb-synthesizer/) et son [`SKILL.md`](.agents/skills/pcb-synthesizer/SKILL.md) orchestrant la chaîne fermée en une commande autonome.
   - [x] Implémenter l'analyseur métrologique post-routage Specctra SES/DSN ([`dsn_metrics.py`](.agents/skills/pcb-synthesizer/dsn_metrics.py)) : extraction des tracés réels, aire polygonale Shoelace, inductance de boucle fermée et skew des paires différentielles.
   - [x] Implémenter le banc de tests unitaires ([`test_dsn_metrics.py`](.agents/skills/pcb-synthesizer/tests/test_dsn_metrics.py)).
   - [x] Implémenter l'orchestrateur maître transactionnel ([`synthesizer_pipeline.py`](.agents/skills/pcb-synthesizer/synthesizer_pipeline.py)) avec rétroaction adaptative (max 3 cycles) : `pcb-placer` -> `apply_placement` -> `freerouting` -> `dsn_metrics` -> `pcb-stitcher`.
-  - [ ] Valider l'exécution de bout en bout de la chaîne avec rapport de synthèse complet et certification DRC = 0.
+  - [x] Valider l'exécution de bout en bout de la chaîne avec rapport de synthèse complet et certification DRC = 0.

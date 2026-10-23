@@ -62,12 +62,12 @@ class FreeRoutingPipeline:
         import urllib.request
         js_code = """
         const lines = await eda.pcb_PrimitiveLine.getAll();
-        const trackIds = lines ? lines.filter(l => l.net && (!l.primitiveLock)).map(l => l.primitiveId) : [];
+        const trackIds = lines ? lines.filter(l => (l.getState_Net && l.getState_Net()) && (!l.getState_PrimitiveLock || !l.getState_PrimitiveLock())).map(l => l.getState_PrimitiveId()) : [];
         if (trackIds.length > 0) {
             await eda.pcb_PrimitiveLine.delete(trackIds);
         }
         const vias = await eda.pcb_PrimitiveVia.getAll();
-        const viaIds = vias ? vias.map(v => v.primitiveId) : [];
+        const viaIds = vias ? vias.filter(v => !v.getState_PrimitiveLock || !v.getState_PrimitiveLock()).map(v => v.getState_PrimitiveId()) : [];
         if (viaIds.length > 0) {
             await eda.pcb_PrimitiveVia.delete(viaIds);
         }

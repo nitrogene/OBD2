@@ -615,8 +615,8 @@ class EasyEDAClient:
             const arcs = (await eda.pcb_PrimitiveArc.getAll?.()) || [];
             const vias = (await eda.pcb_PrimitiveVia.getAll?.()) || [];
 
-            const copperLines = lines.filter(l => (l.getState_Layer() === 1 || l.getState_Layer() === 2) && l.getState_Net());
-            const copperArcs = arcs.filter(a => (a.getState_Layer() === 1 || a.getState_Layer() === 2) && a.getState_Net());
+            const copperLines = lines.filter(l => Boolean(l.getState_Net && l.getState_Net()));
+            const copperArcs = arcs.filter(a => Boolean(a.getState_Net && a.getState_Net()));
 
             const lockedLines = copperLines.filter(l => l.getState_PrimitiveLock && l.getState_PrimitiveLock());
             const lockedArcs = copperArcs.filter(a => a.getState_PrimitiveLock && a.getState_PrimitiveLock());

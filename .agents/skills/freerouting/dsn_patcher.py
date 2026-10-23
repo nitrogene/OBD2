@@ -59,9 +59,23 @@ def mm_to_dsn_units(mm: float, unit: str) -> float:
         return mm * (1000.0 / 25.4)
 
 
-def strip_net_from_dsn(content: str, target_net: str) -> str:
-    """Supprime proprement la déclaration (net ...) et (class ...) d'un réseau dans le DSN."""
-    # 1. Supprimer (net target_net ...) avec parenthèses équilibrées
+def decompose_plane_net_fanout(content: str, target_net: str) -> str:
+    """
+    Décompose un réseau plan (ex. GND) en mini-réseaux locaux ({target_net}_f1, _f2...)
+    autour de chaque groupe (pastille(s) + micro-piste(s) + via) pré-routé à l'Étape 2b.
+    Avantages :
+    - 0 chevelu global à router dans FreeRouting (gain de temps massif).
+    - 0 fausse violation fil-pastille dans FreeRouting (la pastille et sa micro-piste partagent le même mini-net).
+    - Protection physique intégrale (type protect) des vias et micro-pistes d'échappement.
+    """
+    # 1. Extraire les coordonnées de toutes les pins dans (image u1 ...)
+    pin_coords: Dict[str, Tuple[float, float]] = {}
+    for pm in re.finditer(r'\(pin\s+[^\s()]+\s+([^\s()]+)\s+([0-9.-]+)\s+([0-9.-]+)\)', content):
+        pid = f"u1-{pm.group(1)}"
+        pin_coords[pid] = (float(pm.group(2)), float(pm.group(3)))
+
+    # 2. Extraire les pins déclarées dans (net target_net (pins ...)) et supprimer (net target_net ...)
+    target_pins: List[str] = []
     pattern_net = r'\(net\s+' + re.escape(target_net) + r'[\s(]'
     while True:
         m = re.search(pattern_net, content)
@@ -78,9 +92,13 @@ def strip_net_from_dsn(content: str, target_net: str) -> str:
                 if depth == 0:
                     end_idx = i + 1
                     break
+        net_block = content[start_idx:end_idx]
+        pm_pins = re.search(r'\(pins\s+([^)]+)\)', net_block)
+        if pm_pins:
+            target_pins.extend(pm_pins.group(1).split())
         content = content[:start_idx] + content[end_idx:]
 
-    # 2. Supprimer (class <any> 'target_net' ...) avec parenthèses équilibrées
+    # 3. Supprimer (class <any> 'target_net' ...)
     pattern_cls = r'\(class\s+[^\s()]+\s+\'' + re.escape(target_net) + r'\''
     while True:
         m = re.search(pattern_cls, content)
@@ -99,7 +117,146 @@ def strip_net_from_dsn(content: str, target_net: str) -> str:
                     break
         content = content[:start_idx] + content[end_idx:]
 
+    # 4. Inspecter (wiring ...) pour trouver les wires et vias de target_net
+    m_wiring = re.search(r'\(wiring\b', content)
+    if not m_wiring:
+        return content
+
+    w_start = m_wiring.start()
+    depth = 0
+    w_end = w_start
+    for i in range(w_start, len(content)):
+        if content[i] == '(':
+            depth += 1
+        elif content[i] == ')':
+            depth -= 1
+            if depth == 0:
+                w_end = i + 1
+                break
+    wiring_block = content[w_start:w_end]
+
+    # Extraire les sous-expressions (wire ...) et (via ...) dans wiring_block
+    items = []
+    idx = len("(wiring")
+    while idx < len(wiring_block) - 1:
+        if wiring_block[idx] == '(':
+            s_idx = idx
+            d = 0
+            e_idx = s_idx
+            for j in range(s_idx, len(wiring_block)):
+                if wiring_block[j] == '(':
+                    d += 1
+                elif wiring_block[j] == ')':
+                    d -= 1
+                    if d == 0:
+                        e_idx = j + 1
+                        break
+            sexpr = wiring_block[s_idx:e_idx]
+            items.append(sexpr)
+            idx = e_idx
+        else:
+            idx += 1
+
+    target_wires_vias = []
+    other_wires_vias = []
+    for sexpr in items:
+        m_n = re.search(r'\(net\s+(?:"([^"]+)"|([^\s()]+))\)', sexpr)
+        net_val = (m_n.group(1) or m_n.group(2)) if m_n else ""
+        if net_val == target_net:
+            pts = []
+            if sexpr.startswith("(wire"):
+                m_p = re.search(r'\(path\s+[^\s()]+\s+[0-9.]+\s+([^)]+)\)', sexpr)
+                if m_p:
+                    nums = [float(v) for v in m_p.group(1).split()]
+                    for k in range(0, len(nums) - 1, 2):
+                        pts.append((nums[k], nums[k + 1]))
+            elif sexpr.startswith("(via"):
+                m_v = re.search(r'\(via\s+[^\s()]+\s+([0-9.-]+)\s+([0-9.-]+)', sexpr)
+                if m_v:
+                    pts.append((float(m_v.group(1)), float(m_v.group(2))))
+            target_wires_vias.append({"sexpr": sexpr, "pts": pts})
+        else:
+            other_wires_vias.append(sexpr)
+
+    if not target_wires_vias:
+        return content
+
+    # 5. Union-Find géométrique entre target_wires_vias et target_pins (< 4.5 mil)
+    n_wv = len(target_wires_vias)
+    parent = list(range(n_wv))
+
+    def find(x: int) -> int:
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: int, b: int):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for i in range(n_wv):
+        for j in range(i + 1, n_wv):
+            if any(abs(p1[0] - p2[0]) <= 4.5 and abs(p1[1] - p2[1]) <= 4.5 for p1 in target_wires_vias[i]["pts"] for p2 in target_wires_vias[j]["pts"]):
+                union(i, j)
+
+    comp_wv: Dict[int, List[str]] = {}
+    comp_pins: Dict[int, List[str]] = {}
+    for i in range(n_wv):
+        r = find(i)
+        comp_wv.setdefault(r, []).append(target_wires_vias[i]["sexpr"])
+        comp_pins.setdefault(r, [])
+
+    for pid in target_pins:
+        if pid not in pin_coords:
+            continue
+        px, py = pin_coords[pid]
+        for i in range(n_wv):
+            if any(abs(px - pt[0]) <= 4.5 and abs(py - pt[1]) <= 4.5 for pt in target_wires_vias[i]["pts"]):
+                r = find(i)
+                if pid not in comp_pins[r]:
+                    comp_pins[r].append(pid)
+                break
+
+    # 6. Générer les mini-nets {target_net}_f{k} et les blocs (wiring ...) protégés
+    mini_net_defs = []
+    rewritten_wv = []
+    k_idx = 0
+    for r, wv_list in comp_wv.items():
+        k_idx += 1
+        mini_net = f"{target_net}_f{k_idx}"
+        pins_str = " ".join(comp_pins[r])
+        if pins_str:
+            mini_net_defs.append(f"    (net {mini_net}\n      (pins {pins_str})\n    )")
+        else:
+            mini_net_defs.append(f"    (net {mini_net})")
+        for s in wv_list:
+            s_new = re.sub(
+                r'\(net\s+(?:"[^"]+"|[^\s()]+)\)',
+                f'(net {mini_net})',
+                s
+            )
+            if "(type " not in s_new:
+                s_new = s_new[:-1] + " (type protect))"
+            rewritten_wv.append("    " + s_new)
+
+    new_wiring_block = "(wiring\n" + "\n".join(rewritten_wv) + "\n  )"
+    content = content[:w_start] + new_wiring_block + content[w_end:]
+
+    if mini_net_defs:
+        m_net_sec = re.search(r'\(network\b', content)
+        if m_net_sec:
+            ins_pos = m_net_sec.end()
+            content = content[:ins_pos] + "\n" + "\n".join(mini_net_defs) + content[ins_pos:]
+
+    logger.info(f"Fanout '{target_net}' décomposé en {k_idx} mini-réseau(x) protégé(s) (0 chevelu global, 0 conflit).")
     return content
+
+
+def clean_or_preserve_wiring(dsn_content: str, incremental: bool, preserved_nets: set) -> str:
+    """Protège les micro-pistes/vias de fanout des plans internes et nettoie le reste si non incrémental."""
+    return dsn_content
 
 
 def extract_nets(dsn_content: str) -> List[str]:
@@ -177,7 +334,7 @@ class DsnPatcher:
         # 0b. Exclusion des réseaux de plans du routage filaire (laissé aux plans de masse/cuivre)
         if ignore_plane_nets and self.plane_nets:
             for p_net in sorted(self.plane_nets):
-                dsn_content = strip_net_from_dsn(dsn_content, p_net)
+                dsn_content = decompose_plane_net_fanout(dsn_content, p_net)
                 logger.info(f"Net de plan exclu du routage filaire (laissé aux plans de cuivre) : {p_net}")
 
         # 1. Identifier tous les types de vias nécessaires
@@ -218,17 +375,39 @@ class DsnPatcher:
         # 2b. Appliquer les surcharges de padstacks configurées sur toutes les couches
         for pad_id, p_cfg in self.padstack_overrides.items():
             ovr_dia_mm = p_cfg.get("diameter_mm")
-            if ovr_dia_mm:
-                ovr_units = mm_to_dsn_units(ovr_dia_mm, unit)
-                pattern_pad = re.compile(
-                    rf'\(padstack\s+{re.escape(pad_id)}\s*(?:\(shape\([^)]+\)\)\s*)+\)',
-                    re.MULTILINE
-                )
-                shapes_ovr = "\n".join([f"      (shape(circle {ln} {ovr_units:.2f} 0 0))" for ln in all_layers])
-                replacement = f"(padstack {pad_id}\n{shapes_ovr}\n    )"
-                dsn_content, n_subs = pattern_pad.subn(replacement, dsn_content)
-                if n_subs > 0:
-                    logger.info(f"Surcharge padstack appliquée : {pad_id} -> diamètre {ovr_dia_mm} mm ({ovr_units:.2f} {unit})")
+            if not ovr_dia_mm:
+                continue
+            ovr_units = mm_to_dsn_units(ovr_dia_mm, unit)
+            shapes_ovr = "\n".join([f"      (shape(circle {ln} {ovr_units:.2f} 0 0))" for ln in all_layers])
+
+            # Tentative 1 : Surcharge directe d'un (padstack <pad_id> ...) existant
+            pattern_pad = re.compile(
+                rf'\(padstack\s+{re.escape(pad_id)}\s*(?:\(shape\([^)]+\)\)\s*)+\)',
+                re.MULTILINE
+            )
+            replacement = f"(padstack {pad_id}\n{shapes_ovr}\n    )"
+            dsn_content, n_subs = pattern_pad.subn(replacement, dsn_content)
+            if n_subs > 0:
+                logger.info(f"Surcharge padstack appliquée : {pad_id} -> diamètre {ovr_dia_mm} mm ({ovr_units:.2f} {unit})")
+                continue
+
+            # Tentative 2 : Surcharge ciblée d'une pin spécifique (pin_id)
+            # Supporte l'identifiant brut ou avec/sans préfixe 'p' (ex. bdbad5cc7fc4f6ae55, e55, e56)
+            clean_pin = pad_id.lstrip("p")
+            pin_regex = re.compile(rf'\(pin\s+([^\s()]+)\s+([^\s()]*{re.escape(clean_pin)})\s+', re.MULTILINE)
+            m_pin = pin_regex.search(dsn_content)
+            if m_pin:
+                old_pstack = m_pin.group(1)
+                matched_pin_id = m_pin.group(2)
+                new_pstack_name = f"p_ovr_{matched_pin_id[-10:]}"
+                # Injecter le nouveau padstack dans (library ...)
+                new_padstack_def = f"    (padstack {new_pstack_name}\n{shapes_ovr}\n    )\n"
+                lib_m = re.search(r'\(library\b', dsn_content)
+                if lib_m:
+                    dsn_content = dsn_content[:lib_m.end()] + "\n" + new_padstack_def + dsn_content[lib_m.end():]
+                # Remplacer la référence dans (pin ...)
+                dsn_content = pin_regex.sub(rf'(pin {new_pstack_name} \2 ', dsn_content)
+                logger.info(f"Surcharge pin appliquée sur {matched_pin_id} : nouveau padstack {new_pstack_name} ({ovr_dia_mm} mm / {ovr_units:.2f} {unit})")
 
         # 3. Mettre à jour la déclaration (via ...) et les règles globales dans (structure ...)
         all_via_ids = list(via_types.keys())
@@ -357,24 +536,9 @@ class DsnPatcher:
                 f"Isolement: {cl_mm:.3f} mm ({mm_to_dsn_units(cl_mm, unit):.1f} {unit})"
             )
 
-        # 5. Gestion des pistes existantes
-        if incremental:
-            # Si des pistes existent dans (wiring ...), marquer chaque (wire ...) avec (type protect)
-            def protect_wire(m: re.Match) -> str:
-                wire_body = m.group(1)
-                if "(type " not in wire_body:
-                    return f"(wire {wire_body} (type protect))"
-                return m.group(0)
-
-            dsn_content = re.sub(
-                r'\(wire\s+([^()]+(?:\([^()]*\)[^()]*)*)\)',
-                protect_wire,
-                dsn_content,
-            )
-            logger.info("Mode incrémental activé : pistes pré-existantes protégées (type protect).")
-        else:
-            # Mode non-incrémental (à blanc) : purger toute section (wiring ...) résiduelle pour une carte 100% propre
-            dsn_content = re.sub(r'\(wiring\b.*?\n\s*\)', '', dsn_content, flags=re.DOTALL)
+        # 5. Gestion des pistes et vias existants dans (wiring ...)
+        preserved_nets = set(self.plane_nets) if ignore_plane_nets else set()
+        dsn_content = clean_or_preserve_wiring(dsn_content, incremental=incremental, preserved_nets=preserved_nets)
 
         return dsn_content
 

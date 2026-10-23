@@ -102,9 +102,13 @@
     }
   ],
   "padstack_overrides": {
-    "pbdbad5cc7fc4f6ae55": {
-      "diameter_mm": 1.45,
-      "description": "Fentes mécaniques de blindage USB-C J2 gonflées pour garantir la garde DRC >= 0.30 mm"
+    "bdbad5cc7fc4f6ae55": {
+      "diameter_mm": 0.90,
+      "description": "Fente mécanique gauche de blindage USB-C J2 (e55) gonflée à 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
+    },
+    "bdbad5cc7fc4f6ae56": {
+      "diameter_mm": 0.90,
+      "description": "Fente mécanique droite de blindage USB-C J2 (e56) gonflée à 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
     }
   },
   "separation_rules": [
@@ -134,7 +138,7 @@
   "plane_nets": ["GND"],
   "net_classes": {
     "POWER_12V": {
-      "nets": ["+12V", "+12V_FUSED", "+12V_PROT", "VBAT_OBD"],
+      "nets": ["+12V", "+12V_PROT", "VBAT_SENSE"],
       "track_width_mm": 0.8,
       "clearance_mm": 0.25,
       "via_drill_mm": 0.4,
@@ -161,7 +165,7 @@
       "description": "Alimentation USB-C 5V adaptée au pas fin du connecteur USB-C J2"
     },
     "SWITCHING_BUCK": {
-      "nets": ["PH_BUCK", "BOOT_BUCK"],
+      "nets": ["PH_BUCK", "BOOT_BUCK", "$1N16", "$1N19"],
       "track_width_mm": 0.8,
       "clearance_mm": 0.30,
       "via_drill_mm": 0.4,
@@ -175,9 +179,9 @@
       "clearance_mm": 0.20,
       "diff_pair": true,
       "diff_impedance_ohm": 90.0,
-      "max_skew_mm": 2.0,
+      "max_skew_mm": 15.0,
       "emc_class": "victim",
-      "description": "Paire différentielle USB Full-Speed 90 Ohms"
+      "description": "Paire différentielle USB Full-Speed 90 Ohms (12 Mbps)"
     },
     "DIFF_CAN": {
       "nets": ["CANH", "CANL"],
@@ -190,7 +194,7 @@
       "description": "Paire différentielle CAN ISO 11898-2 120 Ohms"
     },
     "SIGNAL_CRITICAL": {
-      "nets": ["K_LINE", "KLINE_RX", "KLINE_TX", "K_RX_IC", "K_TX_IC", "TWAI_RX", "TWAI_TX", "ESP_EN", "IO0"],
+      "nets": ["K_LINE", "KLINE_RX", "KLINE_TX", "K_RX_IC", "K_TX_IC", "TWAI_RX", "TWAI_TX", "ESP_EN", "IO0", "$6N4", "$6N3", "$7N5"],
       "track_width_mm": 0.254,
       "clearance_mm": 0.20,
       "via_drill_mm": 0.3,

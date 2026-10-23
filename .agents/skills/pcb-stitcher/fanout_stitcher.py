@@ -58,15 +58,51 @@ def fetch_pcb_layout(port: int = 49620) -> Dict[str, Any]:
             y: v.getState_Y(),
             diameter: v.getState_Diameter ? v.getState_Diameter() : 24
         })),
-        pads: pads.map(p => ({
-            id: p.getState_PrimitiveId(),
-            net: p.getState_Net(),
-            layer: p.getState_Layer(),
-            x: p.getState_X(),
-            y: p.getState_Y(),
-            width: p.getState_Width ? p.getState_Width() : 40,
-            height: p.getState_Height ? p.getState_Height() : 40
-        }))
+        pads: pads.map(p => {
+            const padShape = p.getState_Pad ? p.getState_Pad() : null;
+            const holeShape = p.getState_Hole ? p.getState_Hole() : null;
+            const rot = p.getState_Rotation ? (p.getState_Rotation() || 0) : 0;
+            let w = 40, h = 40;
+            if (Array.isArray(padShape)) {
+                if (typeof padShape[1] === 'number') {
+                    w = padShape[1];
+                    h = (typeof padShape[2] === 'number' && padShape[0] !== 'REGULAR_POLYGON') ? padShape[2] : w;
+                } else if (Array.isArray(padShape[1])) {
+                    const pts = padShape[1].flat(2).filter(v => typeof v === 'number');
+                    if (pts.length >= 4) {
+                        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                        for (let i = 0; i + 1 < pts.length; i += 2) {
+                            if (pts[i] < minX) minX = pts[i];
+                            if (pts[i] > maxX) maxX = pts[i];
+                            if (pts[i+1] < minY) minY = pts[i+1];
+                            if (pts[i+1] > maxY) maxY = pts[i+1];
+                        }
+                        if (isFinite(minX) && maxX > minX) w = maxX - minX;
+                        if (isFinite(minY) && maxY > minY) h = maxY - minY;
+                    }
+                }
+            }
+            let drill = 0;
+            if (Array.isArray(holeShape) && typeof holeShape[1] === 'number') {
+                drill = holeShape[1];
+                w = Math.max(w, holeShape[1] + 12);
+                h = Math.max(h, (typeof holeShape[2] === 'number' ? holeShape[2] : holeShape[1]) + 12);
+            }
+            const rNorm = ((rot % 180) + 180) % 180;
+            if (rNorm >= 45 && rNorm <= 135) {
+                const tmp = w; w = h; h = tmp;
+            }
+            return {
+                id: p.getState_PrimitiveId(),
+                net: p.getState_Net(),
+                layer: p.getState_Layer(),
+                x: p.getState_X(),
+                y: p.getState_Y(),
+                width: w,
+                height: h,
+                drill: drill
+            };
+        })
     };
     """
     req = urllib.request.Request(
@@ -94,6 +130,8 @@ def solve_pad_fanout(
     px = pad["x"]
     py = pad["y"]
     play = pad.get("layer", 1)
+    if play not in (1, 2):
+        play = 1
 
     best_cand = None
     best_score = -1e9
@@ -169,27 +207,85 @@ def run_fanout_stitcher(
     target_pads = [p for p in pads if p.get("net") == target_net and p.get("layer") in (1, 2)]
     target_vias = [v for v in vias if v.get("net") == target_net]
 
-    logger.info(f"Trouvé {len(target_pads)} pastilles CMS et {len(target_vias)} vias pour le net '{target_net}'.")
+    logger.info(f"Trouvé {len(target_pads)} pastilles et {len(target_vias)} vias pour le net '{target_net}'.")
 
-    # Si only_disconnected est actif, récupérer les IDs des pastilles en erreur DRC
+    # Si only_disconnected est actif, purger d'abord tout via/piste de target_net en conflit DRC
+    # puis récupérer les IDs des pastilles en erreur de connexion DRC
     drc_pad_ids = set()
     if only_disconnected:
         js_drc = f"""
         const groups = await eda.pcb_Drc.check(true, false, true) || [];
-        const ids = [];
+        const allVias = await eda.pcb_PrimitiveVia.getAll() || [];
+        const allLines = await eda.pcb_PrimitiveLine.getAll() || [];
+        const viaMap = new Map(allVias.map(v => [v.getState_PrimitiveId(), v]));
+        const lineMap = new Map(allLines.map(l => [l.getState_PrimitiveId(), l]));
+        const badViaIds = new Set();
+        const badLineIds = new Set();
+
         for (const cat of groups) {{
-            if (cat.name === 'Connection Error') {{
-                for (const netGroup of (cat.list || [])) {{
-                    if (netGroup.name === '{target_net}') {{
-                        for (const item of (netGroup.list || [])) {{
-                            const primId = (item.objs && item.objs[0]) || item.explanation?.errData?.obj1;
-                            if (primId) ids.push(primId);
+            if (cat.name === 'Clearance Error') {{
+                for (const sub of (cat.list || [])) {{
+                    for (const item of (sub.list || [])) {{
+                        const objs = item.objs || [item.explanation?.errData?.obj1, item.explanation?.errData?.obj2].filter(Boolean);
+                        for (const oid of objs) {{
+                            const v = viaMap.get(oid);
+                            if (v && v.getState_Net() === '{target_net}') badViaIds.add(oid);
+                            const l = lineMap.get(oid);
+                            if (l && l.getState_Net() === '{target_net}') badLineIds.add(oid);
                         }}
                     }}
                 }}
             }}
         }}
-        return ids;
+
+        if (badViaIds.size > 0 || badLineIds.size > 0) {{
+            for (const vid of badViaIds) {{
+                const v = viaMap.get(vid);
+                const vx = v.getState_X(), vy = v.getState_Y();
+                for (const l of allLines) {{
+                    if (l.getState_Net() === '{target_net}') {{
+                        const d1 = Math.hypot(l.getState_StartX() - vx, l.getState_StartY() - vy);
+                        const d2 = Math.hypot(l.getState_EndX() - vx, l.getState_EndY() - vy);
+                        if (d1 < 3.0 || d2 < 3.0) badLineIds.add(l.getState_PrimitiveId());
+                    }}
+                }}
+            }}
+            for (const lid of Array.from(badLineIds)) {{
+                const l = lineMap.get(lid);
+                if (!l) continue;
+                for (const v of allVias) {{
+                    if (v.getState_Net() === '{target_net}') {{
+                        const d1 = Math.hypot(l.getState_StartX() - v.getState_X(), l.getState_StartY() - v.getState_Y());
+                        const d2 = Math.hypot(l.getState_EndX() - v.getState_X(), l.getState_EndY() - v.getState_Y());
+                        if (d1 < 3.0 || d2 < 3.0) badViaIds.add(v.getState_PrimitiveId());
+                    }}
+                }}
+            }}
+            if (badViaIds.size > 0) await eda.pcb_PrimitiveVia.delete(Array.from(badViaIds));
+            if (badLineIds.size > 0) await eda.pcb_PrimitiveLine.delete(Array.from(badLineIds));
+            const pours = await eda.pcb_PrimitivePour.getAll() || [];
+            for (const p of pours) {{
+                if (p.rebuildCopperRegion) await p.rebuildCopperRegion();
+            }}
+        }}
+
+        const groupsAfter = (badViaIds.size > 0 || badLineIds.size > 0) ? (await eda.pcb_Drc.check(true, false, true) || []) : groups;
+        const ids = [];
+        for (const cat of groupsAfter) {{
+            if (cat.name === 'Connection Error') {{
+                for (const netGroup of (cat.list || [])) {{
+                    if (netGroup.name === '{target_net}') {{
+                        for (const item of (netGroup.list || [])) {{
+                            const objs = item.objs || [item.explanation?.errData?.obj1, item.explanation?.errData?.obj2].filter(Boolean);
+                            for (const primId of objs) {{
+                                if (primId) ids.push(primId);
+                            }}
+                        }}
+                    }}
+                }}
+            }}
+        }}
+        return {{ ids, deletedBadVias: badViaIds.size + badLineIds.size }};
         """
         req_drc = urllib.request.Request(
             f"http://localhost:{port}/execute",
@@ -197,18 +293,32 @@ def run_fanout_stitcher(
             headers={"Content-Type": "application/json"}
         )
         try:
-            with urllib.request.urlopen(req_drc, timeout=30.0) as resp:
-                drc_pad_ids = set(json.loads(resp.read().decode("utf-8")).get("result", []))
+            with urllib.request.urlopen(req_drc, timeout=45.0) as resp:
+                res_drc_obj = json.loads(resp.read().decode("utf-8")).get("result", {})
+                if isinstance(res_drc_obj, dict):
+                    drc_pad_ids = set(res_drc_obj.get("ids", []))
+                    if res_drc_obj.get("deletedBadVias", 0) > 0:
+                        logger.info(f"Auto-correction DRC : {res_drc_obj['deletedBadVias']} primitive(s) en violation Clearance supprimée(s) et recalculée(s).")
+                        data = fetch_pcb_layout(port=port)
+                        lines = data["lines"]
+                        vias = data["vias"]
+                        pads = data["pads"]
+                        env = ObstacleEnvironment(lines=lines, vias=vias, pads=pads)
+                        target_pads = [p for p in pads if p.get("net") == target_net and p.get("layer") in (1, 2)]
+                        target_vias = [v for v in vias if v.get("net") == target_net]
+                else:
+                    drc_pad_ids = set(res_drc_obj)
         except Exception as e:
             logger.warning(f"Impossible de récupérer le DRC pour le filtre : {e}")
 
-    # Détecter les pastilles qui ont déjà un via à proximité (< 35 mil) ou une ligne connectée
+    # Détecter les pastilles qui ont déjà un via superposé (< 5 mil) ou une ligne connectée
     unescaped = []
     for p in target_pads:
         if only_disconnected and p["id"] not in drc_pad_ids:
             continue
         px, py = p["x"], p["y"]
-        has_via = any(math.hypot(v["x"] - px, v["y"] - py) < 35.0 for v in target_vias)
+        # Une pastille CMS n'est connectée à la masse que si un via est directement sous elle ou relié par une piste
+        has_via = any(math.hypot(v["x"] - px, v["y"] - py) < 5.0 for v in target_vias)
         has_line = any(
             (math.hypot(l["x1"] - px, l["y1"] - py) < 2.0 or math.hypot(l["x2"] - px, l["y2"] - py) < 2.0)
             and l.get("net") == target_net for l in lines
@@ -220,11 +330,35 @@ def run_fanout_stitcher(
 
     solutions = []
     for p in unescaped:
-        # Vérification si un via du même net a déjà été posé tout près par une pastille précédente
         px, py = p["x"], p["y"]
-        nearby_via = any(math.hypot(v["x"] - px, v["y"] - py) < 30.0 for v in env.vias if v.get("net") == target_net)
-        if nearby_via:
-            logger.info(f"  -> Pad {p['id']} mutualisé avec un via de masse voisin existant (distance < 30 mil).")
+        play = p.get("layer", 1)
+        if play not in (1, 2):
+            play = 1
+
+        # Détection d'un via (< 40 mil) ou d'une pastille traversante THT layer 12 (< 65 mil) du même net pour mutualisation sans via doublon
+        v_candidates = [
+            v for v in env.vias if v.get("net") == target_net and math.hypot(v["x"] - px, v["y"] - py) < 40.0
+        ] + [
+            tp for tp in env.pads if tp.get("net") == target_net and tp.get("layer") == 12 and tp.get("id") != p["id"] and math.hypot(tp["x"] - px, tp["y"] - py) < 65.0
+        ]
+        v_candidates.sort(key=lambda v: math.hypot(v["x"] - px, v["y"] - py))
+        shared_found = False
+        for v_cand in v_candidates:
+            if env.is_segment_clear(px, py, v_cand["x"], v_cand["y"], play, track_width_mil, clearance_mil, target_net=target_net):
+                logger.info(f"  -> Pad {p['id']} mutualisé avec ancrage THT/via à ({v_cand['x']:.1f}, {v_cand['y']:.1f}) mil (micro-piste directe sans via doublon).")
+                solutions.append({
+                    "pad_id": p["id"],
+                    "pad_pos": (px, py),
+                    "pad_layer": play,
+                    "via_pos": (v_cand["x"], v_cand["y"]),
+                    "shared_via": True,
+                    "distance_mil": math.hypot(v_cand["x"] - px, v_cand["y"] - py),
+                    "margin_score_mil": 10.0
+                })
+                shared_found = True
+                break
+
+        if shared_found:
             continue
 
         sol = solve_pad_fanout(
@@ -235,6 +369,7 @@ def run_fanout_stitcher(
             via_radius_mil=via_radius_mil
         )
         if sol:
+            sol["shared_via"] = False
             solutions.append(sol)
             # Mise à jour incrémentale immédiate de l'environnement pour éviter tout doublon trou-à-trou
             env.vias.append({
@@ -243,9 +378,46 @@ def run_fanout_stitcher(
                 "diameter": via_radius_mil * 2.0,
                 "net": target_net
             })
+            env.lines.append({
+                "x1": px, "y1": py,
+                "x2": sol["via_pos"][0], "y2": sol["via_pos"][1],
+                "layer": play,
+                "width": track_width_mil,
+                "net": target_net
+            })
             logger.info(f"  -> Solution trouvée pour pad {sol['pad_id']} à ({sol['via_pos'][0]:.1f}, {sol['via_pos'][1]:.1f}) mil (marge: {sol['margin_score_mil']:.1f} mil)")
         else:
-            logger.warning(f"  -> Aucun spot de via valide pour pad {p['id']} à ({p['x']:.1f}, {p['y']:.1f}) mil.")
+            # Fallback : liaison directe vers un via ou une pastille traversante (layer 12) du même net à proximité (< 75 mil)
+            tht_or_vias = [
+                v for v in env.vias if v.get("net") == target_net and math.hypot(v["x"] - px, v["y"] - py) < 75.0
+            ] + [
+                tp for tp in env.pads if tp.get("net") == target_net and tp.get("layer") == 12 and tp.get("id") != p["id"] and math.hypot(tp["x"] - px, tp["y"] - py) < 75.0
+            ]
+            tht_or_vias.sort(key=lambda item: math.hypot(item["x"] - px, item["y"] - py))
+            fallback_connected = False
+            for anchor in tht_or_vias:
+                if env.is_segment_clear(px, py, anchor["x"], anchor["y"], play, track_width_mil, clearance_mil, target_net=target_net):
+                    logger.info(f"  -> Pad {p['id']} raccordé par micro-piste directe à l'ancrage THT/via ({anchor['x']:.1f}, {anchor['y']:.1f}) mil.")
+                    solutions.append({
+                        "pad_id": p["id"],
+                        "pad_pos": (px, py),
+                        "pad_layer": play,
+                        "via_pos": (anchor["x"], anchor["y"]),
+                        "shared_via": True,
+                        "distance_mil": math.hypot(anchor["x"] - px, anchor["y"] - py),
+                        "margin_score_mil": 8.0
+                    })
+                    env.lines.append({
+                        "x1": px, "y1": py,
+                        "x2": anchor["x"], "y2": anchor["y"],
+                        "layer": play,
+                        "width": track_width_mil,
+                        "net": target_net
+                    })
+                    fallback_connected = True
+                    break
+            if not fallback_connected:
+                logger.warning(f"  -> Aucun spot de via valide pour pad {p['id']} à ({p['x']:.1f}, {p['y']:.1f}) mil.")
 
     if apply and solutions:
         logger.info(f"Injection de {len(solutions)} vias et pistes d'échappement dans EasyEDA Pro...")
@@ -261,9 +433,11 @@ def run_fanout_stitcher(
             const vy = s.via_pos[1];
             const px = s.pad_pos[0];
             const py = s.pad_pos[1];
-            const lay = s.pad_layer;
+            const lay = (s.pad_layer === 1 || s.pad_layer === 2) ? s.pad_layer : 1;
 
-            await eda.pcb_PrimitiveVia.create(net, vx, vy, drill, dia);
+            if (!s.shared_via) {
+                await eda.pcb_PrimitiveVia.create(net, vx, vy, drill, dia);
+            }
             await eda.pcb_PrimitiveLine.create(net, lay, px, py, vx, vy, width);
         }
 

@@ -38,6 +38,26 @@ def import_ses_into_easyeda(
     with open(ses_path, "r", encoding="utf-8") as f:
         ses_content = f.read()
 
+    # Purger les mini-réseaux temporaires de fanout (*_f1, *_f2...) déjà présents sur le PCB
+    import re
+    pattern_f = re.compile(r'\(net\s+(?:"[^"]+_f\d+"|[^\s()]+_f\d+)\b')
+    while True:
+        m = pattern_f.search(ses_content)
+        if not m:
+            break
+        s_idx = m.start()
+        depth = 0
+        e_idx = s_idx
+        for i in range(s_idx, len(ses_content)):
+            if ses_content[i] == '(':
+                depth += 1
+            elif ses_content[i] == ')':
+                depth -= 1
+                if depth == 0:
+                    e_idx = i + 1
+                    break
+        ses_content = ses_content[:s_idx] + ses_content[e_idx:]
+
     logger.info(f"Préparation de l'import SES ({len(ses_content)} octets) vers EasyEDA Pro...")
 
     # Injection JS dans EasyEDA Pro

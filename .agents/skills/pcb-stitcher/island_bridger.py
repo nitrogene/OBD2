@@ -37,6 +37,7 @@ logger = logging.getLogger("pcb_stitcher.island_bridger")
 
 def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) -> Dict[str, Any]:
     """Récupère les primitives du PCB et les éléments non connectés du net cible via DRC."""
+    target_net_js = json.dumps(target_net or "")
     js_code = """
     const lines = await eda.pcb_PrimitiveLine.getAll();
     const vias = await eda.pcb_PrimitiveVia.getAll();
@@ -44,13 +45,14 @@ def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) ->
 
     const groups = await eda.pcb_Drc.check(true, false, true) || [];
     const drcDisconnected = [];
+    const targetNet = %s;
     for (const cat of groups) {
         if (cat.name === 'Connection Error') {
             for (const netGroup of (cat.list || [])) {
-                if (netGroup.name === '{target_net}') {
+                if (!targetNet || netGroup.name === targetNet) {
                     for (const item of (netGroup.list || [])) {
                         const primId = (item.objs && item.objs[0]) || (item.explanation?.errData?.obj1);
-                        const net = item.net || item.explanation?.errData?.net || '{target_net}';
+                        const net = item.net || item.explanation?.errData?.net || targetNet;
                         drcDisconnected.push({
                             id: primId,
                             net: net,
@@ -83,18 +85,54 @@ def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) ->
             y: v.getState_Y(),
             diameter: v.getState_Diameter ? v.getState_Diameter() : 24
         })),
-        pads: pads.map(p => ({
-            id: p.getState_PrimitiveId(),
-            net: p.getState_Net(),
-            layer: p.getState_Layer(),
-            x: p.getState_X(),
-            y: p.getState_Y(),
-            width: p.getState_Width ? p.getState_Width() : 40,
-            height: p.getState_Height ? p.getState_Height() : 40
-        })),
+        pads: pads.map(p => {
+            const padShape = p.getState_Pad ? p.getState_Pad() : null;
+            const holeShape = p.getState_Hole ? p.getState_Hole() : null;
+            const rot = p.getState_Rotation ? (p.getState_Rotation() || 0) : 0;
+            let w = 40, h = 40;
+            if (Array.isArray(padShape)) {
+                if (typeof padShape[1] === 'number') {
+                    w = padShape[1];
+                    h = (typeof padShape[2] === 'number' && padShape[0] !== 'REGULAR_POLYGON') ? padShape[2] : w;
+                } else if (Array.isArray(padShape[1])) {
+                    const pts = padShape[1].flat(2).filter(v => typeof v === 'number');
+                    if (pts.length >= 4) {
+                        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                        for (let i = 0; i + 1 < pts.length; i += 2) {
+                            if (pts[i] < minX) minX = pts[i];
+                            if (pts[i] > maxX) maxX = pts[i];
+                            if (pts[i+1] < minY) minY = pts[i+1];
+                            if (pts[i+1] > maxY) maxY = pts[i+1];
+                        }
+                        if (isFinite(minX) && maxX > minX) w = maxX - minX;
+                        if (isFinite(minY) && maxY > minY) h = maxY - minY;
+                    }
+                }
+            }
+            let drill = 0;
+            if (Array.isArray(holeShape) && typeof holeShape[1] === 'number') {
+                drill = holeShape[1];
+                w = Math.max(w, holeShape[1] + 12);
+                h = Math.max(h, (typeof holeShape[2] === 'number' ? holeShape[2] : holeShape[1]) + 12);
+            }
+            const rNorm = ((rot % 180) + 180) % 180;
+            if (rNorm >= 45 && rNorm <= 135) {
+                const tmp = w; w = h; h = tmp;
+            }
+            return {
+                id: p.getState_PrimitiveId(),
+                net: p.getState_Net(),
+                layer: p.getState_Layer(),
+                x: p.getState_X(),
+                y: p.getState_Y(),
+                width: w,
+                height: h,
+                drill: drill
+            };
+        }),
         drcDisconnected
     };
-    """
+    """ % target_net_js
     req = urllib.request.Request(
         f"http://localhost:{port}/execute",
         data=json.dumps({"code": js_code}).encode("utf-8"),
@@ -299,8 +337,6 @@ def run_island_bridger(
 
     env = ObstacleEnvironment(lines=lines, vias=vias, pads=pads)
 
-    env = ObstacleEnvironment(lines=lines, vias=vias, pads=pads)
-
     # 1. Construction du graphe de connexions pour le net cible
     drc_ids = {d["id"] for d in drc_items}
     nodes = {}
@@ -348,7 +384,7 @@ def run_island_bridger(
         if any(nodes[nid]["is_drc"] for nid in comp):
             drc_islands.append(comp)
         else:
-            clean_nodes.extend([nid for nid in comp if nodes[nid]["type"] == "via"])
+            clean_nodes.extend([nid for nid in comp if nodes[nid]["type"] == "via" or nodes[nid]["lay"] == 12])
 
     logger.info(f"Topologie du net '{target_net}' : {len(components)} composantes au total.")
     logger.info(f"  - Îlots isolés nécessitant raccordement : {len(drc_islands)}")

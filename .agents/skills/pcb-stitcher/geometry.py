@@ -49,6 +49,32 @@ def dist_segment_to_segment(
     )
 
 
+def dist_point_to_rect(qx: float, qy: float, rx: float, ry: float, hw: float, hh: float) -> float:
+    """Distance euclidienne minimale exacte entre un point (qx, qy) et le bord d'un rectangle centré en (rx, ry)."""
+    dx = max(0.0, abs(qx - rx) - hw)
+    dy = max(0.0, abs(qy - ry) - hh)
+    return math.hypot(dx, dy)
+
+
+def dist_segment_to_rect(
+    x1: float, y1: float, x2: float, y2: float,
+    rx: float, ry: float, hw: float, hh: float
+) -> float:
+    """Distance euclidienne minimale exacte entre un segment [(x1,y1), (x2,y2)] et un rectangle [rx±hw, ry±hh]."""
+    x_l, x_r = rx - hw, rx + hw
+    y_b, y_t = ry - hh, ry + hh
+    if (x_l <= x1 <= x_r and y_b <= y1 <= y_t) or (x_l <= x2 <= x_r and y_b <= y2 <= y_t):
+        return 0.0
+    return min(
+        dist_point_to_rect(x1, y1, rx, ry, hw, hh),
+        dist_point_to_rect(x2, y2, rx, ry, hw, hh),
+        dist_segment_to_segment(x1, y1, x2, y2, x_l, y_b, x_r, y_b),
+        dist_segment_to_segment(x1, y1, x2, y2, x_r, y_b, x_r, y_t),
+        dist_segment_to_segment(x1, y1, x2, y2, x_r, y_t, x_l, y_t),
+        dist_segment_to_segment(x1, y1, x2, y2, x_l, y_t, x_l, y_b),
+    )
+
+
 class ObstacleEnvironment:
     """Environnement d'obstacles extrait du layout PCB pour les calculs de collision."""
 
@@ -137,21 +163,22 @@ class ObstacleEnvironment:
             if d < req:
                 return False
 
-        # 3. Pastilles (Pads)
+        # 3. Pastilles (Pads) avec géométrie rectangulaire exacte
+        req_pad = half_w + clearance_margin + 1.5
         for p in self.pads:
             if p.get("net") == target_net:
                 continue
             p_lay = p.get("layer", 1)
             if p_lay != 12 and p_lay != layer:
                 continue
-            pad_r = math.hypot(p.get("width", 40.0) / 2.0, p.get("height", 40.0) / 2.0)
-            req = half_w + pad_r + clearance_margin
-            if p["x"] + req < seg_min_x or p["x"] - req > seg_max_x:
+            hw = p.get("width", 40.0) / 2.0
+            hh = p.get("height", 40.0) / 2.0
+            if p["x"] + hw + req_pad < seg_min_x or p["x"] - hw - req_pad > seg_max_x:
                 continue
-            if p["y"] + req < seg_min_y or p["y"] - req > seg_max_y:
+            if p["y"] + hh + req_pad < seg_min_y or p["y"] - hh - req_pad > seg_max_y:
                 continue
-            d = dist_point_to_segment(p["x"], p["y"], x1, y1, x2, y2)
-            if d < req:
+            d = dist_segment_to_rect(x1, y1, x2, y2, p["x"], p["y"], hw, hh)
+            if d < req_pad:
                 return False
 
         return True
@@ -195,16 +222,24 @@ class ObstacleEnvironment:
             if d < req:
                 return False
 
-        # Pastilles
+        # Pastilles (géométrie rectangulaire exacte + garde Hole-to-Hole sur THT/Slots)
+        req_via_pad = via_radius + clearance_margin + 3.0
         for p in self.pads:
+            p_lay = p.get("layer", 1)
+            hw = p.get("width", 40.0) / 2.0
+            hh = p.get("height", 40.0) / 2.0
+            # Si la pastille est traversante ou fente (THT layer 12), la règle Hole to Hole >= 0.30 mm (12 mil)
+            # s'applique sur toute l'empreinte de la fente/pastille, MÊME sur le même net !
+            if p_lay == 12:
+                if dist_point_to_rect(px, py, p["x"], p["y"], hw, hh) < (via_radius + 14.0):
+                    return False
+
             if p.get("net") == target_net:
                 continue
-            pad_r = math.hypot(p.get("width", 40.0) / 2.0, p.get("height", 40.0) / 2.0)
-            req = via_radius + pad_r + clearance_margin + 4.0  # Marge de garde stricte pour DRC = 0
-            if abs(px - p["x"]) > req or abs(py - p["y"]) > req:
+            if abs(px - p["x"]) > hw + req_via_pad or abs(py - p["y"]) > hh + req_via_pad:
                 continue
-            d = math.hypot(px - p["x"], py - p["y"])
-            if d < req:
+            d = dist_point_to_rect(px, py, p["x"], p["y"], hw, hh)
+            if d < req_via_pad:
                 return False
 
         return True
