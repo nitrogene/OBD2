@@ -65,7 +65,14 @@ class ObstacleEnvironment:
         self.vias = vias
         self.pads = pads
         self.keepouts = keepouts or []
-        self.board_bounds = board_bounds or (0.0, 3200.0, 0.0, 1400.0)
+        if board_bounds is not None:
+            self.board_bounds = board_bounds
+        elif pads or vias:
+            all_x = [p.get("x", 0.0) for p in pads] + [v.get("x", 0.0) for v in vias]
+            all_y = [p.get("y", 0.0) for p in pads] + [v.get("y", 0.0) for v in vias]
+            self.board_bounds = (min(all_x), max(all_x), min(all_y), max(all_y))
+        else:
+            self.board_bounds = (0.0, 0.0, 0.0, 0.0)
         self.boundary_margin_mil = boundary_margin_mil
 
     def is_in_bounds(self, px: float, py: float) -> bool:
@@ -88,7 +95,7 @@ class ObstacleEnvironment:
         layer: int,
         track_width: float,
         clearance_margin: float,
-        target_net: str = "GND",
+        target_net: str,
     ) -> bool:
         """Vérifie le dégagement continu d'un segment de piste face à tous les obstacles."""
         if not self.is_in_bounds(x1, y1) or not self.is_in_bounds(x2, y2):
@@ -155,7 +162,7 @@ class ObstacleEnvironment:
         py: float,
         via_radius: float,
         clearance_margin: float,
-        target_net: str = "GND",
+        target_net: str,
     ) -> bool:
         """Vérifie le dégagement d'un via traversant sur toutes les couches conductrices."""
         if not self.is_in_bounds(px, py):
@@ -176,12 +183,15 @@ class ObstacleEnvironment:
 
         # Vias existants
         for v in self.vias:
+            d = math.hypot(px - v["x"], py - v["y"])
             if v.get("net") == target_net:
+                # Règle trou-à-trou (Hole-to-Hole) minimale même sur le même réseau : >= 0.50 mm (20 mil)
+                if d < 20.0:
+                    return False
                 continue
             req = via_radius + v.get("diameter", 24.0) / 2.0 + clearance_margin
             if abs(px - v["x"]) > req or abs(py - v["y"]) > req:
                 continue
-            d = math.hypot(px - v["x"], py - v["y"])
             if d < req:
                 return False
 
@@ -190,7 +200,7 @@ class ObstacleEnvironment:
             if p.get("net") == target_net:
                 continue
             pad_r = math.hypot(p.get("width", 40.0) / 2.0, p.get("height", 40.0) / 2.0)
-            req = via_radius + pad_r + clearance_margin
+            req = via_radius + pad_r + clearance_margin + 4.0  # Marge de garde stricte pour DRC = 0
             if abs(px - p["x"]) > req or abs(py - p["y"]) > req:
                 continue
             d = math.hypot(px - p["x"], py - p["y"])

@@ -131,8 +131,8 @@ L'ensemble des spécifications et le guide d'amorçage sont consignés dans [`do
 
 ### Synthèse en Boucle Fermée (Co-Design Placement-Routage-CEM)
 - [ ] **[FONDAMENTAL] Nouveau Skill Orchestrateur `pcb-synthesizer` :**
-  - Créer le skill `.agents/skills/pcb-synthesizer/` orchestrant la chaîne fermée en une commande autonome.
-  - Chaîner de manière transactionnelle : `pcb-placer` -> `apply_placement` -> `freerouting` -> `audit post-routage DSN` -> `pcb-stitcher`.
-  - Implémenter l'analyseur métrologique DSN/SES post-routage : extraction des pistes réelles de boucles et des vias de retour.
-  - Implémenter la rétroaction itérative (max 3 cycles) : resserrement automatique des contraintes locales si une boucle dépasse sa cible.
-  - Valider l'exécution de bout en bout avec rapport de synthèse complet et certification DRC = 0.
+  - [x] Créer le skill [`.agents/skills/pcb-synthesizer/`](.agents/skills/pcb-synthesizer/) et son [`SKILL.md`](.agents/skills/pcb-synthesizer/SKILL.md) orchestrant la chaîne fermée en une commande autonome.
+  - [x] Implémenter l'analyseur métrologique post-routage Specctra SES/DSN ([`dsn_metrics.py`](.agents/skills/pcb-synthesizer/dsn_metrics.py)) : extraction des tracés réels, aire polygonale Shoelace, inductance de boucle fermée et skew des paires différentielles.
+  - [x] Implémenter le banc de tests unitaires ([`test_dsn_metrics.py`](.agents/skills/pcb-synthesizer/tests/test_dsn_metrics.py)).
+  - [x] Implémenter l'orchestrateur maître transactionnel ([`synthesizer_pipeline.py`](.agents/skills/pcb-synthesizer/synthesizer_pipeline.py)) avec rétroaction adaptative (max 3 cycles) : `pcb-placer` -> `apply_placement` -> `freerouting` -> `dsn_metrics` -> `pcb-stitcher`.
+  - [ ] Valider l'exécution de bout en bout de la chaîne avec rapport de synthèse complet et certification DRC = 0.

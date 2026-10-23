@@ -89,10 +89,12 @@ class EasyEDAClient:
         payload = {"code": code}
         try:
             resp = requests.post(url, json=payload, timeout=self.timeout)
-            resp.raise_for_status()
-            data = resp.json()
+            try:
+                data = resp.json()
+            except Exception:
+                data = {"success": False, "error": resp.text}
             if not data.get("success", False):
-                err = data.get("error", "Erreur inconnue renvoyée par EasyEDA Pro")
+                err = data.get("error", resp.text)
                 raise RuntimeError(f"Erreur API EasyEDA : {err}")
             return data.get("result")
         except requests.RequestException as e:
@@ -242,7 +244,7 @@ class EasyEDAClient:
         """
         return bool(self.execute_js(code))
 
-    def create_mounting_hole(self, x_mil: float, y_mil: float, hole_dia_mil: float = 86.6, pad_dia_mil: float = 177.2, pad_number: str = "MH", net: str = "GND") -> bool:
+    def create_mounting_hole(self, x_mil: float, y_mil: float, hole_dia_mil: float = 86.6, pad_dia_mil: float = 177.2, pad_number: str = "MH", net: str = "") -> bool:
         """
         Crée un trou de fixation mécanique sur le multi-layer (Layer 12 = MULTI).
         hole_dia_mil : diamètre de perçage (ex: 86.6 mil = 2.2 mm pour vis M2).
@@ -303,7 +305,7 @@ class EasyEDAClient:
                 y_mil = h.get("y_mil", 0.0)
                 hole_dia = h.get("hole_diameter_mil", 86.6)
                 pad_dia = h.get("head_clearance_mil", 177.2)
-                net = h.get("net", "GND")
+                net = h.get("net", "")
                 ok = self.create_mounting_hole(x_mil, y_mil, hole_dia_mil=hole_dia, pad_dia_mil=pad_dia, pad_number=hid, net=net)
                 if not ok:
                     all_ok = False
@@ -637,37 +639,51 @@ class EasyEDAClient:
 
     def clear_unlocked_routing(self) -> Dict[str, Any]:
         """
-        Supprime proprement et instantanément toutes les pistes de cuivre et vias non verrouillés.
-        Contrairement à clearRouting(), cette opération par primitives ne déclenche aucun dialogue
-        bloquant (modal) dans l'interface EasyEDA Pro.
+        Supprime proprement et instantanément toutes les pistes de cuivre, vias,
+        plans de masse (Copper Pours) et remplissages cuivre non verrouillés.
+        Garantit une Tabula Rasa absolue sur les couches de cuivre.
         """
         code = """
         try {
             const lines = (await eda.pcb_PrimitiveLine.getAll()) || [];
             const arcs = (await eda.pcb_PrimitiveArc.getAll?.()) || [];
             const vias = (await eda.pcb_PrimitiveVia.getAll?.()) || [];
+            const pours = (await eda.pcb_PrimitivePour?.getAll?.()) || [];
+            const fills = (await eda.pcb_PrimitiveFill?.getAll?.()) || [];
 
             const copperLinesToDelete = lines
-                .filter(l => (l.getState_Layer() === 1 || l.getState_Layer() === 2) && l.getState_Net() && (!l.getState_PrimitiveLock || !l.getState_PrimitiveLock()))
+                .filter(l => l.getState_Net && l.getState_Net() && (!l.getState_PrimitiveLock || !l.getState_PrimitiveLock()))
                 .map(l => l.getState_PrimitiveId());
 
             const copperArcsToDelete = arcs
-                .filter(a => (a.getState_Layer() === 1 || a.getState_Layer() === 2) && a.getState_Net() && (!a.getState_PrimitiveLock || !a.getState_PrimitiveLock()))
+                .filter(a => a.getState_Net && a.getState_Net() && (!a.getState_PrimitiveLock || !a.getState_PrimitiveLock()))
                 .map(a => a.getState_PrimitiveId());
 
             const viasToDelete = vias
                 .filter(v => !v.getState_PrimitiveLock || !v.getState_PrimitiveLock())
                 .map(v => v.getState_PrimitiveId());
 
+            const poursToDelete = pours
+                .filter(p => !p.getState_PrimitiveLock || !p.getState_PrimitiveLock())
+                .map(p => p.getState_PrimitiveId());
+
+            const fillsToDelete = fills
+                .filter(f => f.getState_Net && f.getState_Net() && (!f.getState_PrimitiveLock || !f.getState_PrimitiveLock()))
+                .map(f => f.getState_PrimitiveId());
+
             if (copperLinesToDelete.length) await eda.pcb_PrimitiveLine.delete(copperLinesToDelete);
             if (copperArcsToDelete.length) await eda.pcb_PrimitiveArc.delete(copperArcsToDelete);
             if (viasToDelete.length) await eda.pcb_PrimitiveVia.delete(viasToDelete);
+            if (poursToDelete.length) await eda.pcb_PrimitivePour.delete(poursToDelete);
+            if (fillsToDelete.length) await eda.pcb_PrimitiveFill.delete(fillsToDelete);
 
             return {
                 success: true,
                 deletedLines: copperLinesToDelete.length,
                 deletedArcs: copperArcsToDelete.length,
-                deletedVias: viasToDelete.length
+                deletedVias: viasToDelete.length,
+                deletedPours: poursToDelete.length,
+                deletedFills: fillsToDelete.length
             };
         } catch(e) {
             return { success: false, error: e.message };
@@ -709,16 +725,62 @@ class EasyEDAClient:
         return bool(self.execute_js(code))
 
     def run_drc(self) -> Dict[str, Any]:
-        """Déclenche le DRC physique sous EasyEDA Pro et retourne le bilan d'erreurs."""
+        """Déclenche le véritable contrôle DRC sous EasyEDA Pro et retourne le bilan d'erreurs exact et détaillé."""
         code = """
         try {
-            const result = await eda.pcb_Drc.run();
-            return result || { errorCount: 0, warningCount: 0 };
+            const groups = await eda.pcb_Drc.check(true, false, true);
+            let totalErrors = 0;
+            let totalWarnings = 0;
+            const groupSummaries = [];
+            const detailedItems = [];
+
+            if (Array.isArray(groups)) {
+                for (const g of groups) {
+                    const count = g.count || (g.list ? g.list.length : 0);
+                    const isWarn = g.name && g.name.toLowerCase().includes('warning');
+                    if (isWarn) {
+                        totalWarnings += count;
+                    } else {
+                        totalErrors += count;
+                    }
+                    groupSummaries.push({ name: g.name, count: count });
+
+                    // Exploration hiérarchique des sous-listes (catégories -> groupes de nets -> items individuels)
+                    for (const sub of (g.list || [])) {
+                        for (const it of (sub.list || [])) {
+                            const netName = it.net || it.explanation?.errData?.net || sub.name || '';
+                            const o1 = it.obj1 ? (it.obj1.suffix || it.obj1.typeName || '') : '';
+                            const o2 = it.obj2 ? (it.obj2.suffix || it.obj2.typeName || '') : '';
+                            const minD = it.explanation?.param?.minDistance || '';
+                            const shouldD = it.explanation?.param?.shouldBe || '';
+
+                            detailedItems.push({
+                                category: g.name,
+                                subCategory: sub.name,
+                                net: netName,
+                                obj1: o1,
+                                obj2: o2,
+                                minDistance: minD,
+                                requiredDistance: shouldD,
+                                errorType: it.errorType || g.name,
+                                position: it.pos || null
+                            });
+                        }
+                    }
+                }
+            }
+            return {
+                errorCount: totalErrors,
+                warningCount: totalWarnings,
+                groups: groupSummaries,
+                items: detailedItems,
+                success: totalErrors === 0
+            };
         } catch(e) {
-            return { errorCount: 0, warningCount: 0, error: e.message };
+            return { errorCount: -1, warningCount: -1, error: e.message, success: false, items: [] };
         }
         """
-        return self.execute_js(code) or {}
+        return self.execute_js(code) or {"errorCount": -1, "warningCount": -1, "error": "No response", "items": []}
 
     def save_pcb(self) -> bool:
         """Sauvegarde le document PCB actif."""

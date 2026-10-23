@@ -104,8 +104,11 @@ class FastAnnealingEngine:
         self.geometry = geometry
         self.spacing_margin_mm = spacing_margin_mm
 
-        self.board_w = board_constraints.get("board", {}).get("width_mm", 81.28)
-        self.board_h = board_constraints.get("board", {}).get("height_mm", 35.56)
+        b_info = board_constraints.get("board", {})
+        if "width_mm" not in b_info or "height_mm" not in b_info:
+            raise KeyError("La configuration 'board' doit obligatoirement définir 'width_mm' et 'height_mm'.")
+        self.board_w = float(b_info["width_mm"])
+        self.board_h = float(b_info["height_mm"])
         self.edge_clearance = board_constraints.get("board", {}).get("edge_clearance_mm", 1.0)
         self.mounting_holes = board_constraints.get("board", {}).get("mounting_holes", [])
         self.keepouts = board_constraints.get("keepout_zones", [])
@@ -302,7 +305,11 @@ class FastAnnealingEngine:
         for c in self.placement_constraints:
             if c.get("type") == "return_path_proximity":
                 sig_net = c.get("signal_net")
-                ref_net = c.get("reference_net", "GND")
+                plane_nets = self.board_cfg.get("plane_nets", [])
+                ref_net = c.get("reference_net") or (plane_nets[0] if plane_nets else None)
+                if not ref_net:
+                    cid = c.get("id", "return_path_proximity")
+                    raise KeyError(f"Contrainte '{cid}' : aucun 'reference_net' spécifié et aucun réseau déclaré dans 'plane_nets'.")
                 max_d = c.get("max_distance_to_reference_mm", 3.0)
                 w = c.get("weight", 7.0)
 

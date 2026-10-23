@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-23T12:10:16.921394",
+  "success": false,
+  "drc": {
+    "errorCount": 12,
+    "warningCount": 0,
+    "groups": [
+      {
+        "name": "Clearance Error",
+        "count": 4
+      },
+      {
+        "name": "Connection Error",
+        "count": 8
+      }
+    ],
+    "items": [
+      {
+        "category": "Clearance Error",
+        "subCategory": "Slot Region to Track",
+        "net": "Slot Region to Track",
+        "obj1": "(VBUS_5V): e53586",
+        "obj2": ": e55",
+        "minDistance": "0.2mm",
+        "requiredDistance": ">= 0.3mm",
+        "errorType": "Clearance Error",
+        "position": {
+          "x": 150.40705,
+          "y": 19.7465
+        }
+      },
+      {
+        "category": "Clearance Error",
+        "subCategory": "Slot Region to Track",
+        "net": "Slot Region to Track",
+        "obj1": "(VBUS_5V): e53578",
+        "obj2": ": e56",
+        "minDistance": "0.2mm",
+        "requiredDistance": ">= 0.3mm",
+        "errorType": "Clearance Error",
+        "position": {
+          "x": 169.59295,
+          "y": 19.7465
+        }
+      },
+      {
+        "category": "Clearance Error",
+        "subCategory": "Slot Region to Track",
+        "net": "Slot Region to Track",
+        "obj1": "(VBUS_5V): e53573",
+        "obj2": ": e56",
+        "minDistance": "0.2mm",
+        "requiredDistance": ">= 0.3mm",
+        "errorType": "Clearance Error",
+        "position": {
+          "x": 170.12604309037027,
+          "y": 18.455543090370277
+        }
+      },
+      {
+        "category": "Clearance Error",
+        "subCategory": "Slot Region to Track",
+        "net": "Slot Region to Track",
+        "obj1": "(VBUS_5V): e53580",
+        "obj2": ": e56",
+        "minDistance": "0.252mm",
+        "requiredDistance": ">= 0.3mm",
+        "errorType": "Clearance Error",
+        "position": {
+          "x": 169.6382658289728,
+          "y": 19.00638219434154
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): J2_4",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 142.972,
+          "y": 21.7155
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): e35",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 147.40175,
+          "y": 24.7405
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): e5460",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 208.93,
+          "y": 13.35
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): C10_1",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 215.05,
+          "y": 6.634000000000071
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): e5447",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 60.44,
+          "y": 119.75999999999999
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): C11_2",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 66.82700000000004,
+          "y": 134.69000000000003
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): H2_3",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 198.97999999999996,
+          "y": 124.02000000000001
+        }
+      },
+      {
+        "category": "Connection Error",
+        "subCategory": "GND",
+        "net": "GND",
+        "obj1": "(GND): R17_2",
+        "obj2": "",
+        "minDistance": "",
+        "requiredDistance": "",
+        "errorType": "Connection Error",
+        "position": {
+          "x": 218.1969999999999,
+          "y": 131.73999999999995
+        }
+      }
+    ]
+  }
+}

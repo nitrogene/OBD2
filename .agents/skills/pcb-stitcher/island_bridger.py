@@ -35,27 +35,33 @@ if sys.platform == "win32":
 logger = logging.getLogger("pcb_stitcher.island_bridger")
 
 
-def fetch_layout_and_drc(port: int = 49620, target_net: str = "GND") -> Dict[str, Any]:
+def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) -> Dict[str, Any]:
     """Récupère les primitives du PCB et les éléments non connectés du net cible via DRC."""
     js_code = """
     const lines = await eda.pcb_PrimitiveLine.getAll();
     const vias = await eda.pcb_PrimitiveVia.getAll();
     const pads = await eda.pcb_PrimitivePad.getAll();
 
-    const groups = await eda.pcb_Drc.check(true, false, true);
+    const groups = await eda.pcb_Drc.check(true, false, true) || [];
     const drcDisconnected = [];
-    if (groups && groups[0] && groups[0].list && groups[0].list[0] && groups[0].list[0].list) {
-        for (const item of groups[0].list[0].list) {
-            const primId = (item.objs && item.objs[0]) || (item.explanation?.errData?.obj1);
-            const net = item.explanation?.errData?.net || '';
-            drcDisconnected.push({
-                id: primId,
-                net: net,
-                suffix: item.obj1 ? item.obj1.suffix : '',
-                type: item.errorObjType,
-                x: item.pos ? (item.pos.x * 10) : 0,
-                y: item.pos ? (item.pos.y * 10) : 0
-            });
+    for (const cat of groups) {
+        if (cat.name === 'Connection Error') {
+            for (const netGroup of (cat.list || [])) {
+                if (netGroup.name === '{target_net}') {
+                    for (const item of (netGroup.list || [])) {
+                        const primId = (item.objs && item.objs[0]) || (item.explanation?.errData?.obj1);
+                        const net = item.net || item.explanation?.errData?.net || '{target_net}';
+                        drcDisconnected.push({
+                            id: primId,
+                            net: net,
+                            suffix: item.obj1 ? item.obj1.suffix : '',
+                            type: item.errorObjType,
+                            x: item.pos ? (item.pos.x * 10) : 0,
+                            y: item.pos ? (item.pos.y * 10) : 0
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -105,9 +111,9 @@ def route_2layer_astar(
     start_pt: Tuple[float, float],
     goal_pt: Tuple[float, float],
     env: ObstacleEnvironment,
+    target_net: str,
     start_lay: Optional[int] = 2,
     goal_lay: Optional[int] = 2,
-    target_net: str = "GND",
     track_width_mil: float = 12.0,
     clearance_mil: float = 9.0,
     via_radius_mil: float = 12.0,
@@ -256,7 +262,7 @@ def simplify_path(path: List[Tuple[float, float, int]]) -> Tuple[List[Tuple[floa
 
 
 def run_island_bridger(
-    target_net: str = "GND",
+    target_net: str,
     clearance_mm: float = 0.23,
     track_width_mm: float = 0.30,
     via_drill_mm: float = 0.30,
@@ -282,7 +288,14 @@ def run_island_bridger(
     logger.info(f"Total violations DRC de connexion pour '{target_net}' : {len(drc_items)}")
     if not drc_items:
         logger.info(f"Aucun îlot isolé détecté pour le net '{target_net}'. Continuite parfaite !")
-        return {"routes_found": 0, "status": "all_connected"}
+        return {
+            "routes_found": 0,
+            "vias_count": 0,
+            "lines_count": 0,
+            "vias": [],
+            "lines": [],
+            "status": "all_connected"
+        }
 
     env = ObstacleEnvironment(lines=lines, vias=vias, pads=pads)
 
@@ -337,18 +350,30 @@ def run_island_bridger(
         else:
             clean_nodes.extend([nid for nid in comp if nodes[nid]["type"] == "via"])
 
-    # Trier les îlots par distance minimale croissante vers les vias sains (Principe de l'arbre couvrant minimal / Prim)
-    drc_islands.sort(key=lambda isl: min(
-        math.hypot(nodes[nid]["x"] - nodes[cid]["x"], nodes[nid]["y"] - nodes[cid]["y"])
-        for nid in isl for cid in clean_nodes
-    ))
-
     logger.info(f"Topologie du net '{target_net}' : {len(components)} composantes au total.")
     logger.info(f"  - Îlots isolés nécessitant raccordement : {len(drc_islands)}")
     logger.info(f"  - Vias de référence connectés (composantes saines) : {len(clean_nodes)}")
 
     if not clean_nodes:
-        raise RuntimeError("Aucun via de référence sain identifié sur le PCB !")
+        logger.info(f"Aucun via de référence sain identifié pour '{target_net}'. Pontage A* ignoré.")
+        return {
+            "routes_found": 0,
+            "vias_count": 0,
+            "lines_count": 0,
+            "vias": [],
+            "lines": [],
+            "islandsCount": len(drc_islands),
+            "bridgesFound": 0,
+            "viasAdded": 0,
+            "linesAdded": 0,
+            "drcResult": len(drc_items)
+        }
+
+    # Trier les îlots par distance minimale croissante vers les vias sains (Principe de l'arbre couvrant minimal / Prim)
+    drc_islands.sort(key=lambda isl: min(
+        math.hypot(nodes[nid]["x"] - nodes[cid]["x"], nodes[nid]["y"] - nodes[cid]["y"])
+        for nid in isl for cid in clean_nodes
+    ))
 
     all_vias_to_inject = []
     all_lines_to_inject = []
@@ -480,7 +505,7 @@ def run_island_bridger(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="[island_bridger] %(message)s")
     parser = argparse.ArgumentParser(description="Routeur de passerelles d'îlots isolés EasyEDA Pro")
-    parser.add_argument("--net", type=str, default="GND", help="Nom du net cible (défaut: GND)")
+    parser.add_argument("--net", type=str, required=True, help="Nom du réseau cible à ponter (ex: GND, 0V)")
     parser.add_argument("--clearance-mm", type=float, default=0.23, help="Isolement minimal en mm (défaut: 0.23 mm / 9.0 mil)")
     parser.add_argument("--track-width-mm", type=float, default=0.30, help="Largeur de piste en mm (défaut: 0.30 mm / 12 mil)")
     parser.add_argument("--via-drill-mm", type=float, default=0.30, help="Perçage de via en mm (défaut: 0.30 mm / 12 mil)")

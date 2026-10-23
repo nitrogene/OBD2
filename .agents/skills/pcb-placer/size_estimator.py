@@ -242,8 +242,10 @@ class PCBSizeEstimator:
             data = json.load(f)
 
         board_info = data.get("board", {})
-        cur_w_mm = board_info.get("width_mm", 81.28)
-        cur_h_mm = board_info.get("height_mm", 35.56)
+        if "width_mm" not in board_info or "height_mm" not in board_info:
+            raise KeyError("La configuration 'board' doit obligatoirement définir 'width_mm' et 'height_mm'.")
+        cur_w_mm = float(board_info["width_mm"])
+        cur_h_mm = float(board_info["height_mm"])
         cur_aspect = cur_w_mm / cur_h_mm if cur_h_mm > 0 else 2.28
 
         # Calcul de la surface cumulée des Keepouts dans le floorplan

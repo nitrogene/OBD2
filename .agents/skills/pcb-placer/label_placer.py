@@ -667,6 +667,8 @@ def extract_pcb_geometry(
             maxY = Math.max(maxY, l.getState_StartY(), l.getState_EndY());
         }
 
+        const validBBox = isFinite(minX) && isFinite(maxX) && maxX > minX;
+
         // 2. Composants et pads
         const comps = await eda.pcb_PrimitiveComponent.getAll();
         const compList = [];
@@ -733,10 +735,10 @@ def extract_pcb_geometry(
         return {
             success: true,
             board: {
-                minX_mil: minX,
-                maxX_mil: maxX,
-                minY_mil: minY,
-                maxY_mil: maxY
+                minX_mil: validBBox ? minX : null,
+                maxX_mil: validBBox ? maxX : null,
+                minY_mil: validBBox ? minY : null,
+                maxY_mil: validBBox ? maxY : null
             },
             components: compList,
             designators: desigAttrs
@@ -765,11 +767,27 @@ def optimize_labels(
     """
     Exécute l'algorithme d'optimisation et génère le plan de repositionnement des étiquettes.
     """
-    board_raw = geo_data["board"]
-    min_x_mm = board_raw["minX_mil"] * MIL_TO_MM
-    max_x_mm = board_raw["maxX_mil"] * MIL_TO_MM
-    min_y_mm = board_raw["minY_mil"] * MIL_TO_MM
-    max_y_mm = board_raw["maxY_mil"] * MIL_TO_MM
+    board_raw = geo_data.get("board", {})
+    min_x_mil = board_raw.get("minX_mil")
+    max_x_mil = board_raw.get("maxX_mil")
+    min_y_mil = board_raw.get("minY_mil")
+    max_y_mil = board_raw.get("maxY_mil")
+
+    if min_x_mil is not None and max_x_mil is not None and max_x_mil > min_x_mil:
+        min_x_mm = min_x_mil * MIL_TO_MM
+        max_x_mm = max_x_mil * MIL_TO_MM
+        min_y_mm = min_y_mil * MIL_TO_MM
+        max_y_mm = max_y_mil * MIL_TO_MM
+    elif board_constraints_path and board_constraints_path.is_file():
+        with open(board_constraints_path, "r", encoding="utf-8") as f:
+            bc_data = json.load(f)
+        b_sec = bc_data.get("board", {})
+        min_x_mm = 0.0
+        min_y_mm = 0.0
+        max_x_mm = float(b_sec.get("width_mm", 0.0))
+        max_y_mm = float(b_sec.get("height_mm", 0.0))
+    else:
+        min_x_mm, min_y_mm, max_x_mm, max_y_mm = 0.0, 0.0, 0.0, 0.0
 
     board_bbox = BoundingBox(min_x_mm, max_x_mm, min_y_mm, max_y_mm)
     logger.info(f"📐 Contour PCB détecté : {board_bbox.width:.2f} × {board_bbox.height:.2f} mm")

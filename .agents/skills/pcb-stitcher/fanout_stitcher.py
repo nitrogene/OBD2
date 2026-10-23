@@ -98,10 +98,10 @@ def solve_pad_fanout(
     best_cand = None
     best_score = -1e9
 
-    # Échantillonnage radial (16 angles à pas constant)
-    angles = [i * (2.0 * math.pi / 16.0) for i in range(16)]
-    # Essayer plusieurs distances (distance nominale et légèrement étendue)
-    distances = [escape_dist_mil, escape_dist_mil * 1.25, escape_dist_mil * 1.5]
+    # Échantillonnage radial (24 angles pour exploration fine)
+    angles = [i * (2.0 * math.pi / 24.0) for i in range(24)]
+    # Essayer un éventail progressif de distances d'échappement (de 0.6 mm à 2.1 mm)
+    distances = [25.0, 35.0, 45.0, 55.0, 70.0, 85.0]
 
     for dist in distances:
         for angle in angles:
@@ -142,7 +142,7 @@ def solve_pad_fanout(
 
 
 def run_fanout_stitcher(
-    target_net: str = "GND",
+    target_net: str,
     clearance_mm: float = 0.23,
     track_width_mm: float = 0.30,
     via_drill_mm: float = 0.30,
@@ -174,15 +174,21 @@ def run_fanout_stitcher(
     # Si only_disconnected est actif, récupérer les IDs des pastilles en erreur DRC
     drc_pad_ids = set()
     if only_disconnected:
-        js_drc = """
-        const groups = await eda.pcb_Drc.check(true, false, true);
+        js_drc = f"""
+        const groups = await eda.pcb_Drc.check(true, false, true) || [];
         const ids = [];
-        if (groups && groups[0] && groups[0].list && groups[0].list[0] && groups[0].list[0].list) {
-            for (const item of groups[0].list[0].list) {
-                const primId = (item.objs && item.objs[0]) || (item.explanation?.errData?.obj1);
-                if (primId) ids.push(primId);
-            }
-        }
+        for (const cat of groups) {{
+            if (cat.name === 'Connection Error') {{
+                for (const netGroup of (cat.list || [])) {{
+                    if (netGroup.name === '{target_net}') {{
+                        for (const item of (netGroup.list || [])) {{
+                            const primId = (item.objs && item.objs[0]) || item.explanation?.errData?.obj1;
+                            if (primId) ids.push(primId);
+                        }}
+                    }}
+                }}
+            }}
+        }}
         return ids;
         """
         req_drc = urllib.request.Request(
@@ -214,6 +220,13 @@ def run_fanout_stitcher(
 
     solutions = []
     for p in unescaped:
+        # Vérification si un via du même net a déjà été posé tout près par une pastille précédente
+        px, py = p["x"], p["y"]
+        nearby_via = any(math.hypot(v["x"] - px, v["y"] - py) < 30.0 for v in env.vias if v.get("net") == target_net)
+        if nearby_via:
+            logger.info(f"  -> Pad {p['id']} mutualisé avec un via de masse voisin existant (distance < 30 mil).")
+            continue
+
         sol = solve_pad_fanout(
             p, env,
             target_net=target_net,
@@ -223,6 +236,13 @@ def run_fanout_stitcher(
         )
         if sol:
             solutions.append(sol)
+            # Mise à jour incrémentale immédiate de l'environnement pour éviter tout doublon trou-à-trou
+            env.vias.append({
+                "x": sol["via_pos"][0],
+                "y": sol["via_pos"][1],
+                "diameter": via_radius_mil * 2.0,
+                "net": target_net
+            })
             logger.info(f"  -> Solution trouvée pour pad {sol['pad_id']} à ({sol['via_pos'][0]:.1f}, {sol['via_pos'][1]:.1f}) mil (marge: {sol['margin_score_mil']:.1f} mil)")
         else:
             logger.warning(f"  -> Aucun spot de via valide pour pad {p['id']} à ({p['x']:.1f}, {p['y']:.1f}) mil.")
@@ -280,7 +300,7 @@ def run_fanout_stitcher(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="[fanout_stitcher] %(message)s")
     parser = argparse.ArgumentParser(description="Solveur Fanout & Vias d'échappement EasyEDA Pro")
-    parser.add_argument("--net", type=str, default="GND", help="Nom du net cible (défaut: GND)")
+    parser.add_argument("--net", type=str, required=True, help="Nom du réseau cible à échapper (ex: GND, 0V)")
     parser.add_argument("--clearance-mm", type=float, default=0.23, help="Isolement minimal en mm (défaut: 0.23 mm / 9.0 mil)")
     parser.add_argument("--track-width-mm", type=float, default=0.30, help="Largeur de piste en mm (défaut: 0.30 mm / 12 mil)")
     parser.add_argument("--via-drill-mm", type=float, default=0.30, help="Perçage de via en mm (défaut: 0.30 mm / 12 mil)")

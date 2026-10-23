@@ -201,8 +201,11 @@ def get_all_keepouts(
     """
     all_keepouts: List[Dict[str, Any]] = list(board_constraints.get("keepout_zones", []))
 
-    board_w = board_constraints.get("board", {}).get("width_mm", 81.28)
-    board_h = board_constraints.get("board", {}).get("height_mm", 35.56)
+    board_info = board_constraints.get("board", {})
+    if "width_mm" not in board_info or "height_mm" not in board_info:
+        raise KeyError("La section 'board' des contraintes doit définir 'width_mm' et 'height_mm'.")
+    board_w = float(board_info["width_mm"])
+    board_h = float(board_info["height_mm"])
     packages = manifest.get("packages", {})
     manifest_comps = manifest.get("components", {})
 
@@ -275,6 +278,7 @@ class PCBScorer:
     ):
         self.manifest = manifest
         self.board = board_constraints
+        self.board_constraints = board_constraints
         self.geom = geometry
 
         # Résolution de la sémantique liée si functional_blocks est absent
@@ -303,8 +307,11 @@ class PCBScorer:
         self.functional_blocks = self.manifest.get("functional_blocks", {})
         self.net_classes = board_constraints.get("net_classes", {})
 
-        self.board_width = board_constraints.get("board", {}).get("width_mm", 81.28)
-        self.board_height = board_constraints.get("board", {}).get("height_mm", 35.56)
+        board_info = board_constraints.get("board", {})
+        if "width_mm" not in board_info or "height_mm" not in board_info:
+            raise KeyError("La configuration 'board' doit définir 'width_mm' et 'height_mm'.")
+        self.board_width = float(board_info["width_mm"])
+        self.board_height = float(board_info["height_mm"])
         self.edge_clearance = board_constraints.get("board", {}).get("edge_clearance_mm", 1.0)
         self.mounting_holes = board_constraints.get("board", {}).get("mounting_holes", [])
         self.anchors = board_constraints.get("anchors", {})
@@ -685,7 +692,10 @@ class PCBScorer:
             elif ctype == "return_path_proximity":
                 # Proximité du chemin de retour vers le plan ou broches de masse GND
                 sig_net = c.get("signal_net")
-                ref_net = c.get("reference_net", "GND")
+                plane_nets = self.board_constraints.get("plane_nets", [])
+                ref_net = c.get("reference_net") or (plane_nets[0] if plane_nets else None)
+                if not ref_net:
+                    raise KeyError(f"Contrainte '{cid}' ({ctype}) : aucun 'reference_net' spécifié et aucun réseau déclaré dans 'plane_nets'.")
                 max_ret_d = c.get("max_distance_to_reference_mm", 3.0)
 
                 sig_pins = self.geom.nets.get(sig_net, []) if sig_net else []

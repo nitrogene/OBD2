@@ -21,8 +21,17 @@
     ],
     "width_mm": 81.28,
     "height_mm": 35.56,
-    "layers": 2,
-    "edge_clearance_mm": 1.0,
+    "layers": 4,
+    "stackup": {
+      "type": "4_layer_jlc2313",
+      "layers": [
+        { "id": 1, "name": "TopLayer", "type": "signal", "copper_oz": 1.0, "default_net": "GND", "description": "Composants CMS, signaux critiques, paires diff, RF" },
+        { "id": 15, "name": "Inner1", "type": "plane", "copper_oz": 0.5, "default_net": "GND", "description": "Plan de masse GND continu et ininterrompu" },
+        { "id": 16, "name": "Inner2", "type": "plane", "copper_oz": 0.5, "default_net": "+5V", "description": "Plan d'alimentation (+5V, 3.3V, +12V)" },
+        { "id": 2, "name": "BottomLayer", "type": "signal", "copper_oz": 1.0, "default_net": "GND", "description": "Signaux secondaires et blindage de masse GND" }
+      ]
+    },
+    "edge_clearance_mm": 0.30,
     "mounting_holes": [
       { "id": "MH1", "name": "Fixation Sud-Ouest", "x_mm": 3.5, "y_mm": 3.5,   "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
       { "id": "MH2", "name": "Fixation Nord-Ouest", "x_mm": 3.5, "y_mm": 32.06, "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
@@ -47,9 +56,37 @@
       "x_mm": 63.00,
       "y_mm": 17.78,
       "rot_deg": 270.0
+    },
+    "H1": {
+      "x_mm": 32.00,
+      "y_mm": 31.50,
+      "rot_deg": 0.0
+    },
+    "H2": {
+      "x_mm": 48.00,
+      "y_mm": 31.50,
+      "rot_deg": 0.0
+    },
+    "H3": {
+      "x_mm": 20.00,
+      "y_mm": 31.50,
+      "rot_deg": 0.0
     }
   },
   "keepout_zones": [
+    {
+      "id": "J1_MATING_KEEPOUT",
+      "name": "Zone de dégagement enfichage connecteur OBD J1",
+      "layer": "all",
+      "rect_mm": {
+        "x_min": 0.0,
+        "x_max": 10.16,
+        "y_min": 10.00,
+        "y_max": 25.56
+      },
+      "exempt_refs": ["J1"],
+      "rules": ["no_components"]
+    },
     {
       "id": "RF_ANTENNA_KEEPOUT",
       "name": "Zone d'exclusion RF Antenne ESP32-S3",
@@ -66,7 +103,7 @@
   ],
   "padstack_overrides": {
     "pbdbad5cc7fc4f6ae55": {
-      "diameter_mm": 0.90,
+      "diameter_mm": 1.45,
       "description": "Fentes mécaniques de blindage USB-C J2 gonflées pour garantir la garde DRC >= 0.30 mm"
     }
   },

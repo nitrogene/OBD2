@@ -13,7 +13,7 @@ import json
 import logging
 import argparse
 import urllib.request
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from fanout_stitcher import run_fanout_stitcher
 from island_bridger import run_island_bridger
@@ -28,7 +28,7 @@ if sys.platform == "win32":
 logger = logging.getLogger("pcb_stitcher.pipeline")
 
 
-def rebuild_pours_and_check_drc(port: int = 49620, target_net: str = "GND") -> Dict[str, Any]:
+def rebuild_pours_and_check_drc(port: int = 49620, target_net: Optional[str] = None) -> Dict[str, Any]:
     """Reconstruit toutes les zones de cuivre et audite le DRC."""
     js_code = """
     const pours = await eda.pcb_PrimitivePour.getAll();
@@ -70,7 +70,7 @@ def rebuild_pours_and_check_drc(port: int = 49620, target_net: str = "GND") -> D
 
 
 def run_pipeline(
-    target_net: str = "GND",
+    target_net: str,
     clearance_mm: float = 0.23,
     track_width_mm: float = 0.30,
     via_drill_mm: float = 0.30,
@@ -141,7 +141,7 @@ def run_pipeline(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="[pcb_stitcher] %(message)s")
     parser = argparse.ArgumentParser(description="Pipeline Maître PCB Stitcher")
-    parser.add_argument("--net", type=str, default="GND", help="Net cible (défaut: GND)")
+    parser.add_argument("--net", type=str, required=True, help="Nom du réseau cible à coudre (ex: GND, 0V)")
     parser.add_argument("--clearance-mm", type=float, default=0.23, help="Isolement minimal (mm)")
     parser.add_argument("--track-width-mm", type=float, default=0.30, help="Largeur de piste (mm)")
     parser.add_argument("--via-drill-mm", type=float, default=0.30, help="Perçage de via (mm)")

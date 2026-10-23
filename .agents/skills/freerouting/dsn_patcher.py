@@ -125,7 +125,7 @@ class DsnPatcher:
         self.default_class_cfg = self.net_classes_cfg.get("DEFAULT", {})
         self.padstack_overrides = constraints.get("padstack_overrides", {})
         self.keepout_zones = constraints.get("keepout_zones", [])
-        self.plane_nets = set(constraints.get("plane_nets", ["GND"]))
+        self.plane_nets = set(constraints.get("plane_nets", []))
 
     def resolve_net_rule(self, net_name: str) -> Dict[str, Any]:
         """Associe un net à sa règle correspondante dans constraints.json."""
@@ -157,7 +157,24 @@ class DsnPatcher:
         unit, resolution = parse_resolution(dsn_content)
         logger.info(f"Unité DSN détectée: {unit} (résolution: {resolution})")
 
-        # 0. Exclusion des réseaux de plans de masse (état de l'art par défaut)
+        # Extraction dynamique de toutes les couches de cuivre définies dans le DSN
+        all_layers = re.findall(r'\(layer\s+([A-Za-z0-9_]+)\b', dsn_content)
+        if not all_layers:
+            all_layers = ["TopLayer", "BottomLayer"]
+
+        # 0a. Configuration des plans d'alimentation/masse internes (type power) dans (structure ...)
+        stackup_layers = self.constraints.get("board", {}).get("stackup", {}).get("layers", [])
+        for lay in stackup_layers:
+            if lay.get("type") == "plane":
+                lname = lay.get("name")
+                default_net = lay.get("default_net")
+                prop_str = f'\n    (property (net_name "{default_net}"))' if default_net else ''
+                pattern_lay = re.compile(rf'\(layer\s+{re.escape(lname)}\s*\(type\s+signal\)\s*\)', re.IGNORECASE)
+                dsn_content, n_mod = pattern_lay.subn(f'(layer {lname}\n    (type power){prop_str}\n  )', dsn_content)
+                if n_mod > 0:
+                    logger.info(f"Couche interne configurée en plan (type power, net={default_net}) : {lname}")
+
+        # 0b. Exclusion des réseaux de plans du routage filaire (laissé aux plans de masse/cuivre)
         if ignore_plane_nets and self.plane_nets:
             for p_net in sorted(self.plane_nets):
                 dsn_content = strip_net_from_dsn(dsn_content, p_net)
@@ -171,23 +188,22 @@ class DsnPatcher:
             dia_mm = c_cfg.get("via_diameter_mm")
             if dia_mm:
                 via_id = f"via_dia{int(round(dia_mm * 100)):03d}"
-                # Pour les vias de signaux ~0.60 mm, caler à 24 mil (0.61 mm) pour correspondre exactement à EasyEDA
                 if abs(dia_mm - 0.60) < 0.05:
                     dia_units = mm_to_dsn_units(0.61, unit)
                 else:
                     dia_units = mm_to_dsn_units(dia_mm, unit)
                 via_types[via_id] = dia_units
 
-        # 2. Injecter les nouveaux padstacks de vias dans (library ...)
+        # 2. Injecter les nouveaux padstacks de vias dans (library ...) sur toutes les couches
         padstack_insertions = []
         for via_id, dia_units in via_types.items():
             if via_id == "via0":
                 continue  # Déjà présent
             if f"(padstack {via_id}" not in dsn_content:
+                shapes_str = "\n".join([f"      (shape(circle {ln} {dia_units:.2f}))" for ln in all_layers])
                 padstack_str = (
                     f"    (padstack {via_id}\n"
-                    f"      (shape(circle TopLayer {dia_units:.2f}))\n"
-                    f"      (shape(circle BottomLayer {dia_units:.2f}))\n"
+                    f"{shapes_str}\n"
                     f"    )"
                 )
                 padstack_insertions.append(padstack_str)
@@ -199,24 +215,18 @@ class DsnPatcher:
                 joined_padstacks = "\n" + "\n".join(padstack_insertions)
                 dsn_content = dsn_content[:insert_pos] + joined_padstacks + dsn_content[insert_pos:]
 
-        # 2b. Appliquer les surcharges de padstacks configurées (ex: fentes mécaniques)
+        # 2b. Appliquer les surcharges de padstacks configurées sur toutes les couches
         for pad_id, p_cfg in self.padstack_overrides.items():
             ovr_dia_mm = p_cfg.get("diameter_mm")
             if ovr_dia_mm:
                 ovr_units = mm_to_dsn_units(ovr_dia_mm, unit)
-                padstack_pat = re.compile(
-                    rf'\(padstack\s+{re.escape(pad_id)}\s*'
-                    rf'\(shape\(circle\s+TopLayer\s+[0-9.]+\s*0\s*0\)\)\s*'
-                    rf'\(shape\(circle\s+BottomLayer\s+[0-9.]+\s*0\s*0\)\)\s*\)',
-                    re.MULTILINE,
+                pattern_pad = re.compile(
+                    rf'\(padstack\s+{re.escape(pad_id)}\s*(?:\(shape\([^)]+\)\)\s*)+\)',
+                    re.MULTILINE
                 )
-                replacement = (
-                    f"(padstack {pad_id}\n"
-                    f"      (shape(circle TopLayer {ovr_units:.2f} 0 0))\n"
-                    f"      (shape(circle BottomLayer {ovr_units:.2f} 0 0))\n"
-                    f"    )"
-                )
-                dsn_content, n_subs = padstack_pat.subn(replacement, dsn_content)
+                shapes_ovr = "\n".join([f"      (shape(circle {ln} {ovr_units:.2f} 0 0))" for ln in all_layers])
+                replacement = f"(padstack {pad_id}\n{shapes_ovr}\n    )"
+                dsn_content, n_subs = pattern_pad.subn(replacement, dsn_content)
                 if n_subs > 0:
                     logger.info(f"Surcharge padstack appliquée : {pad_id} -> diamètre {ovr_dia_mm} mm ({ovr_units:.2f} {unit})")
 
@@ -255,6 +265,11 @@ class DsnPatcher:
         if self.keepout_zones:
             keepout_dsn_blocks = []
             for kz in self.keepout_zones:
+                rules = kz.get("rules", ["no_wires"])
+                if "no_wires" not in rules:
+                    # Ne pas restreindre le routage si la zone n'interdit que les composants (ex: zone d'enfichage mécanique)
+                    continue
+
                 kz_name = kz.get("id") or kz.get("name", "KEEPOUT")
                 rect_mm = kz.get("rect_mm", {})
                 if not rect_mm:
@@ -265,7 +280,7 @@ class DsnPatcher:
                 y2 = mm_to_dsn_units(rect_mm.get("y_max", 0.0), unit)
 
                 layer_req = kz.get("layer", "all").lower()
-                target_layers = ["TopLayer", "BottomLayer"] if layer_req in ("all", "multi") else [kz.get("layer")]
+                target_layers = all_layers if layer_req in ("all", "multi") else [kz.get("layer")]
 
                 for t_layer in target_layers:
                     keepout_dsn_blocks.append(
@@ -342,7 +357,7 @@ class DsnPatcher:
                 f"Isolement: {cl_mm:.3f} mm ({mm_to_dsn_units(cl_mm, unit):.1f} {unit})"
             )
 
-        # 5. Mode incrémental : fixer les pistes existantes
+        # 5. Gestion des pistes existantes
         if incremental:
             # Si des pistes existent dans (wiring ...), marquer chaque (wire ...) avec (type protect)
             def protect_wire(m: re.Match) -> str:
@@ -357,6 +372,9 @@ class DsnPatcher:
                 dsn_content,
             )
             logger.info("Mode incrémental activé : pistes pré-existantes protégées (type protect).")
+        else:
+            # Mode non-incrémental (à blanc) : purger toute section (wiring ...) résiduelle pour une carte 100% propre
+            dsn_content = re.sub(r'\(wiring\b.*?\n\s*\)', '', dsn_content, flags=re.DOTALL)
 
         return dsn_content
 

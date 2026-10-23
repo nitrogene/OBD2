@@ -50,8 +50,10 @@ def generate_svg_view(
 ):
     """Génère un fichier SVG autonome haute fidélité du placement PCB."""
     board_cfg = board_constraints.get("board", {})
-    board_w = board_cfg.get("width_mm", 81.28)
-    board_h = board_cfg.get("height_mm", 35.56)
+    if "width_mm" not in board_cfg or "height_mm" not in board_cfg:
+        raise KeyError("La configuration 'board' doit obligatoirement définir 'width_mm' et 'height_mm'.")
+    board_w = float(board_cfg["width_mm"])
+    board_h = float(board_cfg["height_mm"])
     edge_clearance = board_cfg.get("edge_clearance_mm", 1.0)
     mounting_holes = board_cfg.get("mounting_holes", [])
     keepouts = board_constraints.get("keepout_zones", [])
