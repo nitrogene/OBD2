@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "silkscreen.schema.json",
+  "title": "PCB Silkscreen Annotations Configuration",
+  "description": "Configuration déclarative des sérigraphies fonctionnelles et documentaires (Top & Bottom) pour EasyEDA Pro.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Lien vers le schéma JSON formel."
+    },
+    "project": {
+      "type": "string",
+      "description": "Nom du projet."
+    },
+    "version": {
+      "type": "string",
+      "description": "Version du document de configuration."
+    },
+    "defaults": {
+      "type": "object",
+      "description": "Paramètres typographiques et règles DFM par défaut.",
+      "properties": {
+        "font_size_mm": {
+          "type": "number",
+          "minimum": 0.6,
+          "default": 1.0,
+          "description": "Hauteur du texte en millimètres (>= 0.8 mm recommandé par JLCPCB)."
+        },
+        "stroke_width_mm": {
+          "type": "number",
+          "minimum": 0.1,
+          "default": 0.15,
+          "description": "Épaisseur de trait de sérigraphie en mm (>= 0.15 mm recommandé)."
+        },
+        "clearance_to_pads_mm": {
+          "type": "number",
+          "minimum": 0.1,
+          "default": 0.2,
+          "description": "Distance minimale de garde vis-à-vis des ouvertures de vernis épargne (pads)."
+        }
+      },
+      "required": ["font_size_mm", "stroke_width_mm"]
+    },
+    "top": {
+      "$ref": "#/definitions/layer_annotations",
+      "description": "Annotations et textes libres sur la couche Top Silkscreen."
+    },
+    "bottom": {
+      "$ref": "#/definitions/layer_annotations",
+      "description": "Annotations et textes libres sur la couche Bottom Silkscreen."
+    }
+  },
+  "required": ["defaults", "top", "bottom"],
+  "definitions": {
+    "layer_annotations": {
+      "type": "object",
+      "properties": {
+        "pin_labels": {
+          "type": "array",
+          "description": "Repérage textuel des broches le long d'un composant ou connecteur.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "component": {
+                "type": "string",
+                "description": "Désignateur du composant cible (ex: J1, H1)."
+              },
+              "side": {
+                "type": "string",
+                "enum": ["outside", "inside", "above", "below", "left", "right"],
+                "default": "outside",
+                "description": "Côté de placement par rapport à la rangée de pastilles."
+              },
+              "offset_mm": {
+                "type": "number",
+                "default": 1.5,
+                "description": "Distance entre le centre de la pastille et le texte."
+              },
+              "font_size_mm": {
+                "type": "number",
+                "description": "Taille de police spécifique pour ces labels (optionnel)."
+              },
+              "pins": {
+                "type": "object",
+                "description": "Mappage numéro de broche -> libellé textuel.",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": ["component", "pins"]
+          }
+        },
+        "component_legends": {
+          "type": "array",
+          "description": "Textes explicatifs ou consignes ancrés à un composant.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "component": {
+                "type": "string",
+                "description": "Désignateur du composant cible (ex: JP1, JP2)."
+              },
+              "position": {
+                "type": "string",
+                "enum": ["above", "below", "left", "right"],
+                "default": "below"
+              },
+              "offset_mm": {
+                "type": "number",
+                "default": 1.5
+              },
+              "font_size_mm": {
+                "type": "number"
+              },
+              "text": {
+                "type": "string",
+                "description": "Texte de la légende (supporte les sauts de ligne \\n)."
+              }
+            },
+            "required": ["component", "text"]
+          }
+        },
+        "title_blocks": {
+          "type": "array",
+          "description": "Cartouches ou blocs de texte documentaires ancrés au contour de carte ou en coordonnées absolues.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "anchor": {
+                "type": "string",
+                "enum": ["top_left", "top_right", "bottom_left", "bottom_right", "center", "custom"],
+                "description": "Ancrage relatif aux bords du PCB."
+              },
+              "position_mm": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Coordonnées XY absolues si anchor=custom."
+              },
+              "offset_mm": {
+                "type": "array",
+                "items": { "type": "number" },
+                "minItems": 2,
+                "maxItems": 2,
+                "description": "Décalage [dX, dY] par rapport au point d'ancrage."
+              },
+              "alignment": {
+                "type": "string",
+                "enum": ["left", "center", "right"],
+                "default": "left"
+              },
+              "font_size_mm": {
+                "type": "number"
+              },
+              "text": {
+                "oneOf": [
+                  { "type": "string" },
+                  {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                ],
+                "description": "Lignes de texte du cartouche."
+              }
+            },
+            "required": ["text"]
+          }
+        }
+      }
+    }
+  }
+}

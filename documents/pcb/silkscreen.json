@@ -1,0 +1,103 @@
+{
+  "$schema": "./silkscreen.schema.json",
+  "project": "Scanner OBD-II ESP32",
+  "version": "1.0.0",
+  "defaults": {
+    "font_size_mm": 1.0,
+    "stroke_width_mm": 0.15,
+    "clearance_to_pads_mm": 0.25
+  },
+  "top": {
+    "pin_labels": [],
+    "component_legends": [],
+    "title_blocks": []
+  },
+  "bottom": {
+    "pin_labels": [
+      {
+        "component": "H3",
+        "side": "below",
+        "offset_mm": 2.0,
+        "pins": {
+          "1": "+12V",
+          "2": "GND"
+        }
+      },
+      {
+        "component": "J1",
+        "side": "outside",
+        "offset_mm": 3.2,
+        "pins": {
+          "1": "+12V",
+          "2": "K-LINE",
+          "3": "CANH",
+          "4": "CANL",
+          "5": "GND"
+        }
+      },
+      {
+        "component": "H1",
+        "side": "below",
+        "offset_mm": 2.8,
+        "pins": {
+          "1": "RX",
+          "2": "TX",
+          "3": "GND"
+        }
+      },
+      {
+        "component": "H2",
+        "side": "below",
+        "offset_mm": 2.8,
+        "pins": {
+          "1": "RX",
+          "2": "TX",
+          "3": "GND"
+        }
+      }
+    ],
+    "component_legends": [
+      {
+        "component": "H1",
+        "position": "below",
+        "offset_mm": 4.8,
+        "text": "CAN"
+      },
+      {
+        "component": "H2",
+        "position": "below",
+        "offset_mm": 4.8,
+        "text": "KLINE"
+      },
+      {
+        "component": "H3",
+        "position": "below",
+        "offset_mm": 4.2,
+        "text": "SIMU: POWER IN\nSCANNER: POWER OUT"
+      },
+      {
+        "component": "JP1",
+        "position": "right",
+        "offset_mm": 3.5,
+        "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER"
+      },
+      {
+        "component": "JP2",
+        "position": "left",
+        "offset_mm": 3.5,
+        "text": "K-LINE:\nSHUNT=SCANNER\nOPEN=SIMU"
+      }
+    ],
+    "title_blocks": [
+      {
+        "anchor": "bottom_left",
+        "offset_mm": [6.0, 6.0],
+        "alignment": "left",
+        "text": [
+          "HW Rev: v2.0 (4-Layer JLC2313)",
+          "OBD-II SCANNER ESP32-S3"
+        ]
+      }
+    ]
+  }
+}

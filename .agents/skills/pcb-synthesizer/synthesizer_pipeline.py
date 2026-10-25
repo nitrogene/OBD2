@@ -441,6 +441,20 @@ class PcbSynthesizer:
             rc_lbl, stdout_lbl, stderr_lbl = run_cmd(label_cmd, PROJECT_ROOT)
             logger.info(stdout_lbl)
 
+            # Injection déclarative de la sérigraphie additionnelle (pcb-silkscreen)
+            silk_file = PROJECT_ROOT / "documents" / "pcb" / "silkscreen.json"
+            if silk_file.exists():
+                logger.info("\n🎨 Application de la Sérigraphie Additionnelle (pcb-silkscreen)...")
+                silk_cmd = [
+                    "uv", "run", "python",
+                    str(SKILLS_DIR / "pcb-silkscreen" / "scripts" / "apply_silkscreen.py"),
+                    "--silkscreen", str(silk_file),
+                    "--constraints", str(self.board_path),
+                    "--placement", str(self.candidate_placement)
+                ]
+                rc_silk, stdout_silk, stderr_silk = run_cmd(silk_cmd, PROJECT_ROOT)
+                logger.info(stdout_silk)
+
             # Contrôle DRC natif final dans EasyEDA Pro
             try:
                 from easyeda_client import EasyEDAClient

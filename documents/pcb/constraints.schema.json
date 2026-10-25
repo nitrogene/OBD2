@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "constraints.schema.json",
+  "title": "PCB Physical Constraints Schema",
+  "description": "Spécification formelle des contraintes mécaniques, stackup, ancres, keepouts et règles de routage Specctra/FreeRouting.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "project": { "type": "string" },
+    "version": { "type": "string" },
+    "pcb_manifest": { "type": "string" },
+    "schema_semantics": { "type": "string" },
+    "frame": {
+      "type": "object",
+      "properties": {
+        "unit": { "type": "string", "enum": ["mm", "mil"] },
+        "origin": { "type": "string" },
+        "y_axis": { "type": "string" },
+        "rotation": { "type": "string" },
+        "internal_resolution_mm": { "type": "number" },
+        "final_snap_mm": { "type": "number" }
+      },
+      "required": ["unit", "origin"]
+    },
+    "board": {
+      "type": "object",
+      "properties": {
+        "outline_polygon_mm": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "width_mm": { "type": "number" },
+        "height_mm": { "type": "number" },
+        "layers": { "type": "integer" },
+        "stackup": { "type": "object" },
+        "edge_clearance_mm": { "type": "number" },
+        "mounting_holes": { "type": "array" }
+      },
+      "required": ["width_mm", "height_mm", "layers"]
+    },
+    "anchors": {
+      "type": "object",
+      "description": "Composants aux coordonnées physiques verrouillées (connecteurs, headers, MCU).",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "x_mm": { "type": "number" },
+          "y_mm": { "type": "number" },
+          "rot_deg": { "type": "number" },
+          "edge_flush": { "type": "string" }
+        },
+        "required": ["x_mm", "y_mm", "rot_deg"]
+      }
+    },
+    "keepout_zones": { "type": "array" },
+    "padstack_overrides": { "type": "object" },
+    "separation_rules": { "type": "array" },
+    "plane_nets": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "net_classes": { "type": "object" }
+  },
+  "required": ["project", "version", "board", "anchors"]
+}

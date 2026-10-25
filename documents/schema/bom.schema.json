@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bom.schema.json",
+  "title": "Bill of Materials (BOM) Schema",
+  "description": "Nomenclature consolidée des composants, boîtiers, références MPN et codes LCSC JLCPCB.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "project": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "components": {
+      "type": "object",
+      "description": "Dictionnaire des composants indexé par désignateur (ex: R1, C1, U1).",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": ["string", "null"],
+            "description": "Valeur nominale du composant (ex: 100nF, 10k, null pour circuits intégrés)."
+          },
+          "mpn": {
+            "type": ["string", "null"],
+            "description": "Référence fabricant (Manufacturer Part Number, null pour mires de test)."
+          },
+          "lcsc": {
+            "type": ["string", "null"],
+            "description": "Code catalogue LCSC (ex: C14663)."
+          },
+          "type": {
+            "type": ["string", "null"],
+            "enum": ["Basic Part", "Extended Part", "Standard", null],
+            "description": "Catégorisation SMT JLCPCB."
+          },
+          "package": {
+            "type": ["string", "null"],
+            "description": "Empreinte ou boîtier physique (ex: 0603, SOIC-8, null pour mires de test)."
+          }
+        }
+      }
+    }
+  },
+  "required": ["project", "version", "components"]
+}

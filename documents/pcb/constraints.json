@@ -1,5 +1,5 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "./constraints.schema.json",
   "project": "Scanner OBD-II ESP32",
   "version": "2.0.0",
   "pcb_manifest": "./manifest.json",

@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "manifest.schema.json",
+  "title": "PCB Manifest Schema",
+  "description": "Manifeste de placement PCB : dimensions IPC-7351 des boîtiers, contraintes CEM de placement et groupes rigides.",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "project": { "type": "string" },
+    "version": { "type": "string" },
+    "date_modified": { "type": "string" },
+    "description": { "type": "string" },
+    "schema_semantics": { "type": "string" },
+    "project_profile": { "type": "object" },
+    "power_nets": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "packages": {
+      "type": "object",
+      "description": "Dimensions physiques et marges de courtyard IPC-7351 par type de boîtier.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "width_mm": { "type": "number" },
+          "length_mm": { "type": "number" },
+          "height_mm": { "type": "number" },
+          "courtyard_margin_mm": { "type": "number" },
+          "description": { "type": "string" }
+        },
+        "required": ["width_mm", "length_mm"]
+      }
+    },
+    "placement_constraints": { "type": "array" },
+    "rigid_groups": { "type": "array" },
+    "components": {
+      "type": "object",
+      "description": "Désignation du boîtier et contraintes CEM spécifiques pour chaque composant.",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "package": { "type": "string" },
+          "cem_target": { "type": "object" },
+          "rigid_group": { "type": "string" }
+        },
+        "required": ["package"]
+      }
+    }
+  },
+  "required": ["project", "version", "packages", "components"]
+}
