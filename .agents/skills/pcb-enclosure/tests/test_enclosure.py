@@ -80,15 +80,27 @@ class TestPCBEnclosure(unittest.TestCase):
     def test_files_export_existence(self):
         out_dir = PROJECT_ROOT / "documents" / "enclosure"
         expected_files = [
-            "enclosure_bottom.step", "enclosure_bottom.stl",
-            "enclosure_top.step", "enclosure_top.stl",
-            "enclosure_clamp.step", "enclosure_clamp.stl",
-            "enclosure_assembly.step"
+            "enclosure_bottom.step",
+            "enclosure_top.step",
+            "enclosure_clamp.step",
+            "enclosure_full_assembly.step",
+            "enclosure_exploded.step",
+            "enclosure_assembly.stl",
+            "enclosure_exploded.stl",
         ]
         for fname in expected_files:
             fpath = out_dir / fname
             self.assertTrue(fpath.exists(), f"Le fichier {fname} doit exister dans documents/enclosure")
             self.assertGreater(fpath.stat().st_size, 1000, f"Le fichier {fname} ne doit pas etre vide")
+
+    def test_step_labels_integrity(self):
+        # Vérifie que les composants conservent leurs noms fonctionnels explicites dans les STEP
+        out_dir = PROJECT_ROOT / "documents" / "enclosure"
+        full_step = (out_dir / "enclosure_full_assembly.step").read_text(encoding="latin-1", errors="ignore")
+        self.assertIn("Boitier_Inferieur", full_step)
+        self.assertIn("Boitier_Superieur", full_step)
+        self.assertIn("Bride_Serre_Cable", full_step)
+        self.assertIn("Carte_PCB", full_step)
 
 
 if __name__ == "__main__":

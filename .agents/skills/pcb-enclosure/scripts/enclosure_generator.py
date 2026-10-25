@@ -215,6 +215,25 @@ class EnclosureGenerator:
 
         return top
 
+    def build_pcb_mockup(self) -> bd.Solid:
+        """Construit un solide représentant la carte PCB avec ses perçages de fixation."""
+        logger.info("🔨 Construction du solide de référence PCB...")
+        with bd.BuildPart() as pcb_part:
+            with bd.BuildSketch(bd.Plane(origin=(self.cx, self.cy, self.z_pcb_bottom), z_dir=(0, 0, 1))):
+                bd.Rectangle(self.board_w, self.board_h)
+            bd.extrude(amount=self.pcb_thickness)
+
+            # Perçages de fixation M2
+            for h in self.mounting_holes:
+                hx = float(h["x_mm"])
+                hy = float(h["y_mm"])
+                drill_d = float(h.get("drill_mm", 2.2))
+                with bd.BuildSketch(bd.Plane(origin=(hx, hy, self.z_pcb_bottom - 0.1), z_dir=(0, 0, 1))):
+                    bd.Circle(drill_d / 2.0)
+                bd.extrude(amount=self.pcb_thickness + 0.2, mode=bd.Mode.SUBTRACT)
+
+        return pcb_part.part
+
     def build_cable_clamp(self) -> bd.Solid:
         """Construit la bride rigide à 2 vis M2 pour décharger le câble OBD-II."""
         logger.info("🔨 Construction de la bride serre-câble (Cable Clamp)...")
@@ -322,26 +341,61 @@ def main():
 
     gen = EnclosureGenerator(constraints_data, enclosure_data)
 
-    # 1. Génération des pièces
+    # 1. Génération des pièces avec labels et couleurs distinctes
     bottom_shell = gen.build_bottom_shell()
-    top_shell = gen.build_top_shell()
-    cable_clamp = gen.build_cable_clamp()
+    bottom_shell.label = "Boitier_Inferieur"
+    bottom_shell.color = bd.Color(0.25, 0.25, 0.25)  # Anthracite mat
 
-    # 2. Exports STEP (ISO 10303 AP214)
-    logger.info("💾 Export des fichiers STEP solides...")
+    top_shell = gen.build_top_shell()
+    top_shell.label = "Boitier_Superieur"
+    top_shell.color = bd.Color(0.35, 0.35, 0.35)  # Gris boîtier
+
+    cable_clamp = gen.build_cable_clamp()
+    cable_clamp.label = "Bride_Serre_Cable"
+    cable_clamp.color = bd.Color(0.85, 0.45, 0.1)   # Orange mécanique contrasté
+
+    pcb_solid = gen.build_pcb_mockup()
+    pcb_solid.label = "Carte_PCB"
+    pcb_solid.color = bd.Color(0.05, 0.45, 0.2)     # Vert vernis épargne
+
+    # 2. Exports STEP solides individuels AVANT composition dans un Compound
+    # (OpenCASCADE lie la topologie des Shape dès qu'elles sont incluses dans un Compound,
+    # ce qui empêcherait leur export STEP unitaire ultérieur).
+    logger.info("💾 Export des fichiers STEP solides individuels avec noms et couleurs...")
     bd.export_step(bottom_shell, str(out_dir / "enclosure_bottom.step"))
     bd.export_step(top_shell, str(out_dir / "enclosure_top.step"))
     bd.export_step(cable_clamp, str(out_dir / "enclosure_clamp.step"))
 
-    # Assemblage complet fermé
-    assembly = bd.Compound([bottom_shell, top_shell])
-    bd.export_step(assembly, str(out_dir / "enclosure_assembly.step"))
+    # 3. Assemblage complet fermé (Bottom + PCB + Clamp + Top fermé)
+    # L'export est réalisé immédiatement pour préserver la hiérarchie parent-enfant dans l'arborescence STEP.
+    clamp_located = cable_clamp.locate(bd.Location((4.0, 17.78, gen.z_pcb_top + 1.5)))
+    clamp_located.label = "Bride_Serre_Cable"
+    clamp_located.color = bd.Color(0.85, 0.45, 0.1)
 
-    # 3. Exports STL haute résolution pour impression 3D / JLCPCB
-    logger.info("💾 Export des fichiers STL maillés pour impression 3D...")
-    bd.export_stl(bottom_shell, str(out_dir / "enclosure_bottom.stl"), tolerance=0.01, angular_tolerance=0.1)
-    bd.export_stl(top_shell, str(out_dir / "enclosure_top.stl"), tolerance=0.01, angular_tolerance=0.1)
-    bd.export_stl(cable_clamp, str(out_dir / "enclosure_clamp.stl"), tolerance=0.01, angular_tolerance=0.1)
+    full_assembly = bd.Compound(
+        children=[bottom_shell, pcb_solid, clamp_located, top_shell],
+        label="Assemblage_Ferme"
+    )
+    logger.info("💾 Export de l'assemblage complet fermé (STEP & STL)...")
+    bd.export_step(full_assembly, str(out_dir / "enclosure_full_assembly.step"))
+    bd.export_stl(full_assembly, str(out_dir / "enclosure_assembly.stl"), tolerance=0.02, angular_tolerance=0.15)
+
+    # 4. Assemblage en vue éclatée (Couvercle surélevé de +30 mm, bride de +12 mm)
+    top_exploded = top_shell.locate(bd.Location((0, 0, 30.0)))
+    top_exploded.label = "Boitier_Superieur"
+    top_exploded.color = bd.Color(0.35, 0.35, 0.35)
+
+    clamp_exploded = cable_clamp.locate(bd.Location((4.0, 17.78, gen.z_pcb_top + 12.0)))
+    clamp_exploded.label = "Bride_Serre_Cable"
+    clamp_exploded.color = bd.Color(0.85, 0.45, 0.1)
+
+    exploded_assembly = bd.Compound(
+        children=[bottom_shell, pcb_solid, clamp_exploded, top_exploded],
+        label="Vue_Eclatee"
+    )
+    logger.info("💾 Export de la vue éclatée (STEP & STL)...")
+    bd.export_step(exploded_assembly, str(out_dir / "enclosure_exploded.step"))
+    bd.export_stl(exploded_assembly, str(out_dir / "enclosure_exploded.stl"), tolerance=0.02, angular_tolerance=0.15)
 
     logger.info(f"✅ Génération terminée avec succès dans : {out_dir}")
     for item in out_dir.glob("*.*"):

@@ -1,10 +1,10 @@
 # Scanner OBD-II ESP32 — Conception Matérielle (Hardware)
 
-Projet de conception matérielle (schéma électrique, dimensionnement des composants, routage PCB 2 couches et fabricabilité) d'un scanner de diagnostic automobile OBD-II universel, communicant et sécurisé basé sur le SoC ESP32-S3.
+Projet de conception matérielle (schéma électrique, dimensionnement des composants, routage PCB 4 couches et fabricabilité) d'un scanner de diagnostic automobile OBD-II universel, communicant et sécurisé basé sur le SoC ESP32-S3.
 
 > [!NOTE]
 > **Séparation des Dépôts Matériel vs Logiciel :**
-> Ce dépôt `OBD2` est **dédié à la conception matérielle** (CAO EasyEDA Pro, dimensionnement physique, simulations thermiques/CEM, validation DRC/ERC et dossiers de fabrication JLCPCB). Le développement du firmware embarqué (ESP-IDF / FreeRTOS) fait l'objet d'un **dépôt logiciel dédié séparé**.
+> Ce dépôt `OBD2` est **dédié à la conception matérielle** (CAO EasyEDA Pro, dimensionnement physique, simulations thermiques/CEM, validation DRC/ERC et dossiers de fabrication JLCPCB). Le développement du firmware embarqué (ESP-IDF / FreeRTOS) fera l'objet d'un **dépôt logiciel dédié séparé**.
 > Le document de cadrage technique et de liaison entre les deux projets est consultable dans [`documents/software.md`](documents/software.md) (*Software Handover & Specifications*).
 
 ---
@@ -65,7 +65,7 @@ Dans le **Cas 3 (Banc d'Essais Bi-Cartes Miroir)**, une seconde carte configuré
 
 * **Configuration Matérielle Dédiée au Rôle Simulateur d'ECU :**
   * **Cavalier CAN `JP1` (Terminaison 120 Ω) : FERMÉ (avec shunt)** — Fournit la terminaison de ligne indispensable à l'extrémité du bus CAN simulé (la carte Scanner fournissant les autres 120 Ω, formant les 60 Ω équivalents de la norme ISO 11898-2).
-  * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : OUVERT (sans shunt)** — Laisse la ligne en haute impédance passive ($R_{in} \ge 100\,\text{k}\Omega$), rôle normalisé de l'ECU du véhicule (le scanner fournissant la polarisation active 500 Ω).
+  * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : OUVERT (sans shunt)** — Laisse la ligne en haute impédance passive (Rin >= 100 kΩ), rôle normalisé de l'ECU du véhicule (le scanner fournissant la polarisation active 500 Ω).
   * **Connecteur JST-XH 5 contacts `J1` & Embase Labo `H3` :** `J1` raccordé en direct au connecteur `J1` de la carte Scanner (lignes CANH, CANL, K_LINE, +12V, GND), le rail +12V pouvant être alimenté directement par l'alimentation de laboratoire via l'embase dédiée 1x2 broches `H3`.
   * **Port USB-C `J2` :** Relié au PC de développement pour le pilotage interactif (CLI / logs) et l'injection dynamique de scénarios de panne.
   * **Embases de Diagnostic (`H1` et `H2`) :** Permettent le branchement d'un analyseur logique USB pour espionner simultanément les trames CAN et UART au niveau logique 3.3V.
@@ -75,96 +75,153 @@ Dans le **Cas 3 (Banc d'Essais Bi-Cartes Miroir)**, une seconde carte configuré
 
 ### 1.3 Référentiel Normatif & Évaluation de la Conformité (Design Compliance)
 
-Le matériel et le firmware sont développés en référence stricte aux standards internationaux de l'ingénierie automobile. La grille ci-dessous évalue le **niveau de conformité par conception** (*Design Compliance*) atteint par l'architecture :
+Le matériel et le firmware sont développés en référence stricte aux standards internationaux de l'ingénierie automobile. Chaque domaine technique fait l'objet d'une analyse rigoureuse de **conformité par conception** (*Design Compliance*) :
 
-* 🟢 **Pleine conformité matérielle (100%) :** Le circuit respecte rigoureusement les tolérances géométriques, dynamiques et électriques imposées par la norme.
-* 🟡 **Conformité ciblée VL (85% – 95%) :** Dimensionné et éprouvé pour les conditions réelles d'une voiture particulière 12V (VL), avec limites physiques explicitement tracées.
-* 🔵 **Conformité matérielle prête / Dépendant du firmware :** Le hardware est 100% capable et dimensionné ; la conformité finale dépend de la stack logicielle (Phase 5).
+---
 
-| Domaine | Norme / Standard | Titre & Périmètre Couvert | Statut | Justification Matérielle & Choix de Conception | Limite / Condition d'Usage |
-| :--- | :--- | :--- | :---: | :--- | :--- |
-| **Connectique** | **SAE J1962 / ISO 15031-3** | Connecteur diagnostic & banc | 🟢 **100%** | • Connecteur PCB JST-XH 5 contacts coudé à 90° au pas 2.50 mm (`S5B-XH-A-1(LF)(SN)`, LCSC `C163038`) pour raccordement faisceau véhicule pigtail ou banc d'essais.<br>• Brochage direct `J1` : 1 (+12V), 2 (GND), 3 (CANH), 4 (CANL), 5 (K_LINE).<br>• Embase mâle 1x2 broches pas 2.54 mm `H3` (LCSC `C124375`) dédiée à l'injection 12V laboratoire en mode simulateur ECU. | Raccordement sécurisé par connecteur verrouillable ou embase de banc. |
-| **Bus CAN** | **ISO 11898-2** | Couche physique différentielle CAN High-Speed | 🟢 **100%** | • Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique `VIO` (3.3V).<br>• Paires différentielles symétriques 120 Ω.<br>• Terminaison 120 Ω (`R8`) commutable par cavalier `JP1` (obligatoire). | Cavalier `JP1` impérativement **ouvert** sur véhicule. |
-| **Bus K-Line** | **ISO 9141-2 & ISO 14230 (KWP2000)** | Ligne K-Line mono-fil bidirectionnelle 12V | 🟢 **100%** | • Transceiver dédié STMicroelectronics **L9637D** conforme ISO 9141.<br>• Pull-up normalisée à 500 Ω (`R16` // `R18` boîtiers 1206) garantissant tr < 2 µs sur 2 nF.<br>• Compatible init lente 5-baud et *Fast-Init* 25 ms. | Débit limité à 10.4 kbps (spécification ISO). |
-| **Diagnostic OBD** | **ISO 15765-4 & SAE J1979** | Diagnostic CAN (ISO-TP) et PIDs normalisés | 🔵 **Prêt 100%** *(Firmware)* | • Contrôleur TWAI matériel de l'ESP32-S3 compatible trames 11-bit et 29-bit.<br>• Prêt pour débits standard 500 kbps et 250 kbps (Modes 01 à 0A). | Matériel dimensionné ; stack firmware déportée dans le dépôt dédié (spécifiée dans [`documents/software.md`](documents/software.md)). |
-| **Transitoires 12V** | **ISO 7637-2** | Perturbations électriques conduites sur faisceau 12V | 🟢 **95%** *(Niveau III / Classe A)* | • **Impulsion 1 (–100 V inductif) :** Écrêtée en conduction directe sous ≈ –1 V par la TVS `D1` (`SMBJ16A`) et bloquée en tension inverse par le P-MOSFET `Q1` (tenue 60V, Vgs borné par `D3` 12V et diviseur `R5`/`R17`).<br>• **Impulsion 2a (+50 V) :** Écrêtée sous 26.0 V par TVS `D1` (SMBJ16A).<br>• **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtrées par TVS `D1` + capacités d'entrée `C14`, `C7`. | Conçu pour impédance de source automobile standard. |
-| **Environnement VL** | **ISO 16750-2** | Contraintes électriques pour véhicules légers (12V) | 🟡 **90%** *(Ciblé 12V)* | • **Inversion polarité (§4.7, –14 V) :** Bloqué à 100% par P-MOS `Q1` (aucun courant inverse).<br>• **Démarrage / Cranking (§4.6.3) :** Coupure sous 8.01 V via pont UVLO `R19`/`R20` et démarrage progressif 4.0 ms (`C17`) pour protéger la Flash NVS.<br>• **Load-Dump centralisé (§4.6.4, 35 V) :** Écrêté à 26.0 V par `D1` sous la limite absolue de 30.0 V du Buck TPS54331. | Interdiction formelle du réseau 24V et surtensions *Jump-Start* 24V prolongées (> quelques s). |
-| **Immunité ESD** | **ISO 10605 / IEC 61000-4-2** | Décharges électrostatiques (Contact & Air) | 🟢 **100%** *(Niveau 4 : ±8 kV contact / ±15 kV air)* | • Bus CAN : Diode double TVS `U8` (NUP2105L, qualifiée IEC 61000-4-2 Level 4 Contact ±30 kV, Air ±30 kV).<br>• K-Line : Diode TVS unidirectionnelle `D5` (`SMF24A` 24V, 200 W crête, clamp direct sous –1.0 V face aux transitoires négatifs).<br>• Port USB-C : Diodes ESD ultra-rapides `U6`, `U7` (SESD05C, Cj < 1.0 pF). | Nécessite un plan de masse PCB continu avec vias de couture. |
-| **Radiofréquence** | **IEEE 802.11 b/g/n & BLE 5.0** | Connectivité sans fil 2.4 GHz et Bluetooth Low Energy | 🟢 **100%** *(Certifié)* | • Module pré-certifié FCC/CE/SRRC par Espressif Systems.<br>• Antenne méandre PCB intégrée accordée à 50 Ω. | Respect rigoureux du Keepout RF PCB (zone sans cuivre multicouche). |
+#### 🔌 1. Connectique de Diagnostic & Banc — SAE J1962 / ISO 15031-3
+* **Statut de conformité :** 🟢 **100% Conforme**
+* **Périmètre :** Raccordement physique à la prise diagnostic du véhicule et interconnexion banc d'essais.
+* **Justification matérielle & Choix de conception :**
+  * Connecteur PCB JST-XH 5 contacts coudé à 90° au pas 2.50 mm (`S5B-XH-A-1(LF)(SN)`, LCSC `C163038`) pour raccordement direct au faisceau pigtail OBD-II ou banc miroir.
+  * Brochage unifié de `J1` : broche 1 (`+12V`), 2 (`GND`), 3 (`CANH`), 4 (`CANL`), 5 (`K_LINE`).
+  * Embase mâle 1x2 broches au pas 2.54 mm `H3` (LCSC `C124375`) dédiée à l'injection 12V laboratoire en mode simulateur ECU.
+* **Conditions & Limites d'usage :** Raccordement sécurisé par connecteur verrouillable ou embase de banc.
+
+---
+
+#### 🚗 2. Couche Physique Bus CAN — ISO 11898-2
+* **Statut de conformité :** 🟢 **100% Conforme**
+* **Périmètre :** Bus de communication différentiel haute vitesse (CAN High-Speed jusqu'à 1 Mbps).
+* **Justification matérielle & Choix de conception :**
+  * Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique dédiée `VIO` raccordée au 3.3V (parfaite intégrité logique avec l'ESP32-S3 sans adaptateur de niveau).
+  * Routage en paires différentielles symétriques avec impédance contrôlée 120 Ω.
+  * Terminaison 120 Ω (`R8`) commutable par cavalier matériel `JP1`.
+* **Conditions & Limites d'usage :** Cavalier `JP1` impérativement **ouvert** lors d'un raccordement sur véhicule (le bus automobile étant déjà terminé par ses deux résistances de 120 Ω aux extrémités).
+
+---
+
+#### ⚡ 3. Ligne de Diagnostic K-Line — ISO 9141-2 & ISO 14230 (KWP2000)
+* **Statut de conformité :** 🟢 **100% Conforme**
+* **Périmètre :** Ligne de diagnostic mono-fil bidirectionnelle 12V (véhicules essence post-2001 et diesel post-2004).
+* **Justification matérielle & Choix de conception :**
+  * Transceiver spécialisé STMicroelectronics **L9637D** certifié conforme ISO 9141.
+  * Polarisation pull-up commutable à 500 Ω (`R16` en parallèle avec `R18`, boîtiers 1206 pour dissiper la puissance thermique sous 12V) garantissant un temps de montée tr < 2 µs sur charge capacitive de 2 nF.
+  * Pleine compatibilité avec l'initialisation lente (*5-baud init*) et l'initialisation rapide (*Fast-Init* 25 ms).
+* **Conditions & Limites d'usage :** Débit limité à 10.4 kbps conformément à la spécification ISO.
+
+---
+
+#### 🧠 4. Protocoles de Diagnostic & Transport — ISO 15765-4 & SAE J1979
+* **Statut de conformité :** 🔵 **Prêt 100% (Matériel dimensionné / Validation Firmware)**
+* **Périmètre :** Couche transport CAN (ISO-TP) et requêtes normalisées OBD-II (PIDs standardisés).
+* **Justification matérielle & Choix de conception :**
+  * Contrôleur TWAI matériel natif de l'ESP32-S3 prenant en charge les trames d'identifiants standard 11-bit et étendus 29-bit.
+  * Étage matériel dimensionné pour les débits normalisés 500 kbps et 250 kbps (requêtes OBD-II Modes 01 à 0A).
+* **Conditions & Limites d'usage :** La validation finale relève du firmware applicatif consigné dans le dépôt dédié (spécifié dans [`documents/software.md`](documents/software.md)).
+
+---
+
+#### 🛡️ 5. Protection contre les Transitoires Conduits 12V — ISO 7637-2
+* **Statut de conformité :** 🟢 **95% Conforme (Niveau III / Classe A)**
+* **Périmètre :** Surtensions et impulsions parasites conduites sur le faisceau électrique 12V de l'automobile.
+* **Justification matérielle & Choix de conception :**
+  * **Impulsion 1 (–100 V inductif) :** Écrêtée en conduction directe sous environ –1 V par la diode TVS `D1` (`SMBJ16A`) et bloquée en tension inverse par le P-MOSFET `Q1` (tenue Vds 60V, tension Vgs bornée à 12V par la diode Zener `D3` et le diviseur `R5`/`R17`).
+  * **Impulsion 2a (+50 V) :** Écrêtée sous 26.0 V par la TVS d'entrée `D1` (`SMBJ16A`).
+  * **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtrées par le réseau d'entrée associant la TVS `D1` et les capacités céramiques haute tension `C14` et `C7`.
+* **Conditions & Limites d'usage :** Étage dimensionné pour les impédances de source normalisées des réseaux de bord automobiles standard.
+
+---
+
+#### 🚙 6. Contraintes Électriques Véhicules Légers — ISO 16750-2
+* **Statut de conformité :** 🟡 **90% Conforme (Ciblé Réseau 12V Véhicules Légers)**
+* **Périmètre :** Variations de tension batterie, chutes au démarrage et délestage de charge (*Load-Dump*).
+* **Justification matérielle & Choix de conception :**
+  * **Inversion de polarité (§4.7, –14 V) :** Bloquée à 100% par le transistor P-MOSFET `Q1` (aucun courant de fuite destructif).
+  * **Démarrage moteur / Cranking (§4.6.3) :** Coupure propre sous 8.01 V via le seuil UVLO précis (`R19`/`R20`) et démarrage temporisé à 4.0 ms (`C17`) pour prévenir toute corruption de la mémoire Flash NVS de l'ESP32-S3 lors des micro-coupures.
+  * **Load-Dump centralisé (§4.6.4, 35 V) :** Tension écrêtée à 26.0 V par `D1`, restant strictement sous la limite absolue de 30.0 V du régulateur Buck TPS54331.
+* **Conditions & Limites d'usage :** Interdiction formelle d'utilisation sur réseaux 24V (poids lourds) ou surtensions prolongées de démarrage d'urgence (*Jump-Start* 24V > quelques secondes).
+
+---
+
+#### ⚡ 7. Immunité aux Décharges Électrostatiques (ESD) — ISO 10605 / IEC 61000-4-2
+* **Statut de conformité :** 🟢 **100% Conforme (Niveau 4 : ±8 kV contact / ±15 kV air)**
+* **Périmètre :** Protection contre les arcs électrostatiques sur les connecteurs accessibles par l'utilisateur.
+* **Justification matérielle & Choix de conception :**
+  * **Lignes CAN :** Diode double TVS spécifique automobile `U8` (NUP2105L), certifiée IEC 61000-4-2 Niveau 4 (tenue jusqu'à ±30 kV au contact et dans l'air).
+  * **Ligne K-Line :** Diode TVS unidirectionnelle `D5` (`SMF24A`, 24V, 200 W crête) avec retour de conduction sous –1.0 V face aux impulsions négatives.
+  * **Port USB-C :** Réseau de diodes ESD ultra-rapides `U6` et `U7` (SESD05C, capacité parasite Cj < 1.0 pF préservant l'intégrité du bus USB High-Speed).
+* **Conditions & Limites d'usage :** Raccordement optimal au plan de masse continu multicouche par vias de couture.
+
+---
+
+#### 📡 8. Connectivité Sans Fil Radiofréquence — IEEE 802.11 b/g/n & BLE 5.0
+* **Statut de conformité :** 🟢 **100% Conforme (Module Pré-certifié)**
+* **Périmètre :** Émission et réception sans fil Wi-Fi 2.4 GHz et Bluetooth Low Energy 5.0.
+* **Justification matérielle & Choix de conception :**
+  * Module ESP32-S3-WROOM-1 pré-certifié par le fabricant Espressif Systems (FCC, CE, SRRC).
+  * Antenne méandre sur PCB accordée à 50 Ω.
+* **Conditions & Limites d'usage :** Respect strict de la zone d'exclusion RF (*Keepout*) sur toutes les couches de cuivre du PCB (antenne dégagée en porte-à-faux sur le bord Est de la carte).
 
 ---
 
 ## 2. Architecture Fonctionnelle Globale
 
 ```mermaid
-%%{init: {
-  'themeVariables': {
-    'fontFamily': 'Consolas, "Courier New", monospace',
-    'fontSize': '12px'
-  },
-  'flowchart': {
-    'curve': 'stepBefore',
-    'nodeSpacing': 30,
-    'rankSpacing': 40
-  }
-}}%%
-flowchart TD
-    subgraph J1_BLOCK["CONNECTEUR DIAGNOSTIC J1 (JST-XH 5P COUDÉ 90°)"]
-        PIN1["Broche 1 (+12V Batterie / Alim Labo)"]
-        PIN2["Broche 2 (Masse Générale / GND)"]
-        PIN3["Broche 3 (Bus CANH Différentiel)"]
-        PIN4["Broche 4 (Bus CANL Différentiel)"]
-        PIN5["Broche 5 (Ligne K-Line 12V)"]
-    end
-
-    subgraph H3_BLOCK["EMBASE LABO H3 (1x2P 2.54 MM)"]
-        H3_1["Broche 1 (+12V Labo / Simulation ECU)"]
-        H3_2["Broche 2 (Masse Labo / GND)"]
-    end
-
-    subgraph POWER["ÉTAGE D'ALIMENTATION & PROTECTIONS"]
+flowchart LR
+    subgraph IN["1. ENTRÉES & CONNECTIQUE"]
         direction TB
-        F1["1. Protection 12V\n• Fusible PPTC F1 (1.1A / 33V)\n• TVS D1 (16V / Clamp 26.0V)\n• Anti-inversion Q1/Q2 + Zener D3"]
-        BUCK["2. Régulateur Buck 570 kHz (U4)\n• TPS54331 + Inductance L1 (10µH)\n• Diode Schottky D2 (SS34 3A)"]
-        LDO["3. LDO 3.3V Faible Bruit (U5)\n• LDL1117S33R + Perle Ferrite FB1"]
-        F1 -->|"+12V_PROT"| BUCK
+        J1["Connecteur OBD-II J1\n(JST-XH 5 contacts)"]
+        H3["Embase Labo H3\n(Bornier 12V 1x2)"]
+        J2["Port USB-C J2\n(Programmation & Banc)"]
+    end
+
+    subgraph PWR["2. ÉTAGE ALIMENTATION"]
+        direction TB
+        PROT["Protection 12V\n(PPTC F1, TVS D1, P-MOS Q1)"]
+        BUCK["Régulateur Buck 5V\n(TPS54331 U4 - 570 kHz)"]
+        LDO["Régulateur LDO 3.3V\n(LDL1117S33R U5)"]
+        PROT -->|"+12V_PROT"| BUCK
         BUCK -->|"+5V"| LDO
     end
 
-    subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
-        CAN_IC["5. Transceiver CAN (U2 - TJA1051T) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8 (NUP2105L)\n• Broche d'adaptation VIO 3.3V"]
-        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Pull-up 500Ω commutable (JP2)\n• Protection transitoire/ESD D5 (SMF24A)\n• Amortisseurs de ligne R1/R2"]
+    subgraph PHY["3. ÉTAGE TRANSCEIVERS"]
+        direction TB
+        CAN["Transceiver CAN High-Speed\n(TJA1051T U2 + TVS U8)\n[Cavalier JP1 120 Ω]"]
+        KLINE["Transceiver K-Line 12V\n(L9637D U3 + TVS D5)\n[Cavalier JP2 500 Ω]"]
     end
 
-    subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
-        ESP["8. ESP32-S3-WROOM-1 (U1)\n• Xtensa LX7 Dual-Core 240 MHz\n• Wi-Fi 2.4 GHz & BLE 5.0 (Antenne PCB)"]
-        PERIPH["Périphériques associés :\n• 7. LED d'état (LED1 / IO2)\n• 9. Monitoring Batterie ADC1 (R12/R13, C10, D6)\n• 10. Circuit Reset & Boot (SW1, R15, R21, C12)"]
+    subgraph MCU["4. CŒUR ESP32-S3 & RADIO"]
+        direction TB
+        ESP["ESP32-S3-WROOM-1 U1\n(Dual-Core LX7 240 MHz)"]
+        PERIPH["Périphériques I/O\n(LED1, SW1, Pont ADC Vbat)"]
+        RF["Connectivité Sans-Fil\n(Wi-Fi 2.4 GHz & BLE 5.0)"]
+        ESP --- PERIPH
+        ESP --- RF
     end
 
-    subgraph USB_DEBUG["INTERFACE USB-C & BANC DE TEST"]
-        USBC["4. Port USB-C (J2) + ESD U6/U7"]
-        D4["Alimentation autonome banc :\nDiode Schottky simple anti-retour D4 (1A)"]
-        USBC -->|"+5V VBUS"| D4
-        D4 -.->|Alimentation banc| BUCK
-        USBC <-->|"USB D+ / D-"| ESP
-    end
+    J1 -->|"+12V Batterie"| PROT
+    H3 -->|"+12V Labo"| PROT
+    J2 -->|"+5V VBUS (Diode D4)"| BUCK
 
-    PIN1 --> F1
-    H3_1 --> F1
-    PIN2 ===>|"Masse retour GND"| POWER
-    H3_2 ===>|"Masse retour GND"| POWER
-    PIN3 <==>|"Ligne CANH"| CAN_IC
-    PIN4 <==>|"Ligne CANL"| CAN_IC
-    PIN5 <==>|"Ligne K-Line (12V)"| KLINE_IC
-
+    BUCK -->|"+5V VCC"| CAN
+    LDO -->|"+3.3V Logique"| CAN
+    LDO -->|"+3.3V Logique"| KLINE
     LDO -->|"+3.3V Logique"| ESP
-    LDO -->|"+3.3V Logique"| CAN_IC
-    LDO -->|"+3.3V Logique"| KLINE_IC
-    BUCK -->|"+5V VCC"| CAN_IC
 
-    CAN_IC <==>|"Bus TWAI"| ESP
-    KLINE_IC <==>|"Liaison UART"| ESP
+    J1 <-->|"CANH / CANL"| CAN
+    J1 <-->|"Ligne K-Line 12V"| KLINE
+
+    CAN <-->|"Bus TWAI (RX/TX)"| ESP
+    KLINE <-->|"UART Série (RX/TX)"| ESP
+    J2 <-->|"Lignes USB D+ / D-"| ESP
 ```
+
+#### Légende Fonctionnelle des Flux :
+* **1. Entrées & Raccordements :** Connecteur `J1` (faisceau véhicule ou banc miroir), embase `H3` (alimentation laboratoire 12V), port USB-C `J2` (alimentation autonome banc 5V via diode `D4` et flash série).
+* **2. Étage d'Alimentation :** Filtrage et protection amont (`F1`, `D1`, `Q1`), régulateur à découpage Buck 5V (`U4` TPS54331 à 570 kHz), et régulateur LDO 3.3V à faible bruit (`U5` LDL1117S33R).
+* **3. Transceivers Automobiles :** Contrôleur de ligne CAN High-Speed (`U2` TJA1051T, TVS `U8`, cavalier `JP1` 120 Ω) et étage K-Line mono-fil 12V (`U3` L9637D, TVS `D5`, cavalier `JP2` 500 Ω).
+* **4. Cœur de Traitement :** ESP32-S3-WROOM-1 (`U1` Xtensa LX7 dual-core 240 MHz), interfaces physiques (`LED1`, `SW1`, diviseur de tension ADC `TP7`) et émetteur-récepteur Wi-Fi 2.4 GHz / BLE 5.0.
 
 ---
 
@@ -213,19 +270,27 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
   * **Face inférieure (Bottom) :**
   ![PCB OBD2 Scanner - Vue 2D Face Inférieure](./documents/pcb/2d-bottom.png)
 
-### Modélisation 3D Interactive
+### Modélisation 3D
 
 GitHub intègre nativement un visualiseur 3D WebGL : en cliquant sur les fichiers `.stl` ci-dessous, le modèle 3D interactif s'affiche directement dans votre navigateur avec manipulation à la souris (rotation, zoom, vue filaire/ombrée).
 
-#### 1. Circuit Imprimé Assemblé (PCBA)
+#### 1. Circuit Imprimé Assemblé (PCB)
 * 🧊 **[Modèle 3D Interactif du PCB (`scanner.stl`)](./documents/pcb/scanner.stl)** *(visualisation 3D directe sous GitHub, 14.2 MB)*
 
-#### 2. Boîtier Mécanique & Intégration (`pcb-enclosure`)
+#### 2. Boîtier Mécanique (Enclosure)
 Boîtier bi-coquilles paramétrique à 4 bossages M2 avec berceau de câble et bride de décharge de traction :
-* 🧊 **[Coquille Inférieure (`enclosure_bottom.stl`)](./documents/enclosure/enclosure_bottom.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_bottom.step)
-* 🧊 **[Coquille Supérieure (`enclosure_top.stl`)](./documents/enclosure/enclosure_top.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_top.step)
-* 🧊 **[Bride Serre-câble OBD-II (`enclosure_clamp.stl`)](./documents/enclosure/enclosure_clamp.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_clamp.step)
-* 📐 **[Assemblage Complet Boîtier Fermé (`enclosure_assembly.step`)](./documents/enclosure/enclosure_assembly.step)** *(solide d'assemblage complet pour CAO et tolérances)*
+
+* **Visualisation 3D Interactive (STL WebGL GitHub) :**
+  * 🧊 **[Assemblage Boîtier Complet Fermé (`enclosure_assembly.stl`)](./documents/enclosure/enclosure_assembly.stl)** *(boîtier fermé intégrant la carte PCB et la bride)*
+  * 🧊 **[Vue Éclatée de l'Ensemble (`enclosure_exploded.stl`)](./documents/enclosure/enclosure_exploded.stl)** *(couvercle et bride surélevés pour visualisation interne)*
+
+* **Modèles CAO STEP Solides (Norme ISO 10303 AP214 avec noms de pièces et couleurs pour Autodesk Viewer) :**
+  * 📐 **[Assemblage Fermé Complet (`enclosure_full_assembly.step`)](./documents/enclosure/enclosure_full_assembly.step)** *(solide d'assemblage complet multi-pièces)*
+  * 📐 **[Assemblage en Vue Éclatée (`enclosure_exploded.step`)](./documents/enclosure/enclosure_exploded.step)** *(vue éclatée avec arborescence des composants nommés)*
+  * 📦 **Fichiers unitaires d'usinage/impression 3D :**
+    * [Coquille Inférieure (`enclosure_bottom.step`)](./documents/enclosure/enclosure_bottom.step)
+    * [Coquille Supérieure (`enclosure_top.step`)](./documents/enclosure/enclosure_top.step)
+    * [Bride Serre-câble OBD-II (`enclosure_clamp.step`)](./documents/enclosure/enclosure_clamp.step)
 
 ---
 
