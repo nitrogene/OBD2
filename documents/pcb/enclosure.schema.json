@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PCB Enclosure Configuration Schema",
+  "description": "Schéma de configuration déclaratif pour le générateur de boîtier mécanique 3D paramétrique (pcb-enclosure)",
+  "type": "object",
+  "required": ["$schema", "project", "version", "parameters", "shells", "bosses", "cable_clamp", "cutouts"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "project": { "type": "string" },
+    "version": { "type": "string" },
+    "parameters": {
+      "type": "object",
+      "required": ["wall_thickness_mm", "pcb_clearance_xy_mm", "bottom_internal_height_mm", "top_internal_height_mm", "corner_radius_mm", "lip_height_mm", "lip_clearance_mm"],
+      "properties": {
+        "wall_thickness_mm": { "type": "number", "minimum": 1.0, "description": "Épaisseur nominale des parois du boîtier en mm" },
+        "pcb_clearance_xy_mm": { "type": "number", "minimum": 0.1, "description": "Jeu périphérique entre le bord du PCB et la paroi intérieure en mm" },
+        "bottom_internal_height_mm": { "type": "number", "minimum": 2.0, "description": "Hauteur utile sous le PCB (face arrière) en mm" },
+        "top_internal_height_mm": { "type": "number", "minimum": 3.0, "description": "Hauteur utile au-dessus du PCB (face avant) en mm" },
+        "corner_radius_mm": { "type": "number", "minimum": 0.0, "description": "Rayon des congés des coins extérieurs en mm" },
+        "lip_height_mm": { "type": "number", "minimum": 0.5, "description": "Hauteur de la lèvre d'emboîtement entre les deux demi-coquilles en mm" },
+        "lip_clearance_mm": { "type": "number", "minimum": 0.05, "description": "Jeu d'ajustement entre la lèvre et la rainure en mm" }
+      }
+    },
+    "shells": {
+      "type": "object",
+      "required": ["type", "split_plane"],
+      "properties": {
+        "type": { "type": "string", "enum": ["top_and_bottom", "drawer", "clamshell"] },
+        "split_plane": { "type": "string", "enum": ["pcb_center", "pcb_top", "pcb_bottom"] }
+      }
+    },
+    "bosses": {
+      "type": "object",
+      "required": ["screw_type", "outer_diameter_mm", "insert_hole_diameter_mm", "insert_depth_mm", "screw_clearance_diameter_mm", "screw_head_counterbore_diameter_mm", "screw_head_counterbore_depth_mm"],
+      "properties": {
+        "screw_type": { "type": "string", "enum": ["M2", "M2.5", "M3"] },
+        "outer_diameter_mm": { "type": "number", "minimum": 3.0, "description": "Diamètre extérieur des colonnettes en mm" },
+        "insert_hole_diameter_mm": { "type": "number", "minimum": 1.5, "description": "Diamètre du perçage pour insert laiton thermofusible en mm" },
+        "insert_depth_mm": { "type": "number", "minimum": 2.0, "description": "Profondeur du puits d'insert en mm" },
+        "screw_clearance_diameter_mm": { "type": "number", "minimum": 2.0, "description": "Diamètre de passage libre de la vis dans le couvercle en mm" },
+        "screw_head_counterbore_diameter_mm": { "type": "number", "minimum": 3.0, "description": "Diamètre du lamage de tête de vis en mm" },
+        "screw_head_counterbore_depth_mm": { "type": "number", "minimum": 0.5, "description": "Profondeur du lamage de tête de vis en mm" }
+      }
+    },
+    "cable_clamp": {
+      "type": "object",
+      "required": ["enabled", "cable_diameter_mm", "clamp_width_mm", "screw_spacing_mm", "screw_type"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "cable_diameter_mm": { "type": "number", "minimum": 3.0 },
+        "clamp_width_mm": { "type": "number", "minimum": 5.0 },
+        "screw_spacing_mm": { "type": "number", "minimum": 8.0 },
+        "screw_type": { "type": "string", "enum": ["M2", "M2.5", "M3"] }
+      }
+    },
+    "cutouts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "face", "shape", "position_mm", "dimensions_mm"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "face": { "type": "string", "enum": ["front", "back", "left", "right", "top", "bottom", "split_line"] },
+          "shape": { "type": "string", "enum": ["rectangle", "rounded_rectangle", "circle"] },
+          "position_mm": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 2,
+            "maxItems": 3
+          },
+          "dimensions_mm": {
+            "type": "array",
+            "items": { "type": "number" },
+            "minItems": 1,
+            "maxItems": 3
+          },
+          "corner_radius_mm": { "type": "number" }
+        }
+      }
+    }
+  }
+}

@@ -74,12 +74,12 @@ Procédure séquentielle de mise sous tension et de validation des cartes à ré
 
 ---
 
-## 3. Conception du Boîtier & Intégration Mécanique
+## 3. Conception du Boîtier & Intégration Mécanique (Skill `pcb-enclosure`)
 
-- [ ] **Maintien mécanique du faisceau OBD-II :** Concevoir le serre-câble / passe-fil pour décharger mécaniquement les contraintes de traction sur le connecteur `J1` (JST-XH 5P coudé).
-- [ ] **Accès connectique & interfaces :** Dégager les ouvertures pour le connecteur USB-C `J2`, le bouton Flash `SW1` et le guide de lumière de `LED1`.
-- [ ] **Fixation carte :** Intégrer les 4 bossages de fixation M2 alignés avec les perçages du PCB (entraxes conformes à [`constraints.json`](documents/pcb/constraints.json)).
-- [ ] **Modélisation 3D (STEP / STL) :** Export et validation des tolérances d'assemblage pour impression 3D / usinage.
+- [x] **Maintien mécanique du faisceau OBD-II :** Bride serre-câble rigide 2 vis M2 (`enclosure_clamp.step` / `.stl`) déchargeant totalement la traction sur le connecteur `J1`.
+- [x] **Accès connectique & interfaces :** Découpes paramétriques sur plan de joint pour USB-C `J2` (10.2 x 4.2 mm), passage câble OBD-II (diamètre 6.8 mm), bouton Flash `SW1` (diamètre 3.0 mm) et voyant `LED1` (diamètre 2.0 mm).
+- [x] **Fixation carte :** 4 bossages de fixation M2 alignés avec les perçages `MH1..MH4` du PCB (entraxes 74.28 x 28.56 mm), avec puits d'inserts thermofusibles diamètre 3.2 mm et lamages de vis diamètre 4.5 mm.
+- [x] **Modélisation 3D (STEP / STL) :** Moteur OpenCASCADE paramétrique sous `.agents/skills/pcb-enclosure/`, exports STEP AP214 et STL haute résolution dans `documents/enclosure/` prêts pour impression 3D JLCPCB.
 
 ---
 

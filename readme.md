@@ -213,8 +213,19 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
   * **Face inférieure (Bottom) :**
   ![PCB OBD2 Scanner - Vue 2D Face Inférieure](./documents/pcb/2d-bottom.png)
 
-### Modélisation 3D
-![PCB OBD2 Scanner - Vue 3D photoréaliste](./documents/pcb/3d.png)
+### Modélisation 3D Interactive
+
+GitHub intègre nativement un visualiseur 3D WebGL : en cliquant sur les fichiers `.stl` ci-dessous, le modèle 3D interactif s'affiche directement dans votre navigateur avec manipulation à la souris (rotation, zoom, vue filaire/ombrée).
+
+#### 1. Circuit Imprimé Assemblé (PCBA)
+* 🧊 **[Modèle 3D Interactif du PCB (`scanner.stl`)](./documents/pcb/scanner.stl)** *(visualisation 3D directe sous GitHub, 14.2 MB)*
+
+#### 2. Boîtier Mécanique & Intégration (`pcb-enclosure`)
+Boîtier bi-coquilles paramétrique à 4 bossages M2 avec berceau de câble et bride de décharge de traction :
+* 🧊 **[Coquille Inférieure (`enclosure_bottom.stl`)](./documents/enclosure/enclosure_bottom.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_bottom.step)
+* 🧊 **[Coquille Supérieure (`enclosure_top.stl`)](./documents/enclosure/enclosure_top.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_top.step)
+* 🧊 **[Bride Serre-câble OBD-II (`enclosure_clamp.stl`)](./documents/enclosure/enclosure_clamp.stl)** | [Format STEP CAO](./documents/enclosure/enclosure_clamp.step)
+* 📐 **[Assemblage Complet Boîtier Fermé (`enclosure_assembly.step`)](./documents/enclosure/enclosure_assembly.step)** *(solide d'assemblage complet pour CAO et tolérances)*
 
 ---
 
@@ -222,9 +233,9 @@ L'agencement des composants est résolu par le moteur d'auto-placement sous cont
 
 * **Phase 1 : Schématique & Nomenclature (Validée) :** Schéma complet modulaire en 4 pages fonctionnelles (Alimentation, Transceiver CAN, Transceiver K-Line, ESP32-S3), 85 composants validés (70 physiques + 15 mires TP), nomenclature 100% optimisée en Basic Parts JLCPCB ([`documents/schema/bom.json`](documents/schema/bom.json)), cavaliers de configuration bi-mode intégrés (`JP1` 120 Ω CAN, `JP2` 500 Ω K-Line), embase d'alimentation labo (`H3`), connecteurs de diagnostic USB (`H1`, `H2`), et contrôle strict **ERC = 0** sous EasyEDA Pro.
 * **Phase 2 : Placement PCB & Sérigraphie (Validée) :** Moteur d'auto-placement par recuit simulé validé avec **0 chevauchement physique (0.0 mm²)**, courtyards et dégagements pastilles IPC-7351 respectés, sérigraphie optimisée par *Line-of-Sight* sans texte inversé ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
-* **Phase 3.1 : Auto-Routage Headless (Validée) :** 100% des pistes actives routées (219/219 connexions) via le skill `freerouting` (FreeRouting v2.4.1 sous OpenJDK 25 portable) avec réimport automatique et **DRC EasyEDA Pro = 0 violation**.
-* **Phase 3.2 : Plans de Masse & Stitching (En cours de finalisation) :** Plans de masse `GND` continus TopLayer (`POUR1`) et BottomLayer (`POUR2`) coulés, 34 vias de couture implantés (**0 Connection Error**).
-* **Prochaine étape immédiate :** Résolution des 13 Clearance Errors résiduelles de pontage d'îlots de masse via les chemins d'évitement A* du skill `pcb-stitcher` (`island_bridger.py`), sérigraphie finale des cavaliers `JP1`/`JP2` et certification **DRC = 0 strict**.
+* **Phase 3 : Auto-Routage & Plans de Masse (Validée) :** 100% des pistes actives routées (219/219 connexions), paires différentielles USB et CAN respectées, plans de masse continus multicouches, couture de masse (stitching) et certification **DRC EasyEDA Pro = 0 erreur, 0 avertissement**.
+* **Phase 4 : Sérigraphie Fonctionnelle & Boîtier 3D (Validée) :** Sérigraphie fonctionnelle face arrière annotée (`documents/pcb/silkscreen.json`), skill CAO paramétrique `pcb-enclosure` implémenté avec modèles solides STEP et STL haute résolution générés pour JLCPCB 3D Printing.
+* **Prochaine étape immédiate :** Dossier de fabrication SMT JLCPCB (Gerber, BOM SMT, CPL Pick & Place) et commande des prototypes.
 
 ---
 

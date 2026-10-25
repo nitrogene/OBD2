@@ -1,0 +1,69 @@
+{
+  "$schema": "./enclosure.schema.json",
+  "project": "Scanner OBD-II ESP32",
+  "version": "1.0.0",
+  "parameters": {
+    "wall_thickness_mm": 2.0,
+    "pcb_clearance_xy_mm": 0.35,
+    "bottom_internal_height_mm": 3.5,
+    "top_internal_height_mm": 9.5,
+    "corner_radius_mm": 3.0,
+    "lip_height_mm": 1.2,
+    "lip_clearance_mm": 0.15
+  },
+  "shells": {
+    "type": "top_and_bottom",
+    "split_plane": "pcb_top"
+  },
+  "bosses": {
+    "screw_type": "M2",
+    "outer_diameter_mm": 5.0,
+    "insert_hole_diameter_mm": 3.2,
+    "insert_depth_mm": 4.0,
+    "screw_clearance_diameter_mm": 2.4,
+    "screw_head_counterbore_diameter_mm": 4.5,
+    "screw_head_counterbore_depth_mm": 1.6
+  },
+  "cable_clamp": {
+    "enabled": true,
+    "cable_diameter_mm": 6.5,
+    "clamp_width_mm": 8.0,
+    "screw_spacing_mm": 14.0,
+    "screw_type": "M2"
+  },
+  "cutouts": [
+    {
+      "id": "usb_c_port",
+      "description": "Fenêtre de passage pour connecteur USB-C J2",
+      "face": "front",
+      "shape": "rounded_rectangle",
+      "position_mm": [40.64, 0.0, 0.0],
+      "dimensions_mm": [10.2, 4.2],
+      "corner_radius_mm": 1.5
+    },
+    {
+      "id": "obd2_cable_exit",
+      "description": "Sortie axiale du câble blindé du faisceau OBD-II",
+      "face": "left",
+      "shape": "circle",
+      "position_mm": [0.0, 17.78, 0.0],
+      "dimensions_mm": [6.8]
+    },
+    {
+      "id": "flash_button",
+      "description": "Accès au bouton poussoir Flash/Boot SW1",
+      "face": "top",
+      "shape": "circle",
+      "position_mm": [66.59, 31.46],
+      "dimensions_mm": [3.0]
+    },
+    {
+      "id": "status_led",
+      "description": "Conduit de visualisation pour la diode LED1 de statut",
+      "face": "top",
+      "shape": "circle",
+      "position_mm": [68.73, 5.83],
+      "dimensions_mm": [2.0]
+    }
+  ]
+}
