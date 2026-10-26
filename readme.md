@@ -17,7 +17,7 @@ Projet de conception matérielle (schéma électrique, dimensionnement des compo
 
 > [!NOTE]
 > **Conformité & Périmètre Normatif ISO 16750-2 / Load-Dump :**
-> La tenue aux surtensions du circuit repose sur la présence d'un alternateur automobile moderne doté d'un écrêtage centralisé standard (*Centralized Load Dump Clamp* conforme ISO 16750-2 Test B, VL <= 35V). La diode TVS `D1` (SMBJ16A, Vcl = 26.0V max) et le régulateur Buck `U4` (TPS54331, Vin max 30.0V) procurent une marge de sécurité robuste de 4.0V. Les agressions hors spécification (démarrage forcé sur booster 24V et impulsion d'énergie brute non centralisée de 200J ISO 7637-2 / ISO 16750-2 Test A sans écrêtage alternateur) sont formellement exclues du périmètre contractuel.
+> La tenue aux surtensions du circuit repose sur la présence d'un alternateur automobile moderne doté d'un écrêtage centralisé standard (*Centralized Load Dump Clamp* conforme ISO 16750-2 Test B, VL <= 35V). La diode TVS `D1` (16V, Vcl = 26.0V max) et le régulateur Buck `U4` (Vin max 30.0V) procurent une marge de sécurité robuste de 4.0V. Les agressions hors spécification (démarrage forcé sur booster 24V et impulsion d'énergie brute non centralisée de 200J ISO 7637-2 / ISO 16750-2 Test A sans écrêtage alternateur) sont formellement exclues du périmètre contractuel.
 
 Le projet est conçu pour opérer et se qualifier selon **trois cas d'usage et de test opérationnels** :
 1. **Cas 1 : Nominal Véhicule (Usage Conducteur / Atelier) :** Diagnostic autonome enfiché sur la prise OBD-II SAE J1962 (12V) du véhicule via connecteur verrouillable JST-XH 5 broches `J1`, communication 100% sans fil (BLE 5.0 / Wi-Fi), alimentation directe par la batterie du véhicule avec coupure de sécurité UVLO à 8.01 V, cavalier CAN `JP1` ouvert et cavalier K-Line `JP2` impérativement fermé (avec shunt) conformément au rôle de testeur ISO 9141-2.
@@ -31,12 +31,12 @@ Le projet est conçu pour opérer et se qualifier selon **trois cas d'usage et d
 Module autonome compact venant s'enficher directement sur la prise diagnostic du véhicule :
 
 * **Diagnostic moteur multi-protocoles :**
-  * **Bus CAN (ISO 11898-2 / ISO 15765-4) :** Couche physique différentielle haute vitesse (jusqu'à 1 Mbps), via transceiver certifié `U2` (TJA1051T) avec adaptation logique `VIO` 3.3V, contrôleur matériel TWAI de l'ESP32-S3 et protection ESD dédiée `U8` (NUP2105L).
-  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée, via transceiver `U3` (L9637D), pull-up normalisée 500 Ω (`R16` // `R18` 1206) commutable par cavalier `JP2`, et protection TVS unidirectionnelle `D5` (SMF24A).
+  * **Bus CAN (ISO 11898-2 / ISO 15765-4) :** Couche physique différentielle haute vitesse (jusqu'à 1 Mbps), via transceiver certifié `U2` avec adaptation logique `VIO` 3.3V, contrôleur matériel TWAI de l'ESP32-S3 et protection ESD dédiée `U8`.
+  * **Ligne K-Line (ISO 9141-2 / ISO 14230 KWP2000) :** Liaison mono-fil bidirectionnelle 12V calibrée, via transceiver `U3`, pull-up normalisée 500 Ω (`R16` // `R18`) commutable par cavalier `JP2`, et protection TVS unidirectionnelle `D5`.
 * **Cœur de traitement & Connectivité sans fil :** SoC **ESP32-S3-WROOM-1** (Xtensa LX7 Dual-Core 240 MHz, 16 Mo Flash, 2 Mo PSRAM, –40 °C à +85 °C) assurant les liaisons Bluetooth Low Energy (BLE 5.0) et Wi-Fi 2.4 GHz avec antenne méandre PCB intégrée.
 * **Architecture d'alimentation hybride sécurisée :**
-  * Étage primaire robuste face aux transitoires automobiles : fusible réarmable PPTC `F1` (1.1A / 33V), diode TVS `D1` (SMBJ16A, serrage 26.0V max), protection anti-inversion active sans chute de tension par P-MOSFET `Q1` (60V) et N-MOSFET `Q2`.
-  * Double étage de régulation : convertisseur Buck haute fréquence 570 kHz (`U4` TPS54331) 12V → 5V (rendement > 85%, coupure UVLO franche à 8.01 V), suivi d'un LDO ultra-faible bruit 3.3V (`U5` LDL1117S33R) filtré par perle de ferrite `FB1`.
+  * Étage primaire robuste face aux transitoires automobiles : fusible réarmable PPTC `F1` (1.1A / 33V), diode TVS `D1` (serrage 26.0V max), protection anti-inversion active sans chute de tension par P-MOSFET `Q1` et N-MOSFET `Q2`.
+  * Double étage de régulation : convertisseur Buck haute fréquence 570 kHz (`U4`) 12V → 5V (rendement > 85%, coupure UVLO franche à 8.01 V), suivi d'un LDO ultra-faible bruit 3.3V (`U5`) filtré par perle de ferrite `FB1`.
   * Alimentation autonome sur port USB-C protégée contre les retours véhicule par diode Schottky de puissance 1A `D4`.
 * **Spécifications logicielles associées :** Voir [`documents/software.md §4 & §5`](documents/software.md) pour les machines d'état protocolaires, l'initialisation 5-baud / Fast-Init et les services OBD-II (Modes 01 à 09).
 
@@ -83,9 +83,9 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **100% Conforme**
 * **Périmètre :** Raccordement physique à la prise diagnostic du véhicule et interconnexion banc d'essais.
 * **Justification matérielle & Choix de conception :**
-  * Connecteur PCB JST-XH 5 contacts coudé à 90° au pas 2.50 mm (`S5B-XH-A-1(LF)(SN)`, LCSC `C163038`) pour raccordement direct au faisceau pigtail OBD-II ou banc miroir.
-  * Brochage unifié de `J1` : broche 1 (`+12V`), 2 (`GND`), 3 (`CANH`), 4 (`CANL`), 5 (`K_LINE`).
-  * Embase mâle 1x2 broches au pas 2.54 mm `H3` (LCSC `C124375`) dédiée à l'injection 12V laboratoire en mode simulateur ECU.
+  * Connecteur PCB JST-XH 5 contacts coudé à 90° au pas 2.50 mm (`J1`) pour raccordement direct au faisceau pigtail OBD-II ou banc miroir.
+  * Brochage unifié de `J1` : broche 1 (`+12V`), 2 (`K_LINE`), 3 (`CANH`), 4 (`CANL`), 5 (`GND`).
+  * Embase mâle 1x2 broches au pas 2.54 mm `H3` dédiée à l'injection 12V laboratoire en mode simulateur ECU.
 * **Conditions & Limites d'usage :** Raccordement sécurisé par connecteur verrouillable ou embase de banc.
 
 ---
@@ -94,7 +94,7 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **100% Conforme**
 * **Périmètre :** Bus de communication différentiel haute vitesse (CAN High-Speed jusqu'à 1 Mbps).
 * **Justification matérielle & Choix de conception :**
-  * Transceiver certifié NXP **TJA1051T/3/1J** avec broche logique dédiée `VIO` raccordée au 3.3V (parfaite intégrité logique avec l'ESP32-S3 sans adaptateur de niveau).
+  * Transceiver CAN certifié `U2` avec broche logique dédiée `VIO` raccordée au 3.3V (parfaite intégrité logique avec l'ESP32-S3 sans adaptateur de niveau).
   * Routage en paires différentielles symétriques avec impédance contrôlée 120 Ω.
   * Terminaison 120 Ω (`R8`) commutable par cavalier matériel `JP1`.
 * **Conditions & Limites d'usage :** Cavalier `JP1` impérativement **ouvert** lors d'un raccordement sur véhicule (le bus automobile étant déjà terminé par ses deux résistances de 120 Ω aux extrémités).
@@ -105,8 +105,8 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **100% Conforme**
 * **Périmètre :** Ligne de diagnostic mono-fil bidirectionnelle 12V (véhicules essence post-2001 et diesel post-2004).
 * **Justification matérielle & Choix de conception :**
-  * Transceiver spécialisé STMicroelectronics **L9637D** certifié conforme ISO 9141.
-  * Polarisation pull-up commutable à 500 Ω (`R16` en parallèle avec `R18`, boîtiers 1206 pour dissiper la puissance thermique sous 12V) garantissant un temps de montée tr < 2 µs sur charge capacitive de 2 nF.
+  * Transceiver de diagnostic ISO 9141 `U3`.
+  * Polarisation pull-up commutable à 500 Ω (`R16` en parallèle avec `R18` pour dissiper la puissance thermique sous 12V) garantissant un temps de montée tr < 2 µs sur charge capacitive de 2 nF.
   * Pleine compatibilité avec l'initialisation lente (*5-baud init*) et l'initialisation rapide (*Fast-Init* 25 ms).
 * **Conditions & Limites d'usage :** Débit limité à 10.4 kbps conformément à la spécification ISO.
 
@@ -126,8 +126,8 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **95% Conforme (Niveau III / Classe A)**
 * **Périmètre :** Surtensions et impulsions parasites conduites sur le faisceau électrique 12V de l'automobile.
 * **Justification matérielle & Choix de conception :**
-  * **Impulsion 1 (–100 V inductif) :** Écrêtée en conduction directe sous environ –1 V par la diode TVS `D1` (`SMBJ16A`) et bloquée en tension inverse par le P-MOSFET `Q1` (tenue Vds 60V, tension Vgs bornée à 12V par la diode Zener `D3` et le diviseur `R5`/`R17`).
-  * **Impulsion 2a (+50 V) :** Écrêtée sous 26.0 V par la TVS d'entrée `D1` (`SMBJ16A`).
+  * **Impulsion 1 (–100 V inductif) :** Écrêtée en conduction directe sous environ –1 V par la diode TVS `D1` et bloquée en tension inverse par le P-MOSFET `Q1` (tension Vgs bornée à 12V par la diode Zener `D3` et le diviseur `R5`/`R17`).
+  * **Impulsion 2a (+50 V) :** Écrêtée sous 26.0 V par la TVS d'entrée `D1`.
   * **Impulsions 3a/3b (–150 V / +100 V HF) :** Filtrées par le réseau d'entrée associant la TVS `D1` et les capacités céramiques haute tension `C14` et `C7`.
 * **Conditions & Limites d'usage :** Étage dimensionné pour les impédances de source normalisées des réseaux de bord automobiles standard.
 
@@ -139,7 +139,7 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Justification matérielle & Choix de conception :**
   * **Inversion de polarité (§4.7, –14 V) :** Bloquée à 100% par le transistor P-MOSFET `Q1` (aucun courant de fuite destructif).
   * **Démarrage moteur / Cranking (§4.6.3) :** Coupure propre sous 8.01 V via le seuil UVLO précis (`R19`/`R20`) et démarrage temporisé à 4.0 ms (`C17`) pour prévenir toute corruption de la mémoire Flash NVS de l'ESP32-S3 lors des micro-coupures.
-  * **Load-Dump centralisé (§4.6.4, 35 V) :** Tension écrêtée à 26.0 V par `D1`, restant strictement sous la limite absolue de 30.0 V du régulateur Buck TPS54331.
+  * **Load-Dump centralisé (§4.6.4, 35 V) :** Tension écrêtée à 26.0 V par `D1`, restant strictement sous la limite absolue de 30.0 V du régulateur Buck `U4`.
 * **Conditions & Limites d'usage :** Interdiction formelle d'utilisation sur réseaux 24V (poids lourds) ou surtensions prolongées de démarrage d'urgence (*Jump-Start* 24V > quelques secondes).
 
 ---
@@ -148,9 +148,9 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **100% Conforme (Niveau 4 : ±8 kV contact / ±15 kV air)**
 * **Périmètre :** Protection contre les arcs électrostatiques sur les connecteurs accessibles par l'utilisateur.
 * **Justification matérielle & Choix de conception :**
-  * **Lignes CAN :** Diode double TVS spécifique automobile `U8` (NUP2105L), certifiée IEC 61000-4-2 Niveau 4 (tenue jusqu'à ±30 kV au contact et dans l'air).
-  * **Ligne K-Line :** Diode TVS unidirectionnelle `D5` (`SMF24A`, 24V, 200 W crête) avec retour de conduction sous –1.0 V face aux impulsions négatives.
-  * **Port USB-C :** Réseau de diodes ESD ultra-rapides `U6` et `U7` (SESD05C, capacité parasite Cj < 1.0 pF préservant l'intégrité du bus USB High-Speed).
+  * **Lignes CAN :** Diode double TVS spécifique automobile `U8`, certifiée IEC 61000-4-2 Niveau 4 (tenue jusqu'à ±30 kV au contact et dans l'air).
+  * **Ligne K-Line :** Diode TVS unidirectionnelle `D5` (24V, 200 W crête) avec retour de conduction sous –1.0 V face aux impulsions négatives.
+  * **Port USB-C :** Réseau de diodes ESD ultra-rapides `U6` et `U7` (capacité parasite Cj < 1.0 pF préservant l'intégrité du bus USB High-Speed).
 * **Conditions & Limites d'usage :** Raccordement optimal au plan de masse continu multicouche par vias de couture.
 
 ---
@@ -159,7 +159,7 @@ Le matériel et le firmware sont développés en référence stricte aux standar
 * **Statut de conformité :** 🟢 **100% Conforme (Module Pré-certifié)**
 * **Périmètre :** Émission et réception sans fil Wi-Fi 2.4 GHz et Bluetooth Low Energy 5.0.
 * **Justification matérielle & Choix de conception :**
-  * Module ESP32-S3-WROOM-1 pré-certifié par le fabricant Espressif Systems (FCC, CE, SRRC).
+  * Module ESP32-S3-WROOM-1 pré-certifié (FCC, CE, SRRC).
   * Antenne méandre sur PCB accordée à 50 Ω.
 * **Conditions & Limites d'usage :** Respect strict de la zone d'exclusion RF (*Keepout*) sur toutes les couches de cuivre du PCB (antenne dégagée en porte-à-faux sur le bord Est de la carte).
 
@@ -179,16 +179,16 @@ flowchart LR
     subgraph PWR["2. ÉTAGE ALIMENTATION"]
         direction TB
         PROT["Protection 12V\n(PPTC F1, TVS D1, P-MOS Q1)"]
-        BUCK["Régulateur Buck 5V\n(TPS54331 U4 - 570 kHz)"]
-        LDO["Régulateur LDO 3.3V\n(LDL1117S33R U5)"]
+        BUCK["Régulateur Buck 5V\n(U4 - 570 kHz)"]
+        LDO["Régulateur LDO 3.3V\n(U5)"]
         PROT -->|"+12V_PROT"| BUCK
         BUCK -->|"+5V"| LDO
     end
 
     subgraph PHY["3. ÉTAGE TRANSCEIVERS"]
         direction TB
-        CAN["Transceiver CAN High-Speed\n(TJA1051T U2 + TVS U8)\n[Cavalier JP1 120 Ω]"]
-        KLINE["Transceiver K-Line 12V\n(L9637D U3 + TVS D5)\n[Cavalier JP2 500 Ω]"]
+        CAN["Transceiver CAN High-Speed\n(U2 + TVS U8)\n[Cavalier JP1 120 Ω]"]
+        KLINE["Transceiver K-Line 12V\n(U3 + TVS D5)\n[Cavalier JP2 500 Ω]"]
     end
 
     subgraph MCU["4. CŒUR ESP32-S3 & RADIO"]
@@ -219,8 +219,8 @@ flowchart LR
 
 #### Légende Fonctionnelle des Flux :
 * **1. Entrées & Raccordements :** Connecteur `J1` (faisceau véhicule ou banc miroir), embase `H3` (alimentation laboratoire 12V), port USB-C `J2` (alimentation autonome banc 5V via diode `D4` et flash série).
-* **2. Étage d'Alimentation :** Filtrage et protection amont (`F1`, `D1`, `Q1`), régulateur à découpage Buck 5V (`U4` TPS54331 à 570 kHz), et régulateur LDO 3.3V à faible bruit (`U5` LDL1117S33R).
-* **3. Transceivers Automobiles :** Contrôleur de ligne CAN High-Speed (`U2` TJA1051T, TVS `U8`, cavalier `JP1` 120 Ω) et étage K-Line mono-fil 12V (`U3` L9637D, TVS `D5`, cavalier `JP2` 500 Ω).
+* **2. Étage d'Alimentation :** Filtrage et protection amont (`F1`, `D1`, `Q1`), régulateur à découpage Buck 5V (`U4` à 570 kHz), et régulateur LDO 3.3V à faible bruit (`U5`).
+* **3. Transceivers Automobiles :** Contrôleur de ligne CAN High-Speed (`U2`, TVS `U8`, cavalier `JP1` 120 Ω) et étage K-Line mono-fil 12V (`U3`, TVS `D5`, cavalier `JP2` 500 Ω).
 * **4. Cœur de Traitement :** ESP32-S3-WROOM-1 (`U1` Xtensa LX7 dual-core 240 MHz), interfaces physiques (`LED1`, `SW1`, diviseur de tension ADC `TP7`) et émetteur-récepteur Wi-Fi 2.4 GHz / BLE 5.0.
 
 ---
@@ -232,10 +232,10 @@ flowchart LR
 #### 1. Étage d'Alimentation & Protections 12V
 ![Schéma Alimentation](./documents/schema/alimentation.png)
 
-#### 2. Transceiver CAN (TJA1051T & Terminaison 120Ω)
+#### 2. Transceiver CAN & Terminaison 120Ω
 ![Schéma Transceiver CAN](./documents/schema/can.png)
 
-#### 3. Transceiver K-Line (L9637D)
+#### 3. Transceiver K-Line
 ![Schéma Transceiver K-Line](./documents/schema/kline.png)
 
 #### 4. Microcontrôleur ESP32-S3 & Périphériques
@@ -332,7 +332,7 @@ Le projet intègre et exploite 8 compétences logicielles dédiées (*Skills*) s
 
 | Skill | Emplacement | Rôle & Fonctionnalités |
 | :--- | :--- | :--- |
-| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | **Modélisation petit-signal & Stabilité Buck :** Outil de calcul mathématique et d'optimisation paramétrique du réseau de compensation Type II pour le régulateur TI TPS54331 (évaluation Bode, fréquence de coupure fco, marge de phase ≥ 45°, marge de gain ≥ 10 dB, et sélection optimale du triplet Rz, Cz, Cp sur le catalogue Basic Parts JLCPCB). |
+| ⚡ **`buck-compensation`** | [`.agents/skills/buck-compensation/`](.agents/skills/buck-compensation/SKILL.md) | **Modélisation petit-signal & Stabilité Buck :** Outil de calcul mathématique et d'optimisation paramétrique du réseau de compensation Type II pour le régulateur Buck `U4` (évaluation Bode, fréquence de coupure fco, marge de phase ≥ 45°, marge de gain ≥ 10 dB, et sélection optimale du triplet Rz, Cz, Cp sur le catalogue Basic Parts JLCPCB). |
 | 🔌 **`easyeda-api`** | [`.agents/skills/easyeda-api/`](.agents/skills/easyeda-api/SKILL.md) | **Contrôle programmatique EasyEDA Pro :** Pont bidirectionnel local (WebSocket/HTTP sur port 49620) permettant d'interroger, d'auditer et d'automatiser le schéma et le PCB en temps réel sans manipulation manuelle à risque, avec accès aux 120+ classes de l'API officielle. |
 | 🛣️ **`freerouting`** | [`.agents/skills/freerouting/`](.agents/skills/freerouting/SKILL.md) | **Auto-routage Headless Specctra DSN/SES :** Moteur d'auto-routage complet pilotant FreeRouting v2.4.1 sous OpenJDK 25 headless portable. Injecte les règles de classes de nets et isole les paires différentielles CAN/USB et les keepouts RF. |
 | 📐 **`pcb-placer`** | [`.agents/skills/pcb-placer/`](.agents/skills/pcb-placer/SKILL.md) | **Moteur Agnostique d'Auto-Placement par Contraintes :** Algorithme stochastique par recuit simulé multi-objectifs pour l'agencement 2D des composants PCB sous EasyEDA Pro. Intègre les contraintes CEM (découplage < 2 mm), thermiques (boucle Buck), d'exclusion RF (antenne ESP32-S3) et génère nativement [`documents/pcb/placement.svg`](documents/pcb/placement.svg). |

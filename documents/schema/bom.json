@@ -257,9 +257,9 @@
     },
     "Q1": {
       "value": null,
-      "mpn": "CJ2309A",
-      "lcsc": "C7433254",
-      "type": "Extended Part",
+      "mpn": "AO3401A",
+      "lcsc": "C15127",
+      "type": "Basic Part",
       "package": "SOT-23"
     },
     "Q2": {
@@ -579,15 +579,15 @@
     },
     "U6": {
       "value": null,
-      "mpn": "SESD05C",
-      "lcsc": "C720025",
+      "mpn": "PESD5V0S1BA",
+      "lcsc": "C2827694",
       "type": "Extended Part",
       "package": "SOD-323"
     },
     "U7": {
       "value": null,
-      "mpn": "SESD05C",
-      "lcsc": "C720025",
+      "mpn": "PESD5V0S1BA",
+      "lcsc": "C2827694",
       "type": "Extended Part",
       "package": "SOD-323"
     },

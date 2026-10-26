@@ -28,7 +28,7 @@ Procédure séquentielle de mise sous tension et de validation des cartes à ré
 
 ### Étape 2.1 : Contrôles Visuels & Mécaniques (Hors Tension)
 - [ ] **Inspection optique sous microscope/loupe :**
-  - Vérifier l'absence de ponts d'étain (solder bridges), particulièrement sur `U1` (ESP32-S3), `U4` (TPS54331), `U2` (TJA1051) et `U3` (L9637D).
+  - Vérifier l'absence de ponts d'étain (solder bridges), particulièrement sur `U1` (ESP32-S3), `U4`, `U5`, `U2` et `U3`.
   - Contrôler l'alignement et la polarité des composants critiques : diodes (`D1`, `D2`, `D3`, `D4`, `D5`, `D6`), condensateurs polarisés et CI (broche 1).
   - Vérifier la netteté de la sérigraphie face arrière et l'intégrité des 4 perçages mécaniques M2.
 
@@ -44,7 +44,8 @@ Procédure séquentielle de mise sous tension et de validation des cartes à ré
   - Alimenter via un port USB avec wattmètre / limitation à 250 mA.
   - Vérifier le courant de repos : attendu entre 30 mA et 70 mA (ESP32 non programmé / en bootloader).
   - Mesurer la tension `3.3V` sur `TP6` : doit être comprise entre 3.25V et 3.35V.
-  - Vérifier que `VBAT_SENSE` (`TP7`) est inférieur à 0.3V (signature USB-seule sans fausse détection batterie).
+  - Vérifier que `VBAT_SENSE` (`TP9`) est inférieur à 0.3V (signature USB-seule sans fausse détection batterie).
+  - *Note alimentation USB-seule :* Le rail +5V sous USB seul est à ~4.35V (chute Schottky D4) < VCC min 4.5V du TJA1051T ; valider les transceivers CAN et K-Line exclusivement sous alimentation 12V (H3 ou véhicule).
   - Valider l'énumération USB du microcontrôleur sur le PC hôte (périphérique USB JTAG/serial ou port COM natif).
   - Flash d'un micro-firmware de test (« blinky » sur `LED1` et sortie texte série UART).
 
@@ -55,7 +56,7 @@ Procédure séquentielle de mise sous tension et de validation des cartes à ré
   - Mesurer le courant d'entrée global : attendu entre 20 mA et 45 mA à vide.
   - Valider la tension du rail Buck `+5V` sur `TP2` : doit être stable entre 4.90V et 5.15V.
   - Valider la tension du rail LDO `3.3V` sur `TP6` : 3.30V ± 2 %.
-  - Mesurer le diviseur ADC `VBAT_SENSE` sur `TP7` : attendu ~1.09V pour VIN = 12.0V (rapport nominal 1/11).
+  - Mesurer le diviseur ADC `VBAT_SENSE` sur `TP9` : attendu ~1.29V pour VIN = 12.0V (rapport nominal 1/9.33).
   - Vérifier la propreté spectrale (ondulation / ripple résiduel) au multimètre AC / oscilloscope sur les rails 5V et 3.3V (< 50 mV crête).
 
 ### Étape 2.5 : Validation des Émetteurs-Récepteurs CAN & K-Line

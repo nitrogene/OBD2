@@ -41,7 +41,7 @@ Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impé
 
 1. **Périmètre véhicule : 12V VL exclusivement**
    - Le scanner est conçu pour les véhicules légers de tourisme (batterie 12.6V, alternateur 14.4V, transitoires modérés).
-   - **Ne pas sur-spécifier** pour des réseaux 24V poids-lourds (le choix du régulateur Buck TPS54331 30V protégé par TVS SMBJ18A et P-MOSFET 60V est validé et dimensionné pour ce périmètre).
+   - **Ne pas sur-spécifier** pour des réseaux 24V poids-lourds (le choix du régulateur Buck U4 (30V) protégé par TVS `D1` (16V) et P-MOSFET `Q1` est validé et dimensionné pour ce périmètre).
 
 2. **MCU Cible : ESP32-S3 (≠ ESP32 classique)**
    - Le microcontrôleur est un **ESP32-S3-WROOM-1**.
@@ -49,20 +49,20 @@ Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impé
    - *USB :* L'ESP32-S3 intègre un contrôleur USB OTG natif sur les broches GPIO19 (D-) et GPIO20 (D+).
 
 3. **Contraintes de fabrication & Coûts JLCPCB**
-   - PCB standard **2 couches** (plans de masse massifs Top et Bottom avec vias de couture).
+   - PCB standard **4 couches** (empilement standard JLC2313 : Couche 1 Top signaux/composants, Couche 2 Inner 1 plan de masse GND continu, Couche 3 Inner 2 rails 3.3V/5V/GND, Couche 4 Bottom signaux/GND avec vias de couture).
    - **Priorité absolue aux *Basic Parts* JLCPCB :** Toute modification de composant passif ou actif doit privilégier les pièces de base du catalogue LCSC/JLCPCB pour éviter les frais d'outillage additionnels (*Extended part changeover fee*).
 
 4. **Consulter l'état d'avancement réel**
    - Avant de lever une alerte, parcourez brièvement [`todo.md`](../todo.md), [`hardware.md`](../documents/hardware.md) et [`bom.json`](../documents/schema/bom.json).
    - De nombreuses remarques antérieures sont déjà traitées ou arbitrées (ex. cavalier JP1 sur terminaison CAN, diode de clamp D6, condensateur C13 sur broche COMP, etc.).
 
-5. **Transceiver K-Line U3 (L9637D) : Alimentation VCC 3.3V vs 5V & Intégrité du MCU**
-   - *Ne pas exiger de passer VCC en 5V :* Une confusion récurrente consiste à croire que le L9637D exige $V_{CC} \ge 4.5\,\text{V}$ ou que sa sortie RX est à collecteur ouvert pur nécessitant une pull-up externe.
+5. **Transceiver K-Line U3 : Alimentation VCC 3.3V vs 5V & Intégrité du MCU**
+   - *Ne pas exiger de passer VCC en 5V :* Une confusion récurrente consiste à croire que le transceiver K-Line U3 exige VCC >= 4.5V ou que sa sortie RX est à collecteur ouvert pur nécessitant une pull-up externe.
    - *Spécifications de la datasheet ST (Doc ID 1765 Rev 8, Table 5 & Note 1) :*
-     - La plage de tension de service logique $V_{CC}$ s'étend de **3.0 V à 7.0 V** (Table 5 ; le seuil de 4.5 V min correspond à l'alimentation batterie $V_S$, et non à $V_{CC}$). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Un fonctionnement sous $V_{CC} = 3.3\,\text{V}$ est donc 100% conforme aux spécifications constructeur et garanti par conception.
-     - La broche 1 (`RX`) intègre une **résistance de pull-up active $R_{RX} \approx 10\,\text{k}\Omega$ reliée en interne à $V_{CC}$** ($V_{RXH} = V_{CC} - 0.1\,\text{V}$). Elle n'est PAS un collecteur ouvert.
-   - *Sécurité vitale du microcontrôleur :* Les broches d'E/S de l'ESP32-S3 ne sont **pas tolérantes 5V** (tension maximale absolue $V_{DDIO} + 0.3\,\text{V} = 3.6\,\text{V}$). Si $V_{CC}$ était raccordé au rail +5V, la broche RX injecterait ~4.9V directement dans le GPIO4, entraînant le claquage destructif de l'ESP32.
-   - *Directive pour l'audit :* Le raccordement de la broche 3 ($V_{CC}$) au rail régulé `3.3V` est **strictement conforme et indispensable à la survie du microcontrôleur**. Ne pas soulever d'anomalie sur ce point.
+     - La plage de tension de service logique VCC s'étend de **3.0 V à 7.0 V** (Table 5 ; le seuil de 4.5 V min correspond à l'alimentation batterie VS, et non à VCC). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Un fonctionnement sous VCC = 3.3V est donc 100% conforme aux spécifications constructeur et garanti par conception.
+     - La broche 1 (`RX`) intègre une **résistance de pull-up active RRX ≈ 10 kΩ reliée en interne à VCC** (VRXH = VCC - 0.1V). Elle n'est PAS un collecteur ouvert.
+   - *Sécurité vitale du microcontrôleur :* Les broches d'E/S de l'ESP32-S3 ne sont **pas tolérantes 5V** (tension maximale absolue VDDIO + 0.3V = 3.6V). Si VCC était raccordé au rail +5V, la broche RX injecterait ~4.9V directement dans le GPIO4, entraînant le claquage destructif de l'ESP32.
+   - *Directive pour l'audit :* Le raccordement de la broche 3 (VCC) au rail régulé `3.3V` est **strictement conforme et indispensable à la survie du microcontrôleur**. Ne pas soulever d'anomalie sur ce point.
 
 ---
 
@@ -73,7 +73,7 @@ Vos remarques doivent être rigoureusement hiérarchisées en 3 niveaux :
 ### 🔴 1. Bloquant / Critique (*High / Critical*)
 *Ce qui empêche le circuit de fonctionner ou risque de le détruire.*
 - Risque de destruction de composant, surtension, surintensité, inversion de polarité non protégée.
-- Dépassement des valeurs limites absolues (*Absolute Maximum Ratings* : $V_{DS}$, $V_{GS}$, $V_{IN}$, dissipation thermique $T_J$).
+- Dépassement des valeurs limites absolues (*Absolute Maximum Ratings* : VDS, VGS, VIN, dissipation thermique TJ).
 - Court-circuit franc, violation bloquante ERC/DRC, broche vitale laissée en l'air (Reset, Boot, Alimentation).
 - Impossibilité physique d'établir la communication (lignes CAN inversées, niveaux K-Line non conformes ISO 9141).
 

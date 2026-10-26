@@ -54,47 +54,139 @@
     "protection_12v": {
       "title": "Protection 12V, Filtrage & Anti-Inversion",
       "description": "Protection contre les surtensions d'alternateur (Load-Dump), inversion de polarité et surintensités habitacle.",
-      "components": ["J1", "H3", "F1", "D1", "Q1", "Q2", "R5", "R7", "D3", "R14", "R17"]
+      "components": [
+        "J1",
+        "H3",
+        "F1",
+        "D1",
+        "Q1",
+        "Q2",
+        "R5",
+        "R7",
+        "D3",
+        "R14",
+        "R17"
+      ]
     },
     "buck_5v": {
       "title": "Convertisseur Buck 12V -> 5V (570 kHz)",
       "description": "Abaisseur de tension synchrone à haut rendement (>85%) générant le rail 5V pour le transceiver CAN et le LDO 3.3V.",
-      "components": ["U4", "L1", "D2", "C5", "C7", "C8", "C16", "C14", "C17", "R9", "R10", "R11", "R19", "R20", "C9", "C13"]
+      "components": [
+        "U4",
+        "L1",
+        "D2",
+        "C5",
+        "C7",
+        "C8",
+        "C16",
+        "C14",
+        "C17",
+        "R9",
+        "R10",
+        "R11",
+        "R19",
+        "R20",
+        "C9",
+        "C13"
+      ]
     },
     "ldo_3v3": {
       "title": "Régulateur Linéaire LDO 3.3V Faible Bruit",
       "description": "Régulateur LDL1117 et perle de ferrite FB1 générant une alimentation propre pour le SoC radio ESP32-S3.",
-      "components": ["U5", "C6", "FB1"]
+      "components": [
+        "U5",
+        "C6",
+        "FB1"
+      ]
     },
     "usbc_interface": {
       "title": "Interface USB-C, Alimentation Banc & ESD",
       "description": "Port USB-C natif (D+/D-) pour flash/debug, amortissement 22 ohms R22/R23, configuration CC1/CC2, réservoirs C18/C19 et alimentation autonome banc via D4.",
-      "components": ["J2", "D4", "C18", "C19", "U6", "U7", "R3", "R4", "R22", "R23"]
+      "components": [
+        "J2",
+        "D4",
+        "C18",
+        "C19",
+        "U6",
+        "U7",
+        "R3",
+        "R4",
+        "R22",
+        "R23"
+      ]
     },
     "can_transceiver": {
       "title": "Transceiver CAN Haute Vitesse (ISO 11898-2)",
       "description": "Étage physique différentiel TJA1051T avec terminaison 120 ohms déconnectable et protections transitoires NUP2105L.",
-      "components": ["U2", "U8", "R8", "JP1", "C3", "C15"]
+      "components": [
+        "U2",
+        "U8",
+        "R8",
+        "JP1",
+        "C3",
+        "C15"
+      ]
     },
     "kline_transceiver": {
       "title": "Transceiver K-Line 12V (ISO 9141-2 / ISO 14230)",
       "description": "Liaison mono-fil bidirectionnelle 12V L9637D avec pull-up normalisée R16 // R18 (500 ohms, 2x1k 1206) débrayable par cavalier JP2 et protections TVS 24V.",
-      "components": ["U3", "D5", "R1", "R2", "R16", "R18", "JP2", "C4"]
+      "components": [
+        "U3",
+        "D5",
+        "R1",
+        "R2",
+        "R16",
+        "R18",
+        "JP2",
+        "C4"
+      ]
     },
     "esp32_mcu": {
       "title": "SoC ESP32-S3 & Périphériques Radio",
       "description": "Cœur de traitement 240 MHz double cœur, Wi-Fi 2.4 GHz, BLE 5.0, bouton reset, pull-up strapping R21 et voyant d'état LED1.",
-      "components": ["U1", "C1", "C2", "C11", "C12", "R15", "R21", "SW1", "LED1", "R6"]
+      "components": [
+        "U1",
+        "C1",
+        "C2",
+        "C11",
+        "C12",
+        "R15",
+        "R21",
+        "SW1",
+        "LED1",
+        "R6"
+      ]
     },
     "vbat_monitoring": {
       "title": "Monitoring Tension Batterie (ADC1)",
       "description": "Pont diviseur 100k/12k avec filtrage HF C10 et clamp de protection D6 raccordé sur ADC1 de l'ESP32.",
-      "components": ["R12", "R13", "C10", "D6"]
+      "components": [
+        "R12",
+        "R13",
+        "C10",
+        "D6"
+      ]
     },
     "test_points": {
       "title": "Points de Test Cuivre (Mires de mesure)",
       "description": "Pads de test pour diagnostic oscilloscope, voltmètre et forçage bootloader.",
-      "components": ["TP1", "TP2", "TP3", "TP4", "TP5", "TP6", "TP7", "TP8", "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15"]
+      "components": [
+        "TP1",
+        "TP2",
+        "TP3",
+        "TP4",
+        "TP5",
+        "TP6",
+        "TP7",
+        "TP8",
+        "TP9",
+        "TP10",
+        "TP11",
+        "TP12",
+        "TP13",
+        "TP14",
+        "TP15"
+      ]
     }
   },
   "components": {
@@ -589,14 +681,14 @@
     "Q1": {
       "block": "protection_12v",
       "role": "anti_reverse_pmos",
-      "description": "P-MOSFET de puissance 60V 2A blocage inversion de polarité 12V",
-      "value": "CJ2309A",
+      "description": "P-MOSFET de puissance 30V 4A blocage inversion de polarité 12V (Basic Part)",
+      "value": "AO3401A",
       "footprint": "SOT-23",
       "substitutability": "direct_1to1",
       "constraints": {
-        "vds_min_v": 60.0,
-        "id_min_a": 2.0,
-        "rdson_max_ohm": 0.25,
+        "vds_min_v": 30.0,
+        "id_min_a": 4.0,
+        "rdson_max_ohm": 0.05,
         "footprint": "SOT-23"
       }
     },
@@ -1148,26 +1240,26 @@
     "U6": {
       "block": "usbc_interface",
       "role": "usb_esd_tvs",
-      "description": "Diode TVS bidirectionnelle 5V ultra-faible capacité (< 3 pF) protection ESD USB D+",
-      "value": "SESD05C",
+      "description": "Diode TVS bidirectionnelle 5V protection ESD USB D+ (SOD-323)",
+      "value": "PESD5V0S1BA",
       "footprint": "SOD-323",
       "substitutability": "direct_1to1",
       "constraints": {
         "vrwm_v": 5.0,
-        "c_parasitic_max_pf": 3.0,
+        "c_parasitic_max_pf": 15.0,
         "footprint": "SOD-323"
       }
     },
     "U7": {
       "block": "usbc_interface",
       "role": "usb_esd_tvs",
-      "description": "Diode TVS bidirectionnelle 5V ultra-faible capacité (< 3 pF) protection ESD USB D-",
-      "value": "SESD05C",
+      "description": "Diode TVS bidirectionnelle 5V protection ESD USB D- (SOD-323)",
+      "value": "PESD5V0S1BA",
       "footprint": "SOD-323",
       "substitutability": "direct_1to1",
       "constraints": {
         "vrwm_v": 5.0,
-        "c_parasitic_max_pf": 3.0,
+        "c_parasitic_max_pf": 15.0,
         "footprint": "SOD-323"
       }
     },

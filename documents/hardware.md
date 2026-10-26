@@ -52,15 +52,15 @@ flowchart TD
     subgraph POWER["ÉTAGE D'ALIMENTATION & PROTECTIONS"]
         direction TB
         F1["1. Protection 12V\n• Fusible PPTC F1 (1.1A)\n• TVS D1 (16V / Clamp 26.0V)\n• Anti-inversion Q1/Q2 + Zener D3"]
-        BUCK["2. Régulateur Buck 570 kHz (U4)\n• TPS54331 + Inductance L1 (10µH)\n• Diode Schottky D2"]
-        LDO["3. LDO 3.3V Faible Bruit (U5)\n• LDL1117S33R + Perle Ferrite FB1"]
+        BUCK["2. Régulateur Buck 570 kHz (U4)\n• Inductance L1 (10µH)\n• Diode Schottky D2"]
+        LDO["3. LDO 3.3V Faible Bruit (U5)\n• Perle Ferrite FB1"]
         F1 -->|"+12V_PROT"| BUCK
         BUCK -->|"+5V"| LDO
     end
 
     subgraph TRANSCEIVERS["TRANSCEIVERS PHYSIQUES"]
-        CAN_IC["5. Transceiver CAN (U2 - TJA1051T) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8 (NUP2105L)\n• Broche d'adaptation VIO 3.3V"]
-        KLINE_IC["6. Transceiver K-Line (U3 - L9637D) + TVS D5\n• Translation 12V ↔ 3.3V\n• Protection transitoire/ESD D5 (SMF24A)\n• Amortisseurs de ligne R1/R2"]
+        CAN_IC["5. Transceiver CAN (U2) + TVS U8\n• Terminaison 120Ω déconnectable (JP1)\n• Protection transitoire/ESD U8\n• Broche d'adaptation VIO 3.3V"]
+        KLINE_IC["6. Transceiver K-Line (U3) + TVS D5\n• Translation 12V ↔ 3.3V\n• Protection transitoire/ESD D5\n• Amortisseurs de ligne R1/R2"]
     end
 
     subgraph MCU["CŒUR DE TRAITEMENT & RADIO"]
@@ -124,16 +124,16 @@ flowchart LR
     IN2 -.->|Diviseur R5/R17| Q2_G
 ```
 
-* **Fusible Réarmable PPTC `F1` (1.1A / 33V - `1812L110/33MR`) :**
-  * *Principe & Dimensionnement :* Composé d'un polymère conducteur (PPTC), il protège la ligne 12V contre les surintensités destructrices. Calibré à IHOLD = 1.10 A (ITRIP ≈ 2.0 A) avec une tenue en tension de **VMAX = 33.0 V** (Littelfuse `1812L110/33MR`, boîtier 1812, LCSC `C142747`), il maintient un courant de fonctionnement IHOLD >= 0.75 A même à 60°C dans l'habitacle en été, éliminant tout risque de déclenchement intempestif lors des pics de consommation Wi-Fi ou des démarrages moteur, tout en garantissant une résistance série ultra-faible (R <= 0.15 Ω) et une immunité totale face aux surtensions automobiles jusqu'à 33 V.
-* **Diode TVS de Protection contre les Surtensions `D1` (16V - `SMBJ16A`) :**
+* **Fusible Réarmable PPTC `F1` (1.1A / 33V) :**
+  * *Principe & Dimensionnement :* Composé d'un polymère conducteur (PPTC), il protège la ligne 12V contre les surintensités destructrices. Calibré à IHOLD = 1.10 A (ITRIP ≈ 2.0 A) avec une tenue en tension de **VMAX = 33.0 V** (boîtier 1812), il maintient un courant de fonctionnement IHOLD >= 0.75 A même à 60°C dans l'habitacle en été, éliminant tout risque de déclenchement intempestif lors des pics de consommation Wi-Fi ou des démarrages moteur, tout en garantissant une résistance série ultra-faible (R <= 0.15 Ω) et une immunité totale face aux surtensions automobiles jusqu'à 33 V.
+* **Diode TVS de Protection contre les Surtensions `D1` (16V) :**
   * *Principe :* Une diode TVS (*Transient Voltage Suppressor*) reste totalement transparente en temps normal sous la tension batterie (VRWM = 16.0 V). Dès qu'une impulsion transitoire dépasse sa tension d'avalanche (VBR = 17.8 V ~ 19.7 V), elle devient conductrice en quelques picosecondes et court-circuite l'excédent d'énergie directement vers la masse (GND).
-  * *Calibrage optimal pour le régulateur Buck :* Avec une tension de serrage crête Vcl de **26.0 V** sous choc d'impulsion de 23.1 A (600W @ 10/1000 µs), la `SMBJ16A` garantit que la tension d'entrée ne dépasse jamais les **30.0 V de limite absolue** du régulateur Buck U4 (TPS54331), dégageant une **marge de sécurité robuste de 4.0 V** sous le seuil destructeur du silicium.
-  * *Écrêtage des impulsions négatives sévères (ISO 7637-2 Impulsion 1, –100 V) :* Lors d'une impulsion inductive négative sur le faisceau 12V, la diode TVS `D1` (unidirectionnelle) entre en conduction directe et court-circuite l'énergie négative vers la masse sous une tension directe minime ($V_F \approx -0.7 \text{ à } -1.0\,\text{V}$), tandis que la diode de corps et le canal du P-MOSFET `Q1` bloquent hermétiquement toute pénétration de potentiel inverse vers les étages aval de régulation.
-* **Protection Anti-Inversion par P-MOSFET Q1 (CJ2309A) et N-MOSFET Q2 (2N7002) :**
+  * *Calibrage optimal pour le régulateur Buck :* Avec une tension de serrage crête Vcl de **26.0 V** sous choc d'impulsion de 23.1 A (600W @ 10/1000 µs), la diode TVS `D1` garantit que la tension d'entrée ne dépasse jamais les **30.0 V de limite absolue** du régulateur Buck `U4`, dégageant une **marge de sécurité robuste de 4.0 V** sous le seuil destructeur du silicium.
+  * *Écrêtage des impulsions négatives sévères (ISO 7637-2 Impulsion 1, –100 V) :* Lors d'une impulsion inductive négative sur le faisceau 12V, la diode TVS `D1` (unidirectionnelle) entre en conduction directe et court-circuite l'énergie négative vers la masse sous une tension directe minime ($V_FVF ≈ -0.7V à -1.0V), tandis que la diode de corps et le canal du P-MOSFET `Q1` bloquent hermétiquement toute pénétration de potentiel inverse vers les étages aval de régulation.
+* **Protection Anti-Inversion par P-MOSFET Q1 et N-MOSFET Q2 :**
   * *Pourquoi pas une simple diode ?* Une diode de redressement classique provoquerait une chute de tension permanente de 0.7V à 1.0V et dissiperait inutilement de la chaleur (P = V × I).
   * *Fonctionnement des MOSFETs :*
-    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via le pont diviseur 1:2 formé par `R5` (10 kΩ) et `R17` (10 kΩ). Ce diviseur divise la tension par 2, bornant strictement Vgs à un maximum de **13.0 V** lors des pires transitoires d'alternateur (*Load Dump* où D1 écrête à 26.0 V), garantissant une marge sécuritaire de 7.0 V sous la limite absolue destructrice de ±20 V du 2N7002. En régime nominal (12V-14.4V), Vgs = 6.0V - 7.2V, ce qui sature totalement Q2. Q2 tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le modèle CJ2309A (VDS max 60V, ID 2A en boîtier SOT-23) offre une résistance interne Rds(on) très faible (~ 0.25 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 60V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~26.0V).
+    * **En polarité normale (+12V branché correctement) :** La tension positive arrive sur la grille de Q2 via le pont diviseur 1:2 formé par `R5` (10 kΩ) et `R17` (10 kΩ). Ce diviseur divise la tension par 2, bornant strictement Vgs à un maximum de **13.0 V** lors des pires transitoires d'alternateur (*Load Dump* où D1 écrête à 26.0 V), garantissant une marge sécuritaire de 7.0 V sous la limite absolue destructrice de ±20 V du 2N7002. En régime nominal (12V-14.4V), Vgs = 6.0V - 7.2V, ce qui sature totalement Q2. Q2 tire le bas de R14 vers la masse (0V). La différence de potentiel Grille-Source Vgs de Q1 devient négative (~ -12V, bornée par D3), ce qui sature complètement Q1. Le transistor P-MOSFET `Q1` (VDS max -30V, ID -4A en boîtier SOT-23) offre une résistance interne Rds(on) ultra-faible (~ 0.046 Ω), avec une chute de tension négligeable (< 0.05V). Sa tenue VDS de 30V encaisse sans faillir les transitoires et l'écrêtage de la diode TVS D1 (~26.0V).
     * **En cas d'inversion accidentelle de polarité :** La grille de Q2 n'est pas alimentée, Q2 reste bloqué, la grille de Q1 reste au même potentiel que sa source (Vgs = 0V via R7) : Q1 est hermétiquement ouvert. Aucun courant inverse destructeur ne pénètre dans la carte.
 * **Protection de Grille par Diode Zener `D3` (12V - `BZX84C12`) & Résistance Série `R14` (10 kΩ) :**
   * *Pourquoi borner Vgs ?* L'oxyde de grille du MOSFET Q1 ne tolère qu'une tension Vgs absolue maximale de ±20V. Lors d'un transitoire automobile où le rail 12V monte à près de 30V, sans diode Zener, la grille tirée vers 0V verrait un Vgs destructeur de près de -30V.
@@ -141,12 +141,12 @@ flowchart LR
 
 ---
 
-#### Bloc 2 : Buck 12V -> 5V (TPS54331 - 570kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `C17`, `R9`, `R10`, `R11`, `R19`, `R20`, `C9`, `C13`)
+#### Bloc 2 : Buck 12V -> 5V (570 kHz) (`U4`, `L1`, `D2`, `C5`, `C7`, `C8`, `C16`, `C14`, `C17`, `R9`, `R10`, `R11`, `R19`, `R20`, `C9`, `C13`)
 
 L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des transmissions radio Wi-Fi.
 * Si on utilisait un simple régulateur linéaire pour abaisser 12V en 5V sous 500 mA, la puissance perdue en pure chaleur serait de :
   > **P_dissipée = (Vin - Vout) × I = (12V - 5V) × 0.5A = 3.5 Watts !**
-* Le **convertisseur Buck (`U4` - TPS54331DR)** découpe la tension à haute fréquence (**570 kHz**) avec un rendement supérieur à **85%**.
+* Le **convertisseur Buck (`U4`)** découpe la tension à haute fréquence (**570 kHz**) avec un rendement supérieur à **85%**.
 
 ```mermaid
 %%{init: {
@@ -163,26 +163,26 @@ L'ESP32 et les circuits logiques consomment jusqu'à 300 mA à 500 mA lors des t
 flowchart LR
     VIN["VIN (+12V_PROT)"] --> C14["C14 (100 nF HF) // C7 (10 µF)"]
     VIN --> UVLO["Diviseur UVLO :\nR19 (470k) // R20 (68k)"] --> U4_EN["U4 Broche EN (Pin 3)\nSeuils 9.42V Start / 8.01V Stop"]
-    C14 --> U4_SW["Interrupteur Interne\nU4 TPS54331 (PH)"]
+    C14 --> U4_SW["Interrupteur Interne\nU4 (PH)"]
     U4_SW --> L1["Inductance L1\n(10 µH)"] --> VOUT["Sortie +5V"]
-    U4_SW --> D2["Diode Schottky D2\n(SS34 Roue Libre)"] --> GND1["GND"]
+    U4_SW --> D2["Diode Schottky D2\n(Roue Libre)"] --> GND1["GND"]
     VOUT --> C8_C16["Condensateurs C8 // C16\n(2 × 10 µF 50V Filtrage)"] --> GND2["GND"]
     U4_SS["U4 Broche SS (Pin 4)"] --> C17["C17 (10 nF Slow-Start)\nTss = 4.0 ms"] --> GND4["GND"]
     U4_COMP["U4 Broche COMP (Pin 6)"] --> COMP_NET["Réseau Type II :\n(R11 10k + C9 3.3n) // C13 220p"] --> GND3["GND"]
 ```
 
 * **Inductance de Puissance `L1` (10 µH blindée - `YNR6045-100M`) :** Réservoir d'inertie magnétique. Quand le transistor interne s'ouvre, elle s'oppose à l'interruption du courant (V = L · di/dt) et restitue son énergie emmagasinée. Courant de saturation Isat = 3.6A offrant une marge de sécurité de 4.5× face au pic inductif maximal (~0.79A).
-* **Diode Schottky de Roue Libre `D2` (3A / 40V - `SS34`) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
-* **Pont Diviseur UVLO de Coupure Sous-Tension `R19` (470 kΩ) et `R20` (68 kΩ) (0805 Basic Parts `C17709` / `C17801`) :** Raccordé entre le rail `+12V_PROT`, la broche 3 (`EN`) de `U4` et la masse `GND`. Il calibre un seuil d'enclenchement net à Vstart ≈ 9.42 V et un seuil de coupure franche à Vstop ≈ 8.01 V avec une hystérésis robuste de 1.41 V (ΔVhys = 3 µA × R19), évitant tout régime transitoire instable ou redémarrages en boucle lors des creux de tension au démarrage moteur (*cranking*) ainsi que tout pompage lors des pics de consommation Wi-Fi de l'ESP32, préservant l'intégrité de la mémoire Flash NVS.
-* **Condensateur de Bootstrap `C5` (100 nF céramique 50V X7R - `0603` / LCSC `C14663` Basic Part) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne. La valeur de 100 nF (0.1 µF) est formellement prescrite par Texas Instruments (datasheet SLVS839 §8.2.2.8 "Bootstrap Capacitor Selection" recommandant un condensateur céramique de 0.1 µF de qualité diélectrique X5R ou supérieure) pour assurer la recharge dynamique de la pompe de charge en toutes conditions de charge et de démarrage à froid.
-* **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `CL31A106KBHNNNE` / `C1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
-* **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603` / LCSC `C14663`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
-* **Condensateurs de Sortie `C8` et `C16` (2 × 10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Montés en parallèle direct pour obtenir une capacité effective ~18 µF sous 5V DC (faible dérating grâce à la tenue 50V), divisant par 2 l'ESR et lissant l'ondulation résiduelle (*ripple*) < 10 mV crête-à-crête.
-* **Condensateur de Démarrage Progressif `C17` (10 nF céramique 50V X7R - `0603` / LCSC `C57112` Basic Part) :** Raccordé entre la broche 4 (`SS`) de `U4` et la masse `GND`. Il charge sous la source de courant interne Iss = 2 µA pour générer une rampe de montée linéaire de 4.0 ms ($T_{SS} = \frac{C_{SS} \times V_{REF}}{I_{SS}} = \frac{10\,\text{nF} \times 0.8\,\text{V}}{2\,\mu\text{A}} = 4.0\,\text{ms}$), éliminant tout appel de courant brutal (*inrush current*) et tout dépassement de tension (*overshoot*) sur le rail 5V lors du branchement à chaud sur le véhicule.
+* **Diode Schottky de Roue Libre `D2` (3A / 40V) :** Permet au courant de circuler en boucle fermée depuis la masse vers l'inductance sans interruption avec un temps de recouvrement ultra-court (< 10 ns) et une chute de tension minime (~0.35V).
+* **Pont Diviseur UVLO de Coupure Sous-Tension `R19` (470 kΩ) et `R20` (68 kΩ) (boîtiers 0805) :** Raccordé entre le rail `+12V_PROT`, la broche 3 (`EN`) de `U4` et la masse `GND`. Il calibre un seuil d'enclenchement net à Vstart ≈ 9.42 V et un seuil de coupure franche à Vstop ≈ 8.01 V avec une hystérésis robuste de 1.41 V (ΔVhys = 3 µA × R19), évitant tout régime transitoire instable ou redémarrages en boucle lors des creux de tension au démarrage moteur (*cranking*) ainsi que tout pompage lors des pics de consommation Wi-Fi de l'ESP32, préservant l'intégrité de la mémoire Flash NVS.
+* **Condensateur de Bootstrap `C5` (100 nF céramique 50V X7R - `0603`) :** Connecté entre `BOOT` et `PH`, forme une pompe de charge qui rehausse la tension de commande pour saturer le N-MOSFET High-Side interne. La valeur de 100 nF (0.1 µF) est formellement prescrite par Texas Instruments (datasheet SLVS839 §8.2.2.8 "Bootstrap Capacitor Selection" recommandant un condensateur céramique de 0.1 µF de qualité diélectrique X5R ou supérieure) pour assurer la recharge dynamique de la pompe de charge en toutes conditions de charge et de démarrage à froid.
+* **Condensateur Réservoir d'Entrée `C7` (10 µF céramique 50V X5R - `1206`) :** Fournit les fortes impulsions de hachage à 570 kHz avec une marge de sécurité totale sous 50V.
+* **Condensateur de Découplage HF d'Entrée `C14` (100 nF céramique 50V X7R - `0603`) :** Placé en parallèle direct de C7 et collé à la broche 2 (`VIN`) de U4 (< 1.5 mm). Absorbe l'énergie des harmoniques de découpage (> 20 MHz) et court-circuite localement les boucles di/dt d'entrée.
+* **Condensateurs de Sortie `C8` et `C16` (2 × 10 µF céramique 50V X5R - `1206`) :** Montés en parallèle direct pour obtenir une capacité effective ~18 µF sous 5V DC (faible dérating grâce à la tenue 50V), divisant par 2 l'ESR et lissant l'ondulation résiduelle (*ripple*) < 10 mV crête-à-crête.
+* **Condensateur de Démarrage Progressif `C17` (10 nF céramique 50V X7R - `0603`) :** Raccordé entre la broche 4 (`SS`) de `U4` et la masse `GND`. Il charge sous la source de courant interne Iss = 2 µA pour générer une rampe de montée linéaire de 4.0 ms ($T_{SS} = \frac{C_{SS} \times V_{REF}}{I_{SS}} = \frac{10\,\text{nF} \times 0.8\,\text{V}}{2\,\mu\text{A}} = 4.0\,\text{ms}$), éliminant tout appel de courant brutal (*inrush current*) et tout dépassement de tension (*overshoot*) sur le rail 5V lors du branchement à chaud sur le véhicule.
 * **Pont Diviseur de Contre-Réaction `R9` (27 kΩ) et `R10` (5.1 kΩ - Basic Parts) :**
   > **Vout = 0.8V × (1 + R9 / R10) = 0.8V × (1 + 27 000 / 5 100) = 0.8 × 6.2941 ≈ 5.035 V (+0.71%)**
-  Le couple normalisé E24 sélectionné est 100% qualifié en **Basic Parts** (`R9` : 27 kΩ `C17593`, `R10` : 5.1 kΩ `C27834` commun avec `R3`/`R4`), supprimant tout surcoût SMT. Le courant de repos du pont est limité à Idiv ≈ 157 µA (PR9 = 0.66 mW, PR10 = 0.13 mW), préservant le rendement à vide tout en maintenant une impédance d'asservissement robuste face au bruit de hachage.
-* **Réseau de Compensation Type II `R11` (10 kΩ), `C9` (3.3 nF) et `C13` (220 pF X7R 0603 - LCSC `C1603` Basic Part) :**
+  Le couple normalisé E24 sélectionné (`R9` : 27 kΩ, `R10` : 5.1 kΩ) minimise la consommation à vide. Le courant de repos du pont est limité à Idiv ≈ 157 µA (PR9 = 0.66 mW, PR10 = 0.13 mW), préservant le rendement à vide tout en maintenant une impédance d'asservissement robuste face au bruit de hachage.
+* **Réseau de Compensation Type II `R11` (10 kΩ), `C9` (3.3 nF) et `C13` (220 pF X7R 0603) :**
   * *Correcteur Proportionnel-Intégral R11 / C9 :* Fixe le zéro de compensation Fz = 4.82 kHz pour annuler le pôle dominant du filtre LC et stabiliser le gain unitaire à Fco = 19.1 kHz.
   * *Pôle HF de Réjection de Bruit C13 :* Placé en parallèle direct sur R11 + C9 vers GND, C13 introduit un second pôle à Fp1 = 77.2 kHz qui atténue drastiquement le bruit de découpage 570 kHz sur l'amplificateur d'erreur interne (gm = 92 µA/V, Ro = 8 MΩ).
   * *Stabilité vérifiée :* Marge de phase nominale de **66.3°** (stabilité inconditionnelle sur toute l'enveloppe de charge 100 mA à 500 mA) et marge de gain > 20 dB.
@@ -206,15 +206,15 @@ Le convertisseur Buck génère des bruits harmoniques à 570 kHz. Le SoC ESP32-S
   }
 }}%%
 flowchart LR
-    V5["+5V (Buck)"] --> U5["Régulateur LDO U5\n(LDL1117S33R 1.2A)"]
+    V5["+5V (Buck)"] --> U5["Régulateur LDO U5\n(3.3V 1.2A)"]
     U5 -->|3.3V_PRE| FB1["Perle Ferrite FB1\n(120Ω @ 100MHz)"]
     FB1 --> V33["Rail Logique +3.3V"]
     U5 -->|3.3V_PRE| C6["Condensateur C6\n(10 µF 1206 Stabilité)"] --> GND["GND"]
 ```
 
-* **Régulateur Linéaire LDO `U5` (`LDL1117S33R` - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB. Les broches 2 et 4 (`VOUT` et Tab) sont reliées en commun sur le net `3.3V_PRE` pour maximiser la dissipation thermique sur le plan de cuivre PCB.
+* **Régulateur Linéaire LDO `U5` (3.3V - SOT-223) :** Fournit un 3.3V continu stable avec une réjection d'alimentation (PSRR) > 75 dB. Les broches 2 et 4 (`VOUT` et Tab) sont reliées en commun sur le net `3.3V_PRE` pour maximiser la dissipation thermique sur le plan de cuivre PCB.
 * **Perle de Ferrite `FB1` (`BLM18PG121SN1D` - boîtier 0603) :** Présente une impédance inductive de **120 Ω à 100 MHz**, empêchant le bruit numérique du microcontrôleur de refluer vers les capteurs et transceivers.
-* **Condensateur Réservoir & Stabilité de Boucle `C6` (10 µF céramique 50V X5R - `1206` / LCSC `C13585` Basic Part) :** Placé sur le rail intermédiaire `3.3V_PRE` directement en sortie de `U5` (en amont de la perle `FB1`), il garantit le respect de la condition formelle de stabilité constructeur (Cout >= 4.7 µF) de la [datasheet ST LDL1117](datasheets/datasheets.md#u5--régulateur-ldo-faible-bruit--ldl1117s33r).
+* **Condensateur Réservoir & Stabilité de Boucle `C6` (10 µF céramique 50V X5R - `1206`) :** Placé sur le rail intermédiaire `3.3V_PRE` directement en sortie de `U5` (en amont de la perle `FB1`), il garantit le respect de la condition formelle de stabilité constructeur (Cout >= 4.7 µF) de la [documentation constructeur du LDO U5](datasheets/datasheets.md#u5--régulateur-ldo-faible-bruit--ldl1117s33r).
 
 ---
 
@@ -268,19 +268,19 @@ flowchart LR
     VBUS --> TP1["Pad Test TP1 (VBUS_5V)"]
 ```
 
-* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206 — `CL31A106KBHNNNE` — *Basic Part*) & Découplage HF `C19` (100 nF 50V 0603 — `CC0603KRX7R9BB104` — *Basic Part*) :** Montés en dérivation directe sur le rail `VBUS_5V` à l'entrée immédiate du connecteur `J2`. Le réservoir `C18` absorbe les rebonds de contact mécanique et amortit le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement, tandis que `C19` court-circuite localement les fronts raides de commutation et les parasites HF (> 20 MHz) à la masse.
-* **Diode Schottky de Puissance `D4` (`B5819W SL` — SOD-123 / LCSC `C8598` — *Basic Part*) :**
+* **Condensateur Réservoir Bulk `C18` (10 µF 50V 1206) & Découplage HF `C19` (100 nF 50V 0603) :** Montés en dérivation directe sur le rail `VBUS_5V` à l'entrée immédiate du connecteur `J2`. Le réservoir `C18` absorbe les rebonds de contact mécanique et amortit le *ringing* LC inductif du câble lors des branchements à chaud sur banc de développement, tandis que `C19` court-circuite localement les fronts raides de commutation et les parasites HF (> 20 MHz) à la masse.
+* **Diode Schottky de Puissance `D4` (SOD-123) :**
   * *Alimentation autonome sur table :* Permet d'alimenter toute la logique (LDO 3.3V, ESP32, transceiver CAN) via le port USB-C sans source 12V OBD.
   * *Protection anti-retour absolue :* Dès que la carte est connectée sur véhicule (12V présent, Buck actif), la cathode est portée à 5V, polarisant la diode en inverse et interdisant tout refoulement de courant vers le port USB de l'ordinateur.
   * *Tenue en courant et faible chute de tension :* Calibrée à **IF = 1.0 A continu** (tenue aux surintensités IFSM = 9 A) et tension inverse VR = 40 V, elle encaisse les pics de consommation radio Wi-Fi (~500 mA) avec une chute de tension minime (VF ≈ 0.45 V), éliminant tout risque de surchauffe ou de brownout MCU lors des sessions de flash et de test sur banc.
-  * *Validation sur banc de la chaîne VBUS → D4 → U5 :* En alimentation USB seule (sans 12V batterie), la tension à l'entrée du LDO U5 vaut $V_{BUS} - V_F(D4) \approx 5.0\,\text{V} - 0.45\,\text{V} = 4.55\,\text{V}$. Avec un dropout constructeur de seulement 350 mV sous 500 mA pour le LDL1117, la marge reste très confortable (~900 mV au-dessus du seuil de décrochage de 3.65 V). Une mesure de confirmation au multimètre sur `TP6` (3.3V) et `TP1` (VBUS) sous pic d'émission Wi-Fi certifie formellement l'absence de brownout.
+  * *Validation sur banc de la chaîne VBUS → D4 → U5 :* En alimentation USB seule (sans 12V batterie), la tension à l'entrée du LDO U5 vaut $V_{BUS} - V_F(D4) \approx 5.0\,\text{V} - 0.45\,\text{V} = 4.55\,\text{V}$. Avec un dropout constructeur de seulement 350 mV sous 500 mA pour le régulateur LDO U5, la marge reste très confortable (~900 mV au-dessus du seuil de décrochage de 3.65 V). Une mesure de confirmation au multimètre sur `TP6` (3.3V) et `TP1` (VBUS) sous pic d'émission Wi-Fi certifie formellement l'absence de brownout.
 * **Résistances de Configuration `R3` et `R4` (5.1 kΩ pull-down — `R0805`) :** Indispensables en USB-C pour que la source délivre le 5V (négociation en appareil récepteur / *Sink*).
 * **Diodes de Protection Antistatique ESD `U6` et `U7` (`SD05C` — SOD-323) :** TVS bidirectionnelles canalisant les décharges jusqu'à ±30 kV en < 1 ns avec une capacité parasite infime (< 3 pF).
-* **Résistances d'Amortissement Série `R22` et `R23` (22 Ω 0603 1% — Basic Part JLCPCB `0603WAF220JT5E` / LCSC `C23345`) :** Insérées en série stricte sur les lignes de données USB entre les diodes TVS (`U6`/`U7`) et le SoC ESP32-S3 (`R22` sur `USB_D-` vers IO19, `R23` sur `USB_D+` vers IO20). Conformes aux directives d'intégration matérielle d'Espressif, elles adaptent l'impédance différentielle à 90 Ω, amortissent les réflexions de fronts d'onde HF et éliminent les sonneries de commutation (*ringing*) induites par l'inductance parasite des câbles USB hôtes.
+* **Résistances d'Amortissement Série `R22` et `R23` (22 Ω 0603 1%) :** Insérées en série stricte sur les lignes de données USB entre les diodes TVS (`U6`/`U7`) et le SoC ESP32-S3 (`R22` sur `USB_D-` vers IO19, `R23` sur `USB_D+` vers IO20). Conformes aux directives d'intégration matérielle d'Espressif, elles adaptent l'impédance différentielle à 90 Ω, amortissent les réflexions de fronts d'onde HF et éliminent les sonneries de commutation (*ringing*) induites par l'inductance parasite des câbles USB hôtes.
 
 ---
 
-### Bloc 5 : Transceiver CAN (TJA1051T) & Protection ESD (`U2`, `U8`, `R8`, `JP1`, `C3`, `C15`)
+### Bloc 5 : Transceiver CAN & Protection ESD (`U2`, `U8`, `R8`, `JP1`, `C3`, `C15`)
 
 ```mermaid
 %%{init: {
@@ -300,7 +300,7 @@ flowchart LR
         RXD["IO16 (TWAI_RX)"]
     end
 
-    subgraph CAN_IC["TRANSCEIVER CAN U2 (TJA1051T)"]
+    subgraph CAN_IC["TRANSCEIVER CAN U2"]
         PIN_TX["Pin 1 (TXD)"]
         PIN_RX["Pin 4 (RXD)"]
         PIN_CANH["Pin 7 (CANH)"]
@@ -324,7 +324,7 @@ flowchart LR
     end
 
     subgraph PROT_CAN["PROTECTION TRANSITOIRE / ESD"]
-        U8["Double TVS U8 (NUP2105LT1G)\n• Broche 1 : CANH\n• Broche 2 : CANL\n• Broche 3 : GND"]
+        U8["Double TVS U8\n• Broche 1 : CANH\n• Broche 2 : CANL\n• Broche 3 : GND"]
     end
 
     subgraph J1_CONN["CONNECTEUR DIAGNOSTIC J1 (JST-XH 5P)"]
@@ -356,27 +356,27 @@ flowchart LR
   * Bit récessif (1) : CANH = 2.5V, CANL = 2.5V (différence = 0V).
   * Bit dominant (0) : CANH = 3.5V, CANL = 1.5V (différence = +2.0V).
   * Tout parasite affecte identiquement les deux lignes et s'annule par soustraction différentielle.
-* **Double Diode TVS Bidirectionnelle `U8` (`NUP2105LT1G` - SOT-23 / LCSC `C5261087`) :**
+* **Double Diode TVS Bidirectionnelle `U8` (SOT-23) :**
   * *Rôle frontière :* Implantée au plus près des broches CANH (Broche 3) et CANL (Broche 4) du connecteur d'entrée `J1`, elle dérive immédiatement vers la masse `GND` les décharges électrostatiques (qualifiée IEC 61000-4-2 Level 4, Contact ±30 kV, Air ±30 kV selon la datasheet onsemi) et les surtensions transitoires du faisceau véhicule avant qu'elles n'atteignent le transceiver `U2`.
   * *Tension de maintien VRWM = 24 V :* Tolère sans conduction les excursions de mode commun automobile (-12V à +12V) et les anomalies 24V.
   * *Capacité parasite ultra-faible (< 10 pF à 30 pF) :* Préserve l'intégrité des fronts rapides du bus CAN haute vitesse jusqu'à 1 Mbps.
-* **Résistance de Terminaison `R8` (120 Ω 1206 / LCSC `C17909` - Basic Part) & Cavalier Sélecteur `JP1` :**
+* **Résistance de Terminaison `R8` (120 Ω 1206) & Cavalier Sélecteur `JP1` :**
   * *Dimensionnement thermique renforcé (1206, 250 mW) :* Qualifiée en boîtier 1206 (dissipation doublée à 1/4 W vs 1/8 W en 0805, surface 3.2 × 1.6 mm) pour encaisser les transitoires thermiques et limiter l'échauffement en cas de court-circuit accidentel de la ligne CANH vers le rail batterie (+12V/+14V) lorsque le shunt `JP1` est inséré.
   * *En voiture (prise OBD-II) :* Le réseau automobile possède déjà ses deux terminaisons de 120 Ω (60 Ω équivalents). **Le cavalier JP1 reste ouvert (SANS shunt)**.
   * *Sur banc de test / simulateur :* Aucun terminateur sur table. **On place un cavalier standard 2.54 mm sur JP1** pour activer R8.
-* **Embase de Diagnostic Analyseur Logique `H2` (Barrette mâle 1×3 pas 2.54 mm THT / BOOMELE `2.54-1*3P针` / LCSC `C49257`) :**
+* **Embase de Diagnostic Analyseur Logique `H2` (Barrette mâle 1×3 pas 2.54 mm THT) :**
   * Permet le raccordement direct d'une nappe de câbles Dupont femelles depuis un analyseur logique USB (ex. 24 MHz 8 voies) pour capturer les trames CAN au niveau logique 3.3V :
     * **Broche 1 :** `TWAI_RX` (données CAN reçues du transceiver)
     * **Broche 2 :** `TWAI_TX` (données CAN émises par l'ESP32)
     * **Broche 3 :** `GND` (masse de référence indispensable pour l'analyseur)
 * **Condensateurs de Découplage Dédiés `C15` et `C3` (100 nF 50V 0603) :**
-  * `C15` (LCSC `C14663`) : Découplage de la broche 3 (`VCC` rail +5V). Implanté à moins de 2 mm de la broche 3 de `U2`, il fournit les fortes pointes de courant transitoires lors de la commutation des étages de sortie différentiels dominant/récessif.
+  * `C15` (100 nF) : Découplage de la broche 3 (`VCC` rail +5V). Implanté à moins de 2 mm de la broche 3 de `U2`, il fournit les fortes pointes de courant transitoires lors de la commutation des étages de sortie différentiels dominant/récessif.
   * `C3` : Découplage de la broche 5 (`VIO` rail 3.3V) assurant la propreté de l'adaptation de niveau logique vers le SoC ESP32.
 
 
 ---
 
-### Bloc 6 : Transceiver K-Line (L9637D) & Protection ESD (`U3`, `D5`, `R1`, `R2`, `R16`, `C4`)
+### Bloc 6 : Transceiver K-Line & Protection ESD (`U3`, `D5`, `R1`, `R2`, `R16`, `C4`)
 
 ```mermaid
 %%{init: {
@@ -405,7 +405,7 @@ flowchart LR
         H1["Embase Mâle H1 (1×3 - 2.54mm)\n• Pin 1 : KLINE_RX\n• Pin 2 : KLINE_TX\n• Pin 3 : GND"]
     end
 
-    subgraph K_IC["TRANSCEIVER K-LINE U3 (L9637D)"]
+    subgraph K_IC["TRANSCEIVER K-LINE U3"]
         K_TX["Pin 4 (TX)"]
         K_RX["Pin 1 (RX)"]
         K_PIN["Pin 6 (K-Line 12V)"]
@@ -419,11 +419,11 @@ flowchart LR
     end
 
     subgraph PROT_K["PROTECTION TRANSITOIRE"]
-        D5["TVS D5 (SMF24A)\n24V Unidirectionnelle"]
+        D5["TVS D5\n24V Unidirectionnelle"]
     end
 
     subgraph J1_CONN["CONNECTEUR DIAGNOSTIC J1 (JST-XH 5P)"]
-        PIN5_CONN["Broche 5 (Ligne K-Line 12V)"]
+        PIN2_CONN["Broche 2 (Ligne K-Line 12V)"]
     end
 
     MCU_TX --> R2 --> K_TX
@@ -433,23 +433,23 @@ flowchart LR
     R16_R18 --> JP2_BOX --> K_PIN
     K_PIN <==> D5
     D5 --> GND_K["GND"]
-    D5 <==> PIN5_CONN
+    D5 <==> PIN2_CONN
 ```
 
 * **Protocole ISO 9141-2 / ISO 14230:** Liaison mono-fil bidirectionnelle *half-duplex* sous tension batterie (0V = bas/dominant, 12V = haut/récessif).
-* **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle — LCSC `C4410`) & Cavalier Sélecteur `JP2` (`PZ2.54-1*2` — LCSC `C5360898`) :**
+* **Résistances de Pull-Up Normalisées `R16` et `R18` (2 × 1 kΩ 1206 1/4W en parallèle) & Cavalier Sélecteur `JP2` :**
   * *Conformité Norme Automobile (ISO 9141-2 / ISO 14230-4) :* La spécification du banc/testeur impose une résistance de rappel au +12V de 510 Ω ±5% pour garantir un temps de montée rapide (tr < 2 µs) malgré la capacité parasite du faisceau habitacle (pouvant atteindre 2 nF). La mise en parallèle de deux résistances de 1 kΩ donne Req = 500 Ω (écart de seulement –1.96% face aux 510 Ω normatifs, parfaitement dans la tolérance ±5%).
   * *Rôle Normalisé du Diagnostic Tester (ISO 9141-2 / ISO 14230) & Cavalier `JP2` :*
-    * **En mode Voiture / Scanner (Cas 1 et Cas 2) :** La norme ISO 9141-2 (§4.2.1) et la [datasheet du L9637D (Fig. 4)](datasheets/datasheets.md#u3--transceiver-k-line-iso-9141--e-l9637d013tr-l9637d) stipulent expressément que c'est l'outil de diagnostic (*Diagnostic Tester*, notre scanner) qui doit fournir la résistance de pull-up normalisée de 510 Ω vers le +12V véhicule, l'ECU du véhicule ne disposant que d'une haute impédance (Rin >= 100 kΩ). **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** sur véhicule pour polariser activement la ligne K-Line.
+    * **En mode Voiture / Scanner (Cas 1 et Cas 2) :** La norme ISO 9141-2 (§4.2.1) et la [documentation constructeur du transceiver K-Line U3 (Fig. 4)](datasheets/datasheets.md#u3--transceiver-k-line-iso-9141--e-l9637d013tr-l9637d) stipulent expressément que c'est l'outil de diagnostic (*Diagnostic Tester*, notre scanner) qui doit fournir la résistance de pull-up normalisée de 510 Ω vers le +12V véhicule, l'ECU du véhicule ne disposant que d'une haute impédance (Rin >= 100 kΩ). **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** sur véhicule pour polariser activement la ligne K-Line.
     * **En mode Banc d'essais bi-cartes (Cas 3) :** Une seule des deux cartes fermera son cavalier `JP2` (la Carte A Scanner), tandis que la Carte B (Simulateur ECU) laissera `JP2` **OUVERT (sans shunt)** pour reproduire fidèlement la haute impédance passive d'un calculateur moteur.
   * *Dissipation thermique maîtrisée (boîtiers 1206) :* Lorsque la ligne est tirée à 0V par le transistor de sortie avec le shunt JP2 en place, la puissance crête totale dissipée sous 14.4 V vaut Ptot = V² / Req = (14.4V)² / 500 Ω ≈ 0.415 W. Cette puissance est équitablement répartie : chaque résistance 1206 encaisse P = (14.4V)² / 1000 Ω ≈ 0.207 W, restant sous la limite nominale de 250 mW par boîtier sans recourir à un boîtier 2010/2512 Extended.
-* **Diode TVS Unidirectionnelle `D5` (`SMF24A` - SOD-123FL / LCSC `C920178`) :**
+* **Diode TVS Unidirectionnelle `D5` (24V - SOD-123FL) :**
   * *Rôle frontière & Clamping direct :* Connectée entre la broche 2 de `J1` (`K_LINE`) et la masse `GND` (cathode à la ligne K, anode à GND), elle encaisse les décharges électrostatiques et transitoires sévères générés par le système d'allumage. Sa caractéristique unidirectionnelle procure un clamping direct immédiat en conduction directe sous –1.0 V lors des transitoires négatifs, protégeant rigoureusement la limite absolue de –24.0 V de la broche 6 (`K`) du transceiver `U3`.
   * *Tension de maintien VRWM = 24 V :* Reste transparente en régime permanent sous 12V-14.4V et lors des commutations K-Line sans écrêtage intempestif.
   * *Tension d'avalanche VBR = 26.7 V ~ 29.5 V et serrage crête VCL = 38.9 V (200W @ 10/1000 µs) :* Borne strictement la surtension positive sous la limite destructive de la broche 6 du transceiver `U3`.
-* **Transceiver Dédié `U3` (`L9637D013TR`) & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 (VCC) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du L9637D. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 (VCC). La broche 7 (VS) est alimentée depuis le rail protégé `+12V_PROT`. L'entrée non utilisée `LI` (broche 8) est pontée directement sur la broche adjacente 7 (VS), plaçant fermement le comparateur au repos inactif (VLI = VS > 0.55 VS), éliminant tout risque d'antenne parasite CEM et annulant le courant de repos permanent (0 µA).
+* **Transceiver Dédié `U3` & Découplage `C4` (100 nF) :** Translation bidirectionnelle robuste 12V ↔ 3.3V avec protection contre les courts-circuits et coupure thermique. La broche 3 (VCC) est alimentée en 3.3V (plage admissible 3.0V à 7.0V) afin d'adapter directement le niveau RX vers le GPIO4 de l'ESP32-S3 (non tolérant 5V) via la pull-up interne du transceiver U3. Condensateur de découplage `C4` implanté à moins de 2 mm de la broche 3 (VCC). La broche 7 (VS) est alimentée depuis le rail protégé `+12V_PROT`. L'entrée non utilisée `LI` (broche 8) est pontée directement sur la broche adjacente 7 (VS), plaçant fermement le comparateur au repos inactif (VLI = VS > 0.55 VS), éliminant tout risque d'antenne parasite CEM et annulant le courant de repos permanent (0 µA).
 * **Résistances d'Amortissement `R1` et `R2` (10 Ω - `R0805`) :** Atténuent les réflexions parasites et bornent le courant des micro-décharges sur les GPIOs de l'ESP32.
-* **Embase de Diagnostic Analyseur Logique `H1` (Barrette mâle 1×3 pas 2.54 mm THT / BOOMELE `2.54-1*3P针` / LCSC `C49257`) :**
+* **Embase de Diagnostic Analyseur Logique `H1` (Barrette mâle 1×3 pas 2.54 mm THT) :**
   * Permet le raccordement direct d'une nappe de câbles Dupont femelles depuis un analyseur logique USB (ex. 24 MHz 8 voies) pour capturer les trames UART K-Line au niveau logique 3.3V :
     * **Broche 1 :** `KLINE_RX` (trames UART reçues du véhicule via transceiver)
     * **Broche 2 :** `KLINE_TX` (commandes UART émises par le MCU vers transceiver)
@@ -460,7 +460,7 @@ flowchart LR
 
 ### Bloc 7 : LED d'État (`LED1`, `R6`)
 
-* **LED Rouge `LED1` (0603, Basic Part `KT-0603R` / `C2286`) & Résistance `R6` (100 Ω) :** Pilotée par la broche `IO2` du microcontrôleur (compatible modulation PWM matérielle via périphérique LEDC).
+* **LED Rouge `LED1` (0603) & Résistance `R6` (100 Ω) :** Pilotée par la broche `IO2` du microcontrôleur (compatible modulation PWM matérielle via périphérique LEDC).
 * **Courant de Fonctionnement & Visibilité Diurne :**
   > **I_LED = (3.30V - 2.00V) / 100 Ω = 13.0 mA** (intensité lumineuse optimale pour visibilité franche en plein jour dans l'habitacle sous le puits de lumière ; dissipation thermique de R6 de ~16.9 mW parfaitement contenue pour un boîtier 0805 de 125 mW, et appel de courant respectant la limite de 20 mA max par GPIO de l'ESP32-S3).
 
@@ -473,7 +473,7 @@ flowchart LR
 * Contrôleur matériel **TWAI** (compatible CAN 2.0B).
 * Antenne méandre 2.4 GHz gravée sur PCB (Wi-Fi 802.11 b/g/n + BLE 5.0).
 * **Trio de Découplage Local & Réservoir Bulk (`C11`, `C1`, `C2`) :**
-  * *Condensateur Réservoir Bulk `C11` (10 µF 25V X5R 0805 - LCSC `C15850`) :* Rôle critique anti-brownout. Les salves radio Wi-Fi provoquent des appels de courant massifs de **450 à 500 mA** pendant plusieurs centaines de microsecondes. `C11` agit comme une réserve locale immédiate pour empêcher la tension de chuter sous le seuil de coupure de l'ESP32 (2.8V). Raccordé à moins de 2 mm des broches 1 (`GND`) et 2 (`3V3`). Sa tenue de 25V élimine la perte de capacité par DC-bias (> 85% de capacité conservée sous 3.3V).
+  * *Condensateur Réservoir Bulk `C11` (10 µF 25V X5R 0805) :* Rôle critique anti-brownout. Les salves radio Wi-Fi provoquent des appels de courant massifs de **450 à 500 mA** pendant plusieurs centaines de microsecondes. `C11` agit comme une réserve locale immédiate pour empêcher la tension de chuter sous le seuil de coupure de l'ESP32 (2.8V). Raccordé à moins de 2 mm des broches 1 (`GND`) et 2 (`3V3`). Sa tenue de 25V élimine la perte de capacité par DC-bias (> 85% de capacité conservée sous 3.3V).
   * *Condensateurs de Découplage HF `C1` et `C2` (100 nF 50V X7R 0603) :* Céramiques MLCC implantés au plus près direct des broches 1 et 2 pour filtrer les transitoires rapides de commutation d'horloge (240 MHz) et le bruit numérique.
 * **Circuit de Reset Matériel (`R15`, `C12`, `SW1`) :** Pull-up externe 10 kΩ (`R15`) vers 3.3V et condensateur 1 µF (`C12`) vers GND formant une temporisation de reset propre, assisté du bouton poussoir tactile `SW1`.
 
@@ -508,10 +508,10 @@ flowchart LR
   * 12.0V batterie → 1.286V ADC.
   * 14.4V (alternateur actif) → 1.543V ADC.
   * 18.0V (tension crête normale) → 1.929V ADC.
-  * 26.0V (tension d'écrêtage crête TVS D1 SMBJ16A) → **2.785V ADC** : reste strictement sous la limite nominale 3.3V sans saturer le convertisseur ADC !
+  * 26.0V (tension d'écrêtage crête TVS D1 (16V)) → **2.785V ADC** : reste strictement sous la limite nominale 3.3V sans saturer le convertisseur ADC !
 * **Courant de Fuite Pont :** `I = 12V / 112 kΩ ≈ 107 µA` (décharge batterie totalement négligeable).
 * **Filtre Passe-Bas Anti-Bruit `C10` (100 nF) :** Avec `Req = 100k // 12k ≈ 10.71 kΩ`, fréquence de coupure `fc ≈ 148 Hz` éliminant le hachage alternateur et les parasites d'allumage.
-* **Diode Double Silicium de Clamp Rail-to-Rail à Ultra-Faible Fuite `D6` (`BAV199,215` - SOT-23 / LCSC `C40919`) :**
+* **Diode Double Silicium de Clamp Rail-to-Rail à Ultra-Faible Fuite `D6` (SOT-23) :**
   * *Protection matérielle et fidélité métrologique :* Remplaçant l'ancienne Schottky `BAT54WS` (dont le courant de fuite inverse de 5 à 10 µA à 70°C induisait une erreur de mesure supérieure à 0.5 V sur la batterie via `ΔVBAT = IR × R12`), la `BAV199` présente une fuite inverse typique de seulement **3 pA** à 25°C (< 100 pA à 85°C, garantie < 5 nA max à 75V). L'erreur induite sur la mesure batterie est rigoureusement nulle (**ΔVBAT < 0.01 mV**, soit < 0.001 LSB de l'ADC).
   * *Architecture Rail-to-Rail intégrée :* Dans son boîtier SOT-23 compact, la broche 1 (anode D6a) est reliée à la masse `GND` pour écrêter les sonneries et transitoires négatifs sous -0.65V, la broche 2 (cathode D6b) est reliée au rail `3.3V` pour dériver les surtensions au-delà de 3.95V, et la broche 3 (point milieu) est connectée directement sur le nœud `VBAT_SENSE`.
 * **Canal ADC1 :** La broche `IO1` appartient à **ADC1**, garantissant une mesure analogique non perturbée pendant les émissions radio (contrairement à ADC2).
@@ -556,13 +556,13 @@ flowchart TD
 ## 4. Tableau de Synthèse : Contraintes Véhicule vs Solutions Électroniques
 
 | Contrainte du Véhicule | Risque pour l'Électronique | Solution Technique Implémentée | Composants Dédiés |
-| **Pics de surtension alternateur (*Load Dump*)** | Destruction instantanée par claquage (> 30V) | Écrêtage sous 26.0V vers la masse (marge 4.0V) | TVS 16V `D1` (`SMBJ16A`) |
+| **Pics de surtension alternateur (*Load Dump*)** | Destruction instantanée par claquage (> 30V) | Écrêtage sous 26.0V vers la masse (marge 4.0V) | TVS 16V `D1` |
 | **Inversion accidentelle de polarité** | Court-circuit destructeur des circuits intégrés | Commutation automatique sans perte par MOSFET | P-MOS `Q1` (60V) + N-MOS `Q2` |
 | **Court-circuit accidentel faisceau** | Échauffement critique, fonte des pistes | Coupure thermique réarmable sans intervention (maintien >= 0.75A à 60°C) | Fusible PPTC 1.1A / 33V `F1` (`1812L110/33MR`) |
-| **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique | Conversion à découpage 570 kHz (rdt > 85%) | Buck `U4` (`TPS54331`) + `L1` + `D2` |
+| **Chute de tension 12V → 5V à fort courant** | Surchauffe extrême si régulateur linéaire classique | Conversion à découpage 570 kHz (rdt > 85%) | Buck `U4` + `L1` + `D2` |
 | **Appel de courant d'enfichage & pic 5V (*Inrush / Overshoot*)** | Surtension transitoire 5V destructrice à l'enfichage | Démarrage progressif linéaire 4.0 ms par capacité Slow-Start | `U4(SS)`, `C17` (10 nF) |
 | **Bruit de hachage & stabilité boucle Buck** | Instabilité de régulation 5V, oscillations | Réseau Type II (marge 66.3°) + condensateur HF `C13` (220pF) + découplage VIN `C14` | `U4`, `R11`, `C9`, `C13`, `C14` |
-| **Bruit de hachage sur la radio** | Portée Wi-Fi/BLE dégradée, instabilité ADC | Double filtrage : Régulateur LDO + Perle de ferrite | LDO `U5` (`LDL1117`) + `FB1` + `C6` |
+| **Bruit de hachage sur la radio** | Portée Wi-Fi/BLE dégradée, instabilité ADC | Double filtrage : Régulateur LDO + Perle de ferrite | LDO `U5` + `FB1` + `C6` |
 | **Micro-coupures & pics RF Wi-Fi de l'ESP32** | Chute sous 2.8V, redémarrage intempestif (*brownout*) | Découplage HF à < 2 mm + Réservoir local Bulk 10 µF | Condensateurs `C1`-`C4` + Bulk `C11` (25V 0805) |
 | **Surveillance batterie & détection contact** | Impossibilité de diagnostiquer l'alternateur, claquage ADC | Pont diviseur 1/9.33 protégé + clamp silicium ultra-faible fuite `D6` + passe-bas 148 Hz | `R12`, `R13` (12k), `C10`, `D6` (`BAV199`) vers ADC1 (`IO1`) |
 | **Parasites d'allumage moteur sur bus CAN** | Trames de diagnostic corrompues ou illisibles | Transmission différentielle symétrique + terminaison commutable | Transceiver CAN `U2` + Terminaison `R8`/`JP1` |
@@ -570,8 +570,8 @@ flowchart TD
 | **Signaux 12V de la ligne K-Line** | Destruction des broches MCU limitées à 3.3V | Translation de niveau bidirectionnelle 12V ↔ 3.3V | Transceiver K-Line `U3` + `R1`, `R2` |
 | **Temps de montée K-Line & conformité ISO** | Trame illisible par front d'onde trop lent (> 2 µs) | Pull-up normalisée 500 Ω (2 × 1 kΩ 1206) commutable par cavalier | `R16` // `R18` (1 kΩ 1206) + `JP2` |
 | **Décharges électrostatiques (ESD) USB** | Claquage des broches USB internes du silicium | Dérivation des pointes 30 kV en < 1 ns | Diodes ESD bidirectionnelles `U6`, `U7` |
-| **Décharges statiques & transitoires bus CAN** | Claquage différentiel des entrées transceiver U2 | Écrêtage bidirectionnel 24V ultra-rapide (< 10 pF) | Double TVS 24V `U8` (`NUP2105LT1G`) |
-| **Décharges statiques & transitoires K-Line** | Claquage de l'étage de sortie haute tension U3 | Dérivation des pointes transitoires 24V à la masse | Diode TVS unidirectionnelle 24V `D5` (`SMF24A`) |
+| **Décharges statiques & transitoires bus CAN** | Claquage différentiel des entrées transceiver U2 | Écrêtage bidirectionnel 24V ultra-rapide (< 10 pF) | Double TVS 24V `U8` |
+| **Décharges statiques & transitoires K-Line** | Claquage de l'étage de sortie haute tension U3 | Dérivation des pointes transitoires 24V à la masse | Diode TVS unidirectionnelle 24V `D5` |
 | **Négociation de charge USB Type-C** | Absence de tension 5V délivrée par le chargeur | Détection automatique d'appareil consommateur (Sink) | Résistances pull-down 5.1 kΩ `R3`, `R4` |
 | **Alimentation sur banc & anti-retour USB** | Refoulement 5V Buck vers le PC ou brownout en test | Diode Schottky de puissance anti-retour 1A / 40V | Diode Schottky `D4` (`B5819W SL`) |
 
@@ -581,9 +581,9 @@ flowchart TD
 
 | Nom du Net | Composants Reliés (Broches) | Rôle & Fonction Électrique | Domaine / Bloc |
 | :--- | :--- | :--- | :--- |
-| **`+12V`** | Connecteur `J1` (Broche 1), Embase `H3` (Broche 1), `D1(1)`, `F1(1)` | Alimentation 12V brute (batterie véhicule via J1 ou alim de labo banc via H3). | Alimentation / Entrée |
-| **`+12V_FUSED`** | `F1(2)`, `Q1(3)`, `D3(3)`, `R7(1)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
-| **`+12V_PROT`** | `Q1(2)`, `C7(1)`, `C14(1)`, `U4(2)`, `R19(1)`, `R12(1)`, `R16(1)`, `R18(1)`, `U3(7,8)`, `TP4` | Rail 12V sécurisé anti-inversion alimentant le Buck, le transceiver K-Line (VS et LI) et le diviseur batterie. | Alimentation / Sécurité |
+| **`+12V`** | Connecteur `J1` (Broche 1), Embase `H3` (Broche 1), `D1(1)`, `F1(1)`, `R5(1)` | Alimentation 12V brute (batterie véhicule via J1 ou alim de labo banc via H3). | Alimentation / Entrée |
+| **`+12V_FUSED`** | `F1(2)`, `Q1(3)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
+| **`+12V_PROT`** | `Q1(2)`, `D3(3)`, `R7(1)`, `C7(1)`, `C14(1)`, `U4(2)`, `R19(1)`, `R12(1)`, `R16(1)`, `R18(1)`, `U3(7,8)`, `TP4` | Rail 12V sécurisé anti-inversion alimentant le Buck, le transceiver K-Line (VS et LI) et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |
@@ -596,7 +596,7 @@ flowchart TD
 | **`RC_COMP`** | `R11(2)`, `C9(1)` | Nœud série du correcteur RC de phase. | Alimentation / Buck |
 | **`+5V`** | `L1(2)`, `C8(1)`, `C16(1)`, `U5(3)`, `R9(2)`, `U2(3)`, `C15(1)`, `TP5`, `D4(3)` | Rail 5.0V régulé issu du Buck ou injecté via USB-C par D4. | Alimentation / Rail 5V |
 | **`3.3V_PRE`** | `U5(2,4)`, `FB1(1)`, `C6(1)`, `TP14` | Sortie 3.3V brute du LDO avant élimination des harmoniques RF. | Alimentation / LDO |
-| **`3.3V`** | `FB1(2)`, `C6(1)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
+| **`3.3V`** | `FB1(2)`, `C1-C4(1)`, `C11(1)`, `U1(2)`, `U2(5)`, `U3(3, VCC)`, `R15(1)`, `D6(2)` (cathode D6b), `TP6` | Rail logique 3.3V purifié pour l'ESP32, les transceivers et le clamp D6. | Alimentation / Rail 3.3V |
 | **`GND`** | Connecteur `J1` (Broche 5), Embase `H3` (Broche 2), plans de masse, blindages, condensateurs (`C1-C19`), transceivers, `U8(3)`, `D5(2)`, `D6(1)`, `TP3`, `H1(3)`, `H2(3)` | Potentiel de référence zéro volt (0V) commun reliant la masse d'alimentation et la carte. | Référence / Masse |
 | **`LED_STATUS`** | `U1(38)` (`IO2`), `R6(1)` | Commande numérique d'allumage du voyant de fonctionnement. | Interface / Statut |
 | **`LED_ANODE`** | `R6(2)`, `LED1(1)` | Liaison à courant limité (13.0 mA) vers l'anode de la LED rouge. | Interface / Statut |
@@ -645,7 +645,7 @@ flowchart TD
 
 ### 6.2 Embases de Diagnostic & Alimentation Banc (`H1`, `H2`, `H3`)
 
-Deux embases mâles droites 1×3 broches (`H1`, `H2`) au pas standard de **2.54 mm traversantes (THT)** (BOOMELE `2.54-1*3P针`, LCSC `C49257`) et une embase mâle 1×2 broches (`H3`, LCSC `C124375`) sont implantées pour l'analyseur logique et l'alimentation de laboratoire :
+Deux embases mâles droites 1×3 broches (`H1`, `H2`) au pas standard de **2.54 mm traversantes (THT)** et une embase mâle 1×2 broches (`H3`) sont implantées pour l'analyseur logique et l'alimentation de laboratoire :
 
 | Connecteur | Page Schéma | Broche 1 | Broche 2 | Broche 3 | Fonction & Protocole |
 | :---: | :---: | :---: | :---: | :---: | :--- |
@@ -685,11 +685,11 @@ Pour garantir l'intégrité du signal, l'immunité électromagnétique (CEM) et 
 * **Point de Test `TP10` (`IO0`) :** Placé à proximité immédiate d'une pastille `GND` pour faciliter le court-circuit à la masse lors de la récupération bootloader ROM.
 
 ### 7.5 Protections Transitoires Connecteur d'Entrée & USB
-* **Double TVS CAN `U8` (`NUP2105L`) :** Positionnée à **moins de 5 mm** des broches 3 (`CANH`) et 4 (`CANL`) du connecteur d'entrée `J1`. Le flux d'entrée doit traverser les pastilles de `U8` avant d'atteindre la terminaison `R8`/`JP1` et le transceiver `U2`.
-* **TVS K-Line `D5` (`SMF24A`) & Pull-Up `R16` :**
+* **Double TVS CAN `U8` :** Positionnée à **moins de 5 mm** des broches 3 (`CANH`) et 4 (`CANL`) du connecteur d'entrée `J1`. Le flux d'entrée doit traverser les pastilles de `U8` avant d'atteindre la terminaison `R8`/`JP1` et le transceiver `U2`.
+* **TVS K-Line `D5` & Pull-Up `R16` :**
   * `D5` implantée à **moins de 5 mm** de la broche 2 (`K_LINE`) du connecteur `J1` pour dériver les transitoires directement à la masse à l'entrée de carte.
   * Résistance de pull-up `R16` (1 kΩ 1206) implantée à proximité immédiate de `D5` et de la broche 2 (< 5 mm), dans une zone aérée pour assurer une bonne dissipation thermique de ses 207 mW crête.
-* **Diodes ESD USB `U6`, `U7` (`SD05C`) & Résistances d'Amortissement `R22`, `R23` (22 Ω) :** Diodes TVS alignées côte à côte face aux broches A6/B6 (`USB_D+`) et A7/B7 (`USB_D-`) du port USB-C `J2` pour un clamp immédiat, suivies immédiatement des résistances d'amortissement série `R22`/`R23` avant d'entrer dans les GPIOs IO20 et IO19 de l'ESP32.
+* **Diodes ESD USB `U6`, `U7` & Résistances d'Amortissement `R22`, `R23` (22 Ω) :** Diodes TVS alignées côte à côte face aux broches A6/B6 (`USB_D+`) et A7/B7 (`USB_D-`) du port USB-C `J2` pour un clamp immédiat, suivies immédiatement des résistances d'amortissement série `R22`/`R23` avant d'entrer dans les GPIOs IO20 et IO19 de l'ESP32.
 
 ### 7.6 Gestion Radiofréquence (RF) & Plans de Masse
 * **Zone d'exclusion RF d'antenne (Keepout multicouche) :** Définir une exclusion stricte sur toutes les couches (Top, Bottom, Internes) sous et autour de l'antenne méandre 2.4 GHz de l'ESP32-S3 (`NO_WIRES`, `NO_FILLS`, `NO_POURS`). Aucun plan de cuivre ni piste ne doit se trouver dans cette zone.
@@ -770,7 +770,7 @@ flowchart LR
         JP1["Cavalier JP1 (CAN)\n👉 OUVERT (Sans shunt)"]
         JP2["Cavalier JP2 (K-Line)\n👉 FERMÉ (Shunt 500Ω Tester)"]
         USBC["Port USB-C (J2)\n👉 DÉCONNECTÉ"]
-        POWER_SEC["Étage Alimentation\n• PPTC F1 + TVS D1 (16V)\n• Anti-inversion Q1/Q2\n• Buck TPS54331 (UVLO 8.01V)\n• LDO LDL1117 (3.3V)"]
+        POWER_SEC["Étage Alimentation\n• PPTC F1 + TVS D1 (16V)\n• Anti-inversion Q1/Q2\n• Buck U4 (UVLO 8.01V)\n• LDO U5 (3.3V)"]
         RADIO["Radio ESP32-S3\nBLE 5.0 / Wi-Fi"]
     end
 
@@ -798,9 +798,9 @@ flowchart LR
   > **RISQUE D'ÉCRASEMENT DU BUS CAN VÉHICULE :** Le réseau de bord automobile possède déjà ses deux terminaisons de 120 Ω intégrées aux deux calculateurs d'extrémité (ECU moteur et Tableau de bord / Gateway), totalisant une résistance équivalente de 60 Ω. Insérer un shunt sur `JP1` abaisserait l'impédance totale à 40 Ω, réduisant la tension différentielle Vdiff, surchargeant les émetteurs CAN et risquant de provoquer des pannes de transmission en roulage (*Bus-Off*).
 * **Cavalier K-Line `JP2` (Pull-Up 500 Ω) : IMPÉRATIVEMENT FERMÉ (AVEC shunt)**
   > [!IMPORTANT]
-  > Conformément à la norme ISO 9141-2 (§4.2.1) et à l'architecture de référence constructeur ST L9637D (Fig. 4), l'outil de diagnostic (*Diagnostic Tester*, notre scanner) doit fournir la pull-up normalisée de 510 Ω ±5% tirée au +12V véhicule, l'ECU ne disposant que d'une entrée haute impédance. **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** pour assurer la polarisation active de la ligne K-Line en diagnostic habitacle.
+  > Conformément à la norme ISO 9141-2 (§4.2.1) et à l'architecture de référence constructeur du transceiver, l'outil de diagnostic (*Diagnostic Tester*, notre scanner) doit fournir la pull-up normalisée de 510 Ω ±5% tirée au +12V véhicule, l'ECU ne disposant que d'une entrée haute impédance. **Le cavalier `JP2` doit donc être IMPÉRATIVEMENT FERMÉ (avec shunt)** pour assurer la polarisation active de la ligne K-Line en diagnostic habitacle.
 * **Alimentation & Autonomie :**
-  Le scanner est alimenté à 100% par le réseau de bord via le Buck TPS54331. La consommation globale en veille de la carte se situe sur un plancher réaliste de ~8 à 15 mA (la fuite statique du diviseur UVLO R19/R20 étant quant à elle minime, < 25 µA), et le seuil de coupure franche à **8.01 V** garantit l'extinction totale du régulateur avant toute décharge profonde de la batterie du véhicule.
+  Le scanner est alimenté à 100% par le réseau de bord via le Buck `U4`. La consommation globale en veille de la carte se situe sur un plancher réaliste de ~8 à 15 mA (la fuite statique du diviseur UVLO R19/R20 étant quant à elle minime, < 25 µA), et le seuil de coupure franche à **8.01 V** garantit l'extinction totale du régulateur avant toute décharge profonde de la batterie du véhicule.
 * **Port USB-C `J2` :** Non utilisé dans ce mode (déconnecté).
 
 ---
@@ -828,7 +828,7 @@ flowchart TD
         J1["Connecteur J1 (JST-XH 5P)\n• 12V, GND, CANH, CANL, K_LINE"]
         JP1["Cavalier JP1 (CAN)\n👉 OUVERT (Sans shunt)"]
         JP2["Cavalier JP2 (K-Line)\n👉 FERMÉ (Shunt 500Ω Tester)"]
-        BUCK["Buck TPS54331\n(Sortie +5.035V)"]
+        BUCK["Buck U4\n(Sortie +5.035V)"]
         D4{"Diode Schottky D4\nAnti-Retour\n(V_cathode = +5.035V\n> V_anode = +5.0V)"}
         ESP["ESP32-S3\nConsole Série + JTAG Natif"]
         USBC["Port USB-C (J2)"]
@@ -915,7 +915,7 @@ flowchart LR
 > **Règle absolue d'ordonnancement de câblage sur banc (Anti-rétroalimentation) :**
 > Lors des essais sur table avec le banc bi-cartes ou une source externe :
 > 1. **Toujours relier la masse GND et alimenter le 12V (via `H3` ou les broches 1 (+12V) et 5 (GND) de `J1`) AVANT de relier les lignes de signaux/bus (`CANH`, `CANL`, `K_LINE`).**
-> 2. *Interdiction formelle du câblage partiel sans masse ou sans 12V :* Si la ligne `K_LINE` est raccordée à une source active sous 12V alors que la masse `GND` ou le `+12V` de la carte n'est pas connectée, un courant parasite transite par les résistances de pull-up (`R16` // `R18`) et les diodes de clamp internes du transceiver `U3` (L9637D, broche 6 `K` vers broche 7 `VS`), ce qui rétro-alimente anormalement le rail `+12V_PROT` et le système, avec risque d'endommagement de `U3` ou de perturbations sévères.
+> 2. *Interdiction formelle du câblage partiel sans masse ou sans 12V :* Si la ligne `K_LINE` est raccordée à une source active sous 12V alors que la masse `GND` ou le `+12V` de la carte n'est pas connectée, un courant parasite transite par les résistances de pull-up (`R16` // `R18`) et les diodes de clamp internes du transceiver `U3` (broche 6 `K` vers broche 7 `VS`), ce qui rétro-alimente anormalement le rail `+12V_PROT` et le système, avec risque d'endommagement de `U3` ou de perturbations sévères.
 
 #### 2. Câblage du Connecteur `J1` Inter-Cartes
 | Broche Connecteur `J1` | Signal | Raccordement Banc | Fonction électrique |

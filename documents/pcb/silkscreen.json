@@ -61,13 +61,13 @@
         "component": "H1",
         "position": "below",
         "offset_mm": 4.8,
-        "text": "CAN"
+        "text": "KLINE"
       },
       {
         "component": "H2",
         "position": "below",
         "offset_mm": 4.8,
-        "text": "KLINE"
+        "text": "CAN"
       },
       {
         "component": "H3",
@@ -91,7 +91,10 @@
     "title_blocks": [
       {
         "anchor": "bottom_left",
-        "offset_mm": [6.0, 6.0],
+        "offset_mm": [
+          6.0,
+          6.0
+        ],
         "alignment": "left",
         "text": [
           "HW Rev: v2.0 (4-Layer JLC2313)",
