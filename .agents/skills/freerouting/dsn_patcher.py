@@ -319,17 +319,21 @@ class DsnPatcher:
         if not all_layers:
             all_layers = ["TopLayer", "BottomLayer"]
 
-        # 0a. Configuration des plans d'alimentation/masse internes (type power) dans (structure ...)
+        # 0a. Configuration des plans d'alimentation/masse internes dans (structure ...)
+        # Si ignore_plane_nets est actif, le réseau de plan est décomposé en micro-nets locaux
+        # et laissé aux plans de cuivre. On conserve alors le type 'signal' dans FreeRouting
+        # pour éviter l'échec de validation de power-plane et permettre le routage propre.
         stackup_layers = self.constraints.get("board", {}).get("stackup", {}).get("layers", [])
-        for lay in stackup_layers:
-            if lay.get("type") == "plane":
-                lname = lay.get("name")
-                default_net = lay.get("default_net")
-                prop_str = f'\n    (property (net_name "{default_net}"))' if default_net else ''
-                pattern_lay = re.compile(rf'\(layer\s+{re.escape(lname)}\s*\(type\s+signal\)\s*\)', re.IGNORECASE)
-                dsn_content, n_mod = pattern_lay.subn(f'(layer {lname}\n    (type power){prop_str}\n  )', dsn_content)
-                if n_mod > 0:
-                    logger.info(f"Couche interne configurée en plan (type power, net={default_net}) : {lname}")
+        if not ignore_plane_nets:
+            for lay in stackup_layers:
+                if lay.get("type") == "plane":
+                    lname = lay.get("name")
+                    default_net = lay.get("default_net")
+                    prop_str = f'\n    (property (net_name "{default_net}"))' if default_net else ''
+                    pattern_lay = re.compile(rf'\(layer\s+{re.escape(lname)}\s*\(type\s+signal\)\s*\)', re.IGNORECASE)
+                    dsn_content, n_mod = pattern_lay.subn(f'(layer {lname}\n    (type power){prop_str}\n  )', dsn_content)
+                    if n_mod > 0:
+                        logger.info(f"Couche interne configurée en plan (type power, net={default_net}) : {lname}")
 
         # 0b. Exclusion des réseaux de plans du routage filaire (laissé aux plans de masse/cuivre)
         if ignore_plane_nets and self.plane_nets:
@@ -421,10 +425,13 @@ class DsnPatcher:
 
         default_clear_units = mm_to_dsn_units(self.default_class_cfg.get("clearance_mm", 0.20), unit)
         default_width_units = mm_to_dsn_units(self.default_class_cfg.get("track_width_mm", 0.254), unit)
+        # Règle d'espacement CMS-à-CMS (smd_smd) alignée sur le pitch fin (ex. connecteur USB-C J2 0.5mm pitch)
+        min_smd_clear_mm = self.constraints.get("drc_limits", {}).get("min_clearance_mm", 0.15)
+        smd_clear_units = mm_to_dsn_units(min(0.15, min_smd_clear_mm), unit)
         structure_rules = (
             f"    (rule(clear {default_clear_units:.2f}))\n"
             f"    (rule(clear {default_clear_units:.2f} (type default_smd)))\n"
-            f"    (rule(clear {default_clear_units:.2f} (type smd_smd)))\n"
+            f"    (rule(clear {smd_clear_units:.2f} (type smd_smd)))\n"
             f"    (rule(clear {default_clear_units:.2f} (type via_via)))\n"
             f"    (rule(clear {default_clear_units:.2f} (type via_wire)))\n"
             f"    (rule(clear {default_clear_units:.2f} (type wire_wire)))\n"

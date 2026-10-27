@@ -120,8 +120,7 @@ flowchart LR
     Q1_S --- D3_R7["D3 (Zener 12V) // R7 (10k)"] --- Q1_G["Grille Q1 (GATE_PMOS)"]
     Q1_G --> R14["R14 (10k)"] --> Q2_D["Drain Q2"]
     Q2_S["Source Q2"] --> GND2["GND"]
-    IN1 -.->|Diviseur R5/R17| Q2_G["Grille Q2"]
-    IN2 -.->|Diviseur R5/R17| Q2_G
+    Q1_D -.->|Diviseur R5/R17 (+12V_PROT)| Q2_G["Grille Q2"]
 ```
 
 * **Fusible Réarmable PPTC `F1` (1.1A / 33V) :**
@@ -581,9 +580,9 @@ flowchart TD
 
 | Nom du Net | Composants Reliés (Broches) | Rôle & Fonction Électrique | Domaine / Bloc |
 | :--- | :--- | :--- | :--- |
-| **`+12V`** | Connecteur `J1` (Broche 1), Embase `H3` (Broche 1), `D1(1)`, `F1(1)`, `R5(1)` | Alimentation 12V brute (batterie véhicule via J1 ou alim de labo banc via H3). | Alimentation / Entrée |
+| **`+12V`** | Connecteur `J1` (Broche 1), Embase `H3` (Broche 1), `F1(1)` | Alimentation 12V brute (batterie véhicule via J1 ou alim de labo banc via H3). | Alimentation / Entrée |
 | **`+12V_FUSED`** | `F1(2)`, `Q1(3)` | Alimentation 12V protégée en surintensité par le fusible PPTC. | Alimentation / Sécurité |
-| **`+12V_PROT`** | `Q1(2)`, `D3(3)`, `R7(1)`, `C7(1)`, `C14(1)`, `U4(2)`, `R19(1)`, `R12(1)`, `R16(1)`, `R18(1)`, `U3(7,8)`, `TP4` | Rail 12V sécurisé anti-inversion alimentant le Buck, le transceiver K-Line (VS et LI) et le diviseur batterie. | Alimentation / Sécurité |
+| **`+12V_PROT`** | `Q1(2)`, `D3(3)`, `R7(1)`, `R5(1)`, `C7(1)`, `C14(1)`, `U4(2)`, `R19(1)`, `R12(1)`, `R16(1)`, `R18(1)`, `U3(7,8)`, `TP4` | Rail 12V sécurisé anti-inversion alimentant le Buck, le transceiver K-Line (VS et LI) et le diviseur batterie. | Alimentation / Sécurité |
 | **`GATE_PMOS`** | `Q1(1)`, `D3(1)`, `R7(2)`, `R14(1)` | Commande de grille P-MOS bornée à 12V par Zener D3 et tirée par Q2 via R14. | Commutation / Contrôle |
 | **`DRAIN_NMOS`** | `Q2(3)`, `R14(2)` | Liaison entre le drain du N-MOS Q2 et la résistance R14. | Commutation / Contrôle |
 | **`GATE_NMOS`** | `Q2(1)`, `R5(2)`, `R17(1)` | Polarisation de grille du N-MOS Q2 via pont diviseur 1:2 R5/R17 (protection Vgs <= 14.6V). | Commutation / Contrôle |

@@ -416,14 +416,16 @@ class PCBScorer:
                         amount=1.0
                     ))
             else:
-                if box.x_min < min_x or box.x_max > max_x or box.y_min < min_y or box.y_max > max_y:
+                eps = 1e-4
+                if box.x_min < min_x - eps or box.x_max > max_x + eps or box.y_min < min_y - eps or box.y_max > max_y + eps:
                     overflow = max(0.0, min_x - box.x_min, box.x_max - max_x, min_y - box.y_min, box.y_max - max_y)
-                    hard_violations.append(HardViolation(
-                        violation_type="out_of_board",
-                        subject=des,
-                        details=f"Composant {des} hors zone autorisée (dépassement {overflow:.2f} mm)",
-                        amount=overflow
-                    ))
+                    if overflow > eps:
+                        hard_violations.append(HardViolation(
+                            violation_type="out_of_board",
+                            subject=des,
+                            details=f"Composant {des} hors zone autorisée (dépassement {overflow:.2f} mm)",
+                            amount=overflow
+                        ))
 
         # B. Chevauchement physique des courtyards (NoOverlap2D)
         comp_keys = list(comp_boxes.keys())

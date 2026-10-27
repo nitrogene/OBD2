@@ -1043,23 +1043,39 @@ class FastAnnealingEngine:
                         if pen_x < pen_y:
                             dist_x = pen_x + push_margin
                             sign = 1.0 if it_a.x >= it_b.x else -1.0
-                            if not it_a.is_fixed and not it_b.is_fixed:
+                            if not it_a.is_fixed and it_b.is_fixed:
+                                if sign > 0 and (it_a.x + dist_x + hw_a > self.board_w - self.edge_clearance):
+                                    sign = -1.0
+                                elif sign < 0 and (it_a.x - dist_x - hw_a < self.edge_clearance):
+                                    sign = 1.0
+                                it_a.x += sign * dist_x
+                            elif not it_b.is_fixed and it_a.is_fixed:
+                                if sign > 0 and (it_b.x - dist_x - hw_b < self.edge_clearance):
+                                    sign = -1.0
+                                elif sign < 0 and (it_b.x + dist_x + hw_b > self.board_w - self.edge_clearance):
+                                    sign = 1.0
+                                it_b.x -= sign * dist_x
+                            elif not it_a.is_fixed and not it_b.is_fixed:
                                 it_a.x += sign * (dist_x / 2.0)
                                 it_b.x -= sign * (dist_x / 2.0)
-                            elif not it_a.is_fixed:
-                                it_a.x += sign * dist_x
-                            elif not it_b.is_fixed:
-                                it_b.x -= sign * dist_x
                         else:
                             dist_y = pen_y + push_margin
                             sign = 1.0 if it_a.y >= it_b.y else -1.0
-                            if not it_a.is_fixed and not it_b.is_fixed:
+                            if not it_a.is_fixed and it_b.is_fixed:
+                                if sign > 0 and (it_a.y + dist_y + hh_a > self.board_h - self.edge_clearance):
+                                    sign = -1.0
+                                elif sign < 0 and (it_a.y - dist_y - hh_a < self.edge_clearance):
+                                    sign = 1.0
+                                it_a.y += sign * dist_y
+                            elif not it_b.is_fixed and it_a.is_fixed:
+                                if sign > 0 and (it_b.y - dist_y - hh_b < self.edge_clearance):
+                                    sign = -1.0
+                                elif sign < 0 and (it_b.y + dist_y + hh_b > self.board_h - self.edge_clearance):
+                                    sign = 1.0
+                                it_b.y -= sign * dist_y
+                            elif not it_a.is_fixed and not it_b.is_fixed:
                                 it_a.y += sign * (dist_y / 2.0)
                                 it_b.y -= sign * (dist_y / 2.0)
-                            elif not it_a.is_fixed:
-                                it_a.y += sign * dist_y
-                            elif not it_b.is_fixed:
-                                it_b.y -= sign * dist_y
 
                         for it, hw, hh in ((it_a, hw_a, hh_a), (it_b, hw_b, hh_b)):
                             if not it.is_fixed:

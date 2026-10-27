@@ -45,7 +45,7 @@ def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) ->
 
     const groups = await eda.pcb_Drc.check(true, false, true) || [];
     const drcDisconnected = [];
-    const targetNet = %s;
+    const targetNet = TARGET_NET_PLACEHOLDER;
     for (const cat of groups) {
         if (cat.name === 'Connection Error') {
             for (const netGroup of (cat.list || [])) {
@@ -132,7 +132,7 @@ def fetch_layout_and_drc(port: int = 49620, target_net: Optional[str] = None) ->
         }),
         drcDisconnected
     };
-    """ % target_net_js
+    """.replace("TARGET_NET_PLACEHOLDER", target_net_js)
     req = urllib.request.Request(
         f"http://localhost:{port}/execute",
         data=json.dumps({"code": js_code}).encode("utf-8"),

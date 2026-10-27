@@ -14,10 +14,22 @@
   },
   "board": {
     "outline_polygon_mm": [
-      [0.0, 0.0],
-      [81.28, 0.0],
-      [81.28, 35.56],
-      [0.0, 35.56]
+      [
+        0.0,
+        0.0
+      ],
+      [
+        81.28,
+        0.0
+      ],
+      [
+        81.28,
+        35.56
+      ],
+      [
+        0.0,
+        35.56
+      ]
     ],
     "width_mm": 81.28,
     "height_mm": 35.56,
@@ -25,18 +37,82 @@
     "stackup": {
       "type": "4_layer_jlc2313",
       "layers": [
-        { "id": 1, "name": "TopLayer", "type": "signal", "copper_oz": 1.0, "default_net": "GND", "description": "Composants CMS, signaux critiques, paires diff, RF" },
-        { "id": 15, "name": "Inner1", "type": "plane", "copper_oz": 0.5, "default_net": "GND", "description": "Plan de masse GND continu et ininterrompu" },
-        { "id": 16, "name": "Inner2", "type": "plane", "copper_oz": 0.5, "default_net": "+5V", "description": "Plan d'alimentation (+5V, 3.3V, +12V)" },
-        { "id": 2, "name": "BottomLayer", "type": "signal", "copper_oz": 1.0, "default_net": "GND", "description": "Signaux secondaires et blindage de masse GND" }
+        {
+          "id": 1,
+          "name": "TopLayer",
+          "type": "signal",
+          "copper_oz": 1.0,
+          "default_net": "GND",
+          "description": "Composants CMS, signaux critiques, paires diff, RF"
+        },
+        {
+          "id": 15,
+          "name": "Inner1",
+          "type": "plane",
+          "copper_oz": 0.5,
+          "default_net": "GND",
+          "description": "Plan de masse GND continu et ininterrompu"
+        },
+        {
+          "id": 16,
+          "name": "Inner2",
+          "type": "signal",
+          "copper_oz": 0.5,
+          "default_net": "+5V",
+          "description": "Plan d alimentation (+5V, 3.3V, +12V) et signaux internes"
+        },
+        {
+          "id": 2,
+          "name": "BottomLayer",
+          "type": "signal",
+          "copper_oz": 1.0,
+          "default_net": "GND",
+          "description": "Signaux secondaires et blindage de masse GND"
+        }
       ]
     },
-    "edge_clearance_mm": 0.30,
+    "edge_clearance_mm": 0.3,
     "mounting_holes": [
-      { "id": "MH1", "name": "Fixation Sud-Ouest", "x_mm": 3.5, "y_mm": 3.5,   "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
-      { "id": "MH2", "name": "Fixation Nord-Ouest", "x_mm": 3.5, "y_mm": 32.06, "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
-      { "id": "MH3", "name": "Fixation Sud-Est",   "x_mm": 77.78, "y_mm": 3.5,   "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" },
-      { "id": "MH4", "name": "Fixation Nord-Est",   "x_mm": 77.78, "y_mm": 32.06, "drill_mm": 2.2, "pad_mm": 4.5, "head_clearance_mm": 4.5, "net": "GND" }
+      {
+        "id": "MH1",
+        "name": "Fixation Sud-Ouest",
+        "x_mm": 3.5,
+        "y_mm": 3.5,
+        "drill_mm": 2.2,
+        "pad_mm": 4.5,
+        "head_clearance_mm": 4.5,
+        "net": "GND"
+      },
+      {
+        "id": "MH2",
+        "name": "Fixation Nord-Ouest",
+        "x_mm": 3.5,
+        "y_mm": 32.06,
+        "drill_mm": 2.2,
+        "pad_mm": 4.5,
+        "head_clearance_mm": 4.5,
+        "net": "GND"
+      },
+      {
+        "id": "MH3",
+        "name": "Fixation Sud-Est",
+        "x_mm": 77.78,
+        "y_mm": 3.5,
+        "drill_mm": 2.2,
+        "pad_mm": 4.5,
+        "head_clearance_mm": 4.5,
+        "net": "GND"
+      },
+      {
+        "id": "MH4",
+        "name": "Fixation Nord-Est",
+        "x_mm": 77.78,
+        "y_mm": 32.06,
+        "drill_mm": 2.2,
+        "pad_mm": 4.5,
+        "head_clearance_mm": 4.5,
+        "net": "GND"
+      }
     ]
   },
   "anchors": {
@@ -53,92 +129,116 @@
       "edge_flush": "south"
     },
     "U1": {
-      "x_mm": 63.00,
+      "x_mm": 63.0,
       "y_mm": 17.78,
       "rot_deg": 270.0
     },
     "H1": {
-      "x_mm": 32.00,
-      "y_mm": 31.50,
+      "x_mm": 32.0,
+      "y_mm": 31.5,
       "rot_deg": 0.0
     },
     "H2": {
-      "x_mm": 48.00,
-      "y_mm": 31.50,
+      "x_mm": 48.0,
+      "y_mm": 31.5,
       "rot_deg": 0.0
     },
     "H3": {
-      "x_mm": 20.00,
-      "y_mm": 31.50,
+      "x_mm": 20.0,
+      "y_mm": 31.5,
       "rot_deg": 0.0
     }
   },
   "keepout_zones": [
     {
       "id": "J1_MATING_KEEPOUT",
-      "name": "Zone de dégagement enfichage connecteur OBD J1",
+      "name": "Zone de d\u00e9gagement enfichage connecteur OBD J1",
       "layer": "all",
       "rect_mm": {
         "x_min": 0.0,
         "x_max": 10.16,
-        "y_min": 10.00,
+        "y_min": 10.0,
         "y_max": 25.56
       },
-      "exempt_refs": ["J1"],
-      "rules": ["no_components"]
+      "exempt_refs": [
+        "J1"
+      ],
+      "rules": [
+        "no_components"
+      ]
     },
     {
       "id": "RF_ANTENNA_KEEPOUT",
       "name": "Zone d'exclusion RF Antenne ESP32-S3",
       "layer": "all",
       "rect_mm": {
-        "x_min": 73.50,
+        "x_min": 73.5,
         "x_max": 81.28,
         "y_min": 8.78,
         "y_max": 26.78
       },
-      "exempt_refs": ["U1"],
-      "rules": ["no_wires", "no_vias", "no_pours"]
+      "exempt_refs": [
+        "U1"
+      ],
+      "rules": [
+        "no_wires",
+        "no_vias",
+        "no_pours"
+      ]
     }
   ],
   "padstack_overrides": {
     "bdbad5cc7fc4f6ae55": {
-      "diameter_mm": 0.90,
-      "description": "Fente mécanique gauche de blindage USB-C J2 (e55) gonflée à 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
+      "diameter_mm": 0.9,
+      "description": "Fente m\u00e9canique gauche de blindage USB-C J2 (e55) gonfl\u00e9e \u00e0 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
     },
     "bdbad5cc7fc4f6ae56": {
-      "diameter_mm": 0.90,
-      "description": "Fente mécanique droite de blindage USB-C J2 (e56) gonflée à 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
+      "diameter_mm": 0.9,
+      "description": "Fente m\u00e9canique droite de blindage USB-C J2 (e56) gonfl\u00e9e \u00e0 0.90 mm pour garantir la garde DRC >= 0.30 mm sans chevaucher les pastilles CMS"
     }
   },
   "separation_rules": [
     {
       "id": "SEP_BUCK_ANTENNA",
-      "group_a": { "cluster": "buck_5v" },
-      "group_b": { "zone": "RF_ANTENNA_KEEPOUT" },
+      "group_a": {
+        "cluster": "buck_5v"
+      },
+      "group_b": {
+        "zone": "RF_ANTENNA_KEEPOUT"
+      },
       "min_distance_mm": 15.0,
       "coupling": "H_field",
       "frequency_mhz": 0.57,
       "hard": false,
       "weight": 6,
-      "rationale": "Découpage Buck 570 kHz éloigné de l'antenne radio 2.4 GHz (décroissance dipolaire H en 1/r³)"
+      "rationale": "D\u00e9coupage Buck 570 kHz \u00e9loign\u00e9 de l'antenne radio 2.4 GHz (d\u00e9croissance dipolaire H en 1/r\u00b3)"
     },
     {
       "id": "SEP_AGGRESSOR_VICTIM",
-      "group_a": { "emc_class": "aggressor" },
-      "group_b": { "emc_class": "victim" },
+      "group_a": {
+        "emc_class": "aggressor"
+      },
+      "group_b": {
+        "emc_class": "victim"
+      },
       "min_distance_mm": 8.0,
       "coupling": "E_field",
       "frequency_mhz": 50.0,
       "hard": false,
       "weight": 5,
-      "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance (décroissance capacitive E en 1/r²)"
+      "rationale": "Isolation des bus sensibles (USB, CAN) des commutations de puissance (d\u00e9croissance capacitive E en 1/r\u00b2)"
     }
   ],
-  "plane_nets": ["GND"],
+  "plane_nets": [
+    "GND"
+  ],
   "net_classes": {
     "POWER_12V": {
-      "nets": ["+12V", "+12V_PROT", "VBAT_SENSE"],
+      "nets": [
+        "+12V",
+        "+12V_PROT",
+        "VBAT_SENSE"
+      ],
       "track_width_mm": 0.8,
       "clearance_mm": 0.25,
       "via_drill_mm": 0.4,
@@ -147,69 +247,99 @@
       "description": "Rails de puissance 12V batterie et protections amont"
     },
     "POWER_REGULATED": {
-      "nets": ["+5V", "3.3V", "3.3V_PRE"],
+      "nets": [
+        "+5V",
+        "3.3V",
+        "3.3V_PRE"
+      ],
       "track_width_mm": 0.6,
-      "clearance_mm": 0.20,
+      "clearance_mm": 0.2,
       "via_drill_mm": 0.4,
       "via_diameter_mm": 0.8,
       "emc_class": "power_clean",
-      "description": "Distribution à faible impédance des rails 5V et 3.3V"
+      "description": "Distribution \u00e0 faible imp\u00e9dance des rails 5V et 3.3V"
     },
     "POWER_USB": {
-      "nets": ["VBUS_5V"],
+      "nets": [
+        "VBUS_5V"
+      ],
       "track_width_mm": 0.35,
-      "clearance_mm": 0.20,
+      "clearance_mm": 0.2,
       "via_drill_mm": 0.3,
       "via_diameter_mm": 0.6,
       "emc_class": "power_clean",
-      "description": "Alimentation USB-C 5V adaptée au pas fin du connecteur USB-C J2"
+      "description": "Alimentation USB-C 5V adapt\u00e9e au pas fin du connecteur USB-C J2"
     },
     "SWITCHING_BUCK": {
-      "nets": ["PH_BUCK", "BOOT_BUCK", "$1N16", "$1N19"],
+      "nets": [
+        "PH_BUCK",
+        "BOOT_BUCK",
+        "$1N16",
+        "$1N19"
+      ],
       "track_width_mm": 0.8,
-      "clearance_mm": 0.30,
+      "clearance_mm": 0.3,
       "via_drill_mm": 0.4,
       "via_diameter_mm": 0.8,
       "emc_class": "aggressor",
-      "description": "Nœud de commutation haute fréquence (570 kHz) et bootstrap"
+      "description": "N\u0153ud de commutation haute fr\u00e9quence (570 kHz) et bootstrap"
     },
     "DIFF_USB": {
-      "nets": ["USB_D+", "USB_D-"],
-      "track_width_mm": 0.30,
-      "clearance_mm": 0.20,
+      "nets": [
+        "USB_D+",
+        "USB_D-"
+      ],
+      "track_width_mm": 0.3,
+      "clearance_mm": 0.2,
       "diff_pair": true,
       "diff_impedance_ohm": 90.0,
       "max_skew_mm": 15.0,
       "emc_class": "victim",
-      "description": "Paire différentielle USB Full-Speed 90 Ohms (12 Mbps)"
+      "description": "Paire diff\u00e9rentielle USB Full-Speed 90 Ohms (12 Mbps)"
     },
     "DIFF_CAN": {
-      "nets": ["CANH", "CANL"],
-      "track_width_mm": 0.30,
-      "clearance_mm": 0.20,
+      "nets": [
+        "CANH",
+        "CANL"
+      ],
+      "track_width_mm": 0.3,
+      "clearance_mm": 0.2,
       "diff_pair": true,
       "diff_impedance_ohm": 120.0,
       "max_skew_mm": 5.0,
       "emc_class": "victim",
-      "description": "Paire différentielle CAN ISO 11898-2 120 Ohms"
+      "description": "Paire diff\u00e9rentielle CAN ISO 11898-2 120 Ohms"
     },
     "SIGNAL_CRITICAL": {
-      "nets": ["K_LINE", "KLINE_RX", "KLINE_TX", "K_RX_IC", "K_TX_IC", "TWAI_RX", "TWAI_TX", "ESP_EN", "IO0", "$6N4", "$6N3", "$7N5"],
+      "nets": [
+        "K_LINE",
+        "KLINE_RX",
+        "KLINE_TX",
+        "K_RX_IC",
+        "K_TX_IC",
+        "TWAI_RX",
+        "TWAI_TX",
+        "ESP_EN",
+        "IO0",
+        "$6N4",
+        "$6N3",
+        "$7N5"
+      ],
       "track_width_mm": 0.254,
-      "clearance_mm": 0.20,
+      "clearance_mm": 0.2,
       "via_drill_mm": 0.3,
       "via_diameter_mm": 0.6,
       "emc_class": "signal",
-      "description": "Signaux de communication série, TWAI et contrôle microcontrôleur"
+      "description": "Signaux de communication s\u00e9rie, TWAI et contr\u00f4le microcontr\u00f4leur"
     },
     "DEFAULT": {
       "nets": [],
       "track_width_mm": 0.254,
-      "clearance_mm": 0.20,
+      "clearance_mm": 0.2,
       "via_drill_mm": 0.3,
       "via_diameter_mm": 0.6,
       "emc_class": "neutral",
-      "description": "Signaux généraux par défaut"
+      "description": "Signaux g\u00e9n\u00e9raux par d\u00e9faut"
     }
   }
 }

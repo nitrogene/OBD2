@@ -3,104 +3,116 @@
   "project": "OBD2-Scanner-ESP32",
   "version": "2.0.0",
   "date_modified": "2026-10-12",
-  "description": "Manifeste de placement PCB : boîtiers IPC-7351, contraintes CEM de placement et groupes rigides.",
+  "description": "Manifeste de placement PCB : bo\u00eetiers IPC-7351, contraintes CEM de placement et groupes rigides.",
   "schema_semantics": "../schema/semantics.json",
   "project_profile": {
-    "power_nets": ["GND", "+12V", "+5V", "3.3V"],
-    "ground_nets": ["GND"]
+    "power_nets": [
+      "GND",
+      "+12V",
+      "+5V",
+      "3.3V"
+    ],
+    "ground_nets": [
+      "GND"
+    ]
   },
-  "power_nets": ["GND", "+12V", "+5V", "3.3V"],
+  "power_nets": [
+    "GND",
+    "+12V",
+    "+5V",
+    "3.3V"
+  ],
   "packages": {
     "0603": {
       "width_mm": 2.3,
       "length_mm": 1.0,
       "height_mm": 0.5,
       "courtyard_margin_mm": 0.3,
-      "description": "CMS passif standard 0603 (empreinte cuivre réelle 2.30x0.90 mm)"
+      "description": "CMS passif standard 0603 (empreinte cuivre r\u00e9elle 2.30x0.90 mm)"
     },
     "0805": {
       "width_mm": 3.35,
       "length_mm": 1.5,
       "height_mm": 0.6,
       "courtyard_margin_mm": 0.3,
-      "description": "CMS passif standard 0805 (empreinte cuivre réelle 3.35x1.41 mm)"
+      "description": "CMS passif standard 0805 (empreinte cuivre r\u00e9elle 3.35x1.41 mm)"
     },
     "1206": {
       "width_mm": 4.7,
       "length_mm": 1.7,
       "height_mm": 0.9,
       "courtyard_margin_mm": 0.35,
-      "description": "CMS passif puissance 1206 (empreinte cuivre réelle 4.70x1.70 mm)"
+      "description": "CMS passif puissance 1206 (empreinte cuivre r\u00e9elle 4.70x1.70 mm)"
     },
     "1812": {
       "width_mm": 5.2,
       "length_mm": 3.5,
       "height_mm": 1.2,
       "courtyard_margin_mm": 0.4,
-      "description": "Fusible réarmable PPTC 1812 (empreinte cuivre réelle 5.12x3.50 mm)"
+      "description": "Fusible r\u00e9armable PPTC 1812 (empreinte cuivre r\u00e9elle 5.12x3.50 mm)"
     },
     "SOD-123": {
       "width_mm": 4.6,
       "length_mm": 1.6,
       "height_mm": 1.2,
       "courtyard_margin_mm": 0.35,
-      "description": "Diode CMS SOD-123 (empreinte cuivre réelle 4.60x1.00 mm)"
+      "description": "Diode CMS SOD-123 (empreinte cuivre r\u00e9elle 4.60x1.00 mm)"
     },
     "SOD-123FL": {
       "width_mm": 4.7,
       "length_mm": 1.8,
       "height_mm": 1.0,
       "courtyard_margin_mm": 0.35,
-      "description": "Diode TVS compacte SOD-123FL (empreinte cuivre réelle 4.67x1.15 mm)"
+      "description": "Diode TVS compacte SOD-123FL (empreinte cuivre r\u00e9elle 4.67x1.15 mm)"
     },
     "SOD-323": {
       "width_mm": 2.75,
       "length_mm": 1.25,
       "height_mm": 0.9,
       "courtyard_margin_mm": 0.3,
-      "description": "Diode ESD ultra-compacte SOD-323 (empreinte cuivre réelle 2.73x1.00 mm)"
+      "description": "Diode ESD ultra-compacte SOD-323 (empreinte cuivre r\u00e9elle 2.73x1.00 mm)"
     },
     "SOT-23": {
       "width_mm": 3.3,
       "length_mm": 3.0,
       "height_mm": 1.1,
       "courtyard_margin_mm": 0.35,
-      "description": "Transistors et diodes doubles SOT-23-3 (empreinte cuivre réelle 3.25x2.60 mm)"
+      "description": "Transistors et diodes doubles SOT-23-3 (empreinte cuivre r\u00e9elle 3.25x2.60 mm)"
     },
     "SOT-223-4": {
       "width_mm": 8.2,
       "length_mm": 6.5,
       "height_mm": 1.8,
       "courtyard_margin_mm": 0.45,
-      "description": "Régulateur LDO SOT-223 avec onglet thermique (empreinte cuivre réelle 8.14x5.58 mm)"
+      "description": "R\u00e9gulateur LDO SOT-223 avec onglet thermique (empreinte cuivre r\u00e9elle 8.14x5.58 mm)"
     },
     "SOIC-8": {
       "width_mm": 5.2,
       "length_mm": 7.4,
       "height_mm": 1.75,
       "courtyard_margin_mm": 0.4,
-      "description": "Boîtier SOIC-8 à pas 1.27 mm (empreinte cuivre réelle pads 4.40x7.36 mm)"
+      "description": "Bo\u00eetier SOIC-8 \u00e0 pas 1.27 mm (empreinte cuivre r\u00e9elle pads 4.40x7.36 mm)"
     },
     "SMA": {
       "width_mm": 6.4,
       "length_mm": 2.6,
       "height_mm": 2.2,
       "courtyard_margin_mm": 0.4,
-      "description": "Diode de puissance DO-214AC (empreinte cuivre réelle 6.40x2.00 mm)"
+      "description": "Diode de puissance DO-214AC (empreinte cuivre r\u00e9elle 6.40x2.00 mm)"
     },
     "SMB": {
       "width_mm": 6.8,
       "length_mm": 3.6,
       "height_mm": 2.4,
       "courtyard_margin_mm": 0.4,
-      "description": "Diode TVS de puissance DO-214AA (empreinte cuivre réelle 6.77x2.19 mm)"
+      "description": "Diode TVS de puissance DO-214AA (empreinte cuivre r\u00e9elle 6.77x2.19 mm)"
     },
     "SMD_IND_7X7": {
       "width_mm": 7.3,
       "length_mm": 7.3,
       "height_mm": 4.5,
       "courtyard_margin_mm": 0.4,
-      "description": "Inductance blindée de puissance 7.3x7.3 mm (empreinte cuivre réelle 7.20x5.72 mm)"
+      "description": "Inductance blind\u00e9e de puissance 7.3x7.3 mm (empreinte cuivre r\u00e9elle 7.20x5.72 mm)"
     },
     "MODULE_ESP32_S3": {
       "width_mm": 18.0,
@@ -110,7 +122,7 @@
       "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1",
       "antenna_keepout": {
         "name": "RF_ANTENNA_KEEPOUT",
-        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne méandre 2.4 GHz",
+        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne m\u00e9andre 2.4 GHz",
         "dx_min_mm": -9.0,
         "dx_max_mm": 9.0,
         "dy_min_mm": 6.45,
@@ -123,28 +135,28 @@
       "length_mm": 7.5,
       "height_mm": 3.26,
       "courtyard_margin_mm": 0.4,
-      "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte réelle 9.85x6.50 mm)"
+      "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte r\u00e9elle 9.85x6.50 mm)"
     },
     "CONN_JST_XH_5P_90": {
       "width_mm": 14.9,
       "length_mm": 11.5,
       "height_mm": 7.0,
       "courtyard_margin_mm": 0.5,
-      "description": "Embase mâle JST-XH 5 contacts coudée à 90° S5B-XH-A (corps 14.9x11.5 mm)"
+      "description": "Embase m\u00e2le JST-XH 5 contacts coud\u00e9e \u00e0 90\u00b0 S5B-XH-A (corps 14.9x11.5 mm)"
     },
     "HEADER_1X2_2.54": {
       "width_mm": 5.08,
       "length_mm": 2.54,
       "height_mm": 8.5,
       "courtyard_margin_mm": 0.4,
-      "description": "Barrette mâle 1x2 pas 2.54 mm (corps plastique 5.08x2.54 mm)"
+      "description": "Barrette m\u00e2le 1x2 pas 2.54 mm (corps plastique 5.08x2.54 mm)"
     },
     "HEADER_1X3_2.54": {
       "width_mm": 7.62,
       "length_mm": 2.54,
       "height_mm": 8.5,
       "courtyard_margin_mm": 0.4,
-      "description": "Barrette mâle 1x3 pas 2.54 mm (corps plastique 7.62x2.54 mm)"
+      "description": "Barrette m\u00e2le 1x3 pas 2.54 mm (corps plastique 7.62x2.54 mm)"
     },
     "JUMPER_1X2_2.54": {
       "width_mm": 5.08,
@@ -158,7 +170,7 @@
       "length_mm": 5.2,
       "height_mm": 2.5,
       "courtyard_margin_mm": 0.4,
-      "description": "Bouton poussoir miniature CMS pour Reset (empreinte cuivre réelle 7.00x4.50 mm, corps 5.1x5.1 mm)"
+      "description": "Bouton poussoir miniature CMS pour Reset (empreinte cuivre r\u00e9elle 7.00x4.50 mm, corps 5.1x5.1 mm)"
     },
     "TEST_PAD": {
       "width_mm": 0.6,
@@ -184,7 +196,7 @@
       "max_mm": 3.0,
       "hard": true,
       "weight": 10,
-      "rationale": "Découplage HF entrée Buck < 3 mm de VIN"
+      "rationale": "D\u00e9couplage HF entr\u00e9e Buck < 3 mm de VIN"
     },
     {
       "id": "PC_BUCK_HOT_LOOP",
@@ -240,7 +252,7 @@
       "target_max_mm": 25.0,
       "hard": false,
       "weight": 8,
-      "rationale": "Boucle chaude de découpage di/dt minimale fermée sur le plan GND"
+      "rationale": "Boucle chaude de d\u00e9coupage di/dt minimale ferm\u00e9e sur le plan GND"
     },
     {
       "id": "PC_PH_NODE_COMPACT",
@@ -250,7 +262,7 @@
       "target_max_mm": 12.0,
       "hard": false,
       "weight": 6,
-      "rationale": "Nœud de commutation PH haute fréquence compact pour limiter le rayonnement"
+      "rationale": "N\u0153ud de commutation PH haute fr\u00e9quence compact pour limiter le rayonnement"
     },
     {
       "id": "PC_PH_RETURN_PATH",
@@ -259,7 +271,7 @@
       "reference_net": "GND",
       "max_distance_to_reference_mm": 3.0,
       "weight": 7,
-      "rationale": "Proximité immédiate du plan de référence GND pour le nœud de commutation PH à fort dv/dt"
+      "rationale": "Proximit\u00e9 imm\u00e9diate du plan de r\u00e9f\u00e9rence GND pour le n\u0153ud de commutation PH \u00e0 fort dv/dt"
     },
     {
       "id": "PC_SW1_EDGE",
@@ -271,7 +283,7 @@
       "max_distance_to_edge_mm": 5.0,
       "hard": false,
       "weight": 2,
-      "rationale": "Accessibilité mécanique du bouton Reset"
+      "rationale": "Accessibilit\u00e9 m\u00e9canique du bouton Reset"
     },
     {
       "id": "PC_C18_VBUS",
@@ -288,7 +300,7 @@
       "max_mm": 12.0,
       "hard": false,
       "weight": 6,
-      "rationale": "Réservoir local Bulk VBUS à proximité du port USB-C J2"
+      "rationale": "R\u00e9servoir local Bulk VBUS \u00e0 proximit\u00e9 du port USB-C J2"
     },
     {
       "id": "PC_C19_VBUS",
@@ -305,7 +317,286 @@
       "max_mm": 8.0,
       "hard": false,
       "weight": 7,
-      "rationale": "Découplage HF VBUS à proximité immédiate du port USB-C J2"
+      "rationale": "D\u00e9couplage HF VBUS \u00e0 proximit\u00e9 imm\u00e9diate du port USB-C J2"
+    },
+    {
+      "id": "PC_L1_PH",
+      "type": "proximity",
+      "subject": {
+        "ref": "L1",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U4",
+        "pin": "8"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Liaison directe n\u0153ud de hachage PH vers self L1 <= 8 mm pour limiter le rayonnement EMI"
+    },
+    {
+      "id": "PC_D2_GND",
+      "type": "proximity",
+      "subject": {
+        "ref": "D2",
+        "pin": "A"
+      },
+      "target": {
+        "ref": "U4",
+        "pin": "7"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 5.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Boucle ultra-courte de retour diode Schottky D2 vers broche GND U4 <= 5 mm"
+    },
+    {
+      "id": "PC_C8_L1",
+      "type": "proximity",
+      "subject": {
+        "ref": "C8",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "L1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Condensateur de sortie Buck C8 au contact de L1.2"
+    },
+    {
+      "id": "PC_C16_L1",
+      "type": "proximity",
+      "subject": {
+        "ref": "C16",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "L1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Condensateur de sortie Buck C16 au contact de L1.2"
+    },
+    {
+      "id": "PC_C1_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C1",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C2_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C2",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 3.0 mm"
+    },
+    {
+      "id": "PC_C11_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C11",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 4.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "R\u00e9servoir bulk 10uF ESP32 <= 4.0 mm pour appels de courant Wi-Fi"
+    },
+    {
+      "id": "PC_C12_EN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C12",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Circuit RC Reset ESP_EN <= 3.0 mm pour immunit\u00e9 aux parasites"
+    },
+    {
+      "id": "PC_C15_CAN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C15",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U2",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VCC 5V CAN U2 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C3_CAN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C3",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U2",
+        "pin": "5"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VIO 3.3V CAN U2 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C4_KLINE",
+      "type": "proximity",
+      "subject": {
+        "ref": "C4",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U3",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VCC K-Line U3 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C6_LDO",
+      "type": "proximity",
+      "subject": {
+        "ref": "C6",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U5",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Stabilite de boucle LDO U5 VOUT <= 3.5 mm"
+    },
+    {
+      "id": "PC_U8_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "U8"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS CAN U8 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
+    },
+    {
+      "id": "PC_D5_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "D5"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS K-Line D5 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
+    },
+    {
+      "id": "PC_F1_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "F1"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 15.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Fusible PPTC F1 fronti\u00e8re connecteur J1.1 <= 10.0 mm"
+    },
+    {
+      "id": "PC_U6_J2",
+      "type": "proximity",
+      "subject": {
+        "ref": "U6"
+      },
+      "target": {
+        "ref": "J2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS USB D+ U6 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
+    },
+    {
+      "id": "PC_U7_J2",
+      "type": "proximity",
+      "subject": {
+        "ref": "U7"
+      },
+      "target": {
+        "ref": "J2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS USB D- U7 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
     }
   ],
   "rigid_groups": [
@@ -314,14 +605,21 @@
       "anchor_component": "U4",
       "members": [
         "U4",
+        "L1",
+        "D2",
         "C5",
         "C7",
+        "C8",
+        "C16",
         "C14",
-        "D2",
         "C17",
+        "R9",
+        "R10",
         "R11",
         "C9",
-        "C13"
+        "C13",
+        "R19",
+        "R20"
       ],
       "layout": "solve"
     },
@@ -334,7 +632,82 @@
         "C2",
         "C11",
         "C12",
-        "R15"
+        "R15",
+        "R21",
+        "SW1",
+        "LED1",
+        "R2"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_CAN_CORE",
+      "anchor_component": "U2",
+      "members": [
+        "U2",
+        "C15",
+        "C3",
+        "R6",
+        "R8",
+        "JP1"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_KLINE_CORE",
+      "anchor_component": "U3",
+      "members": [
+        "U3",
+        "C4",
+        "R16",
+        "R18",
+        "JP2"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_LDO_CORE",
+      "anchor_component": "U5",
+      "members": [
+        "U5",
+        "C6",
+        "FB1"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_OBD_PROTECTION",
+      "anchor_component": "J1",
+      "members": [
+        "J1",
+        "U8",
+        "D5",
+        "F1",
+        "D1",
+        "Q1",
+        "Q2",
+        "R5",
+        "R17",
+        "R14",
+        "D3",
+        "R7"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_USB_PROTECTION",
+      "anchor_component": "J2",
+      "members": [
+        "J2",
+        "U6",
+        "U7",
+        "D4",
+        "R3",
+        "R4",
+        "R22",
+        "R23",
+        "C18",
+        "C19"
       ],
       "layout": "solve"
     }
@@ -346,7 +719,7 @@
         "component": "U1",
         "rail": "3.3V",
         "max_distance_mm": 5.0,
-        "reason": "Découplage HF pin 2 (VDD)"
+        "reason": "D\u00e9couplage HF pin 2 (VDD)"
       }
     },
     "C2": {
@@ -355,7 +728,7 @@
         "component": "U1",
         "rail": "3.3V",
         "max_distance_mm": 5.0,
-        "reason": "Découplage HF pin 2 (VDD)"
+        "reason": "D\u00e9couplage HF pin 2 (VDD)"
       }
     },
     "C3": {
@@ -364,7 +737,7 @@
         "component": "U2",
         "rail": "3.3V",
         "max_distance_mm": 4.0,
-        "reason": "Découplage VIO CAN"
+        "reason": "D\u00e9couplage VIO CAN"
       }
     },
     "C4": {
@@ -373,7 +746,7 @@
         "component": "U3",
         "rail": "3.3V",
         "max_distance_mm": 4.0,
-        "reason": "Découplage VCC K-Line"
+        "reason": "D\u00e9couplage VCC K-Line"
       }
     },
     "C5": {
@@ -394,7 +767,7 @@
         "component": "U4",
         "rail": "+12V_PROT",
         "max_distance_mm": 5.0,
-        "reason": "Condensateur entrée VIN Buck"
+        "reason": "Condensateur entr\u00e9e VIN Buck"
       }
     },
     "C8": {
@@ -412,7 +785,7 @@
         "component": "U1",
         "rail": "3.3V",
         "max_distance_mm": 5.0,
-        "reason": "Réservoir Bulk Wi-Fi TX"
+        "reason": "R\u00e9servoir Bulk Wi-Fi TX"
       }
     },
     "C12": {
@@ -439,7 +812,7 @@
         "component": "U4",
         "rail": "+12V_PROT",
         "max_distance_mm": 5.0,
-        "reason": "Découplage HF VIN Buck"
+        "reason": "D\u00e9couplage HF VIN Buck"
       }
     },
     "C15": {
@@ -448,7 +821,7 @@
         "component": "U2",
         "rail": "+5V",
         "max_distance_mm": 4.0,
-        "reason": "Découplage VCC CAN"
+        "reason": "D\u00e9couplage VCC CAN"
       }
     },
     "C16": {
@@ -469,7 +842,7 @@
         "connector": "J2",
         "rail": "VBUS_5V",
         "max_distance_mm": 9.0,
-        "reason": "Réservoir entrée VBUS"
+        "reason": "R\u00e9servoir entr\u00e9e VBUS"
       }
     },
     "C19": {
@@ -478,7 +851,7 @@
         "connector": "J2",
         "rail": "VBUS_5V",
         "max_distance_mm": 9.0,
-        "reason": "Découplage HF VBUS"
+        "reason": "D\u00e9couplage HF VBUS"
       }
     },
     "D1": {
@@ -637,7 +1010,7 @@
         "connector": "J2",
         "signal": "USB_D-",
         "max_distance_mm": 6.0,
-        "reason": "Amortissement série D-"
+        "reason": "Amortissement s\u00e9rie D-"
       }
     },
     "R23": {
@@ -646,7 +1019,7 @@
         "connector": "J2",
         "signal": "USB_D+",
         "max_distance_mm": 6.0,
-        "reason": "Amortissement série D+"
+        "reason": "Amortissement s\u00e9rie D+"
       }
     },
     "SW1": {

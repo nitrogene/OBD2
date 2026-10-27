@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "JLCPCB DFM & SMT Design Rules",
+  "description": "Seuils de tolérance et capacités d'usinage / assemblage standard JLCPCB (PCB 4 couches standard JLC2313, épaisseur 1.6 mm, cuivre 1 oz)",
+  "vendor": "JLCPCB",
+  "stackup": "JLC2313",
+  "pcb_rules": {
+    "soldermask_bridge": {
+      "min_green_mm": 0.10,
+      "min_other_color_mm": 0.12,
+      "danger_threshold_mm": 0.08,
+      "description": "Largeur minimale du pont de vernis épargne entre pastilles adjacentes pour éviter le décollement (gang mask) et les ponts d'étain"
+    },
+    "via_to_pad": {
+      "min_clearance_mm": 0.15,
+      "danger_threshold_mm": 0.05,
+      "allow_thermal_pad_vias": true,
+      "description": "Distance minimale cuivre-à-cuivre entre pastille CMS et via non bouché pour prévenir le siphonnage d'étain (solder wicking)"
+    },
+    "silkscreen": {
+      "min_to_pad_clearance_mm": 0.15,
+      "min_to_hole_clearance_mm": 0.15,
+      "min_text_stroke_mm": 0.15,
+      "recommended_text_stroke_mm": 0.18,
+      "min_text_height_mm": 0.80,
+      "description": "Dégagement sérigraphie face aux ouvertures de vernis et perçages pour éviter le rognage automatique (auto-clipping)"
+    },
+    "copper": {
+      "min_trace_width_mm": 0.09,
+      "min_trace_spacing_mm": 0.09,
+      "min_copper_to_board_edge_mm": 0.30,
+      "danger_copper_to_edge_mm": 0.20,
+      "description": "Largeur de piste minimale (3.5 mils) et recul de cuivre par rapport au contour de fraisage CNC / rainurage en V"
+    },
+    "drilling": {
+      "min_via_drill_mm": 0.30,
+      "min_annular_ring_mm": 0.13,
+      "danger_annular_ring_mm": 0.10,
+      "min_pad_drill_mm": 0.60,
+      "description": "Diamètre de perçage minimal et bague de cuivre minimale (5 mils)"
+    }
+  },
+  "smt_rules": {
+    "spacing": {
+      "min_component_to_component_mm": 0.50,
+      "danger_component_to_component_mm": 0.25,
+      "description": "Dégagement minimal entre boîtiers CMS pour la liberté de passage des buses de placement Pick & Place"
+    },
+    "conveyor": {
+      "min_rail_margin_mm": 3.0,
+      "description": "Bord libre sans composant CMS sur les côtés longs pour maintien sur les rails de convoyeur de refusion SMT"
+    },
+    "fiducials": {
+      "required_count": 3,
+      "min_diameter_mm": 1.0,
+      "min_clearance_mm": 1.0,
+      "description": "Repères optiques de cadrage pour machine Pick & Place automatique"
+    }
+  }
+}

@@ -76,7 +76,8 @@ class PcbSynthesizer:
         passes: int = 15,
         spacing: float = 0.20,
         dry_run: bool = False,
-        apply_easyeda: bool = True
+        apply_easyeda: bool = True,
+        placement_override: Optional[Path] = None
     ):
         self.manifest_path = manifest_path.resolve()
         self.board_path = board_path.resolve()
@@ -85,6 +86,7 @@ class PcbSynthesizer:
         self.spacing = spacing
         self.dry_run = dry_run
         self.apply_easyeda = apply_easyeda
+        self.placement_override = placement_override.resolve() if placement_override else None
 
         # Cache de synthèse
         self.cache_dir = SYNTHESIZER_DIR / ".cache"
@@ -123,21 +125,26 @@ class PcbSynthesizer:
             with open(self.adapted_manifest_path, "w", encoding="utf-8") as f:
                 json.dump(current_manifest, f, indent=2)
 
-            placer_cmd = [
-                "uv", "run", "python",
-                str(PLACER_DIR / "simulated_annealing.py"),
-                "--manifest", str(self.adapted_manifest_path),
-                "--board", str(self.board_path),
-                "--starts", "4",
-                "--steps", "40000",
-                "--spacing", str(self.spacing),
-                "--out", str(self.candidate_placement),
-                "--svg", str(PROJECT_ROOT / "documents" / "pcb" / "placement.svg")
-            ]
-            rc, stdout, stderr = run_cmd(placer_cmd, PROJECT_ROOT)
-            if rc != 0:
-                logger.error(f"Échec de l'auto-placement :\n{stderr or stdout}")
-                return False
+            if cycle == 1 and self.placement_override and self.placement_override.is_file():
+                logger.info(f"📂 Utilisation directe du placement fourni : {self.placement_override}")
+                import shutil
+                shutil.copyfile(self.placement_override, self.candidate_placement)
+            else:
+                placer_cmd = [
+                    "uv", "run", "python",
+                    str(PLACER_DIR / "simulated_annealing.py"),
+                    "--manifest", str(self.adapted_manifest_path),
+                    "--board", str(self.board_path),
+                    "--starts", "4",
+                    "--steps", "40000",
+                    "--spacing", str(self.spacing),
+                    "--out", str(self.candidate_placement),
+                    "--svg", str(PROJECT_ROOT / "documents" / "pcb" / "placement.svg")
+                ]
+                rc, stdout, stderr = run_cmd(placer_cmd, PROJECT_ROOT)
+                if rc != 0:
+                    logger.error(f"Échec de l'auto-placement :\n{stderr or stdout}")
+                    return False
 
             # Évaluation du score de placement
             score_cmd = [
@@ -552,6 +559,7 @@ def main():
     parser.add_argument("--spacing", type=float, default=0.20)
     parser.add_argument("--dry-run", action="store_true", help="Mode simulation sans altération d'EasyEDA")
     parser.add_argument("--apply", action="store_true", help="Applique l'injection réelle dans EasyEDA Pro")
+    parser.add_argument("--placement", type=Path, default=None, help="Placement initial pré-calculé (saute l'étape 1 du cycle 1)")
     args = parser.parse_args()
 
     synthesizer = PcbSynthesizer(
@@ -561,7 +569,8 @@ def main():
         passes=args.passes,
         spacing=args.spacing,
         dry_run=args.dry_run,
-        apply_easyeda=args.apply
+        apply_easyeda=args.apply,
+        placement_override=args.placement
     )
     ok = synthesizer.execute_closed_loop()
     sys.exit(0 if ok else 1)

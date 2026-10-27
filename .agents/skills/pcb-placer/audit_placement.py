@@ -249,8 +249,12 @@ class PCBAuditor:
                     ref_nets = set(p.get("net") for p in ref_pads if p.get("net"))
                     common_nets = c_nets.intersection(ref_nets)
                     power_and_planes = set(getattr(self.config, "power_nets", [])) | set(getattr(self.config, "plane_nets", []))
-                    if not power_and_planes:
-                        power_and_planes = set(DEFAULT_POWER_NETS)
+                    if not power_and_planes and hasattr(self.config, "net_classes") and isinstance(self.config.net_classes, dict):
+                        power_and_planes = {
+                            net for cls_info in self.config.net_classes.values()
+                            if isinstance(cls_info, dict) and cls_info.get("emc_class") in ("power_raw", "power_clean")
+                            for net in cls_info.get("nets", [])
+                        }
                     signal_common = [n for n in common_nets if n not in power_and_planes]
                     nets_to_check = signal_common if signal_common else list(common_nets)
                     if nets_to_check:

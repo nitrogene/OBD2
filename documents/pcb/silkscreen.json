@@ -59,32 +59,32 @@
     "component_legends": [
       {
         "component": "H1",
-        "position": "below",
+        "position": "above",
         "offset_mm": 4.8,
         "text": "KLINE"
       },
       {
         "component": "H2",
-        "position": "below",
+        "position": "above",
         "offset_mm": 4.8,
         "text": "CAN"
       },
       {
         "component": "H3",
-        "position": "below",
-        "offset_mm": 4.2,
-        "text": "SIMU: POWER IN\nSCANNER: POWER OUT"
+        "position": "above",
+        "offset_mm": 4.8,
+        "text": "SIMU: POWER IN\nSCANNER: MEASURE ONLY"
       },
       {
         "component": "JP1",
         "position": "right",
-        "offset_mm": 3.5,
+        "offset_mm": 11.8,
         "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER"
       },
       {
         "component": "JP2",
-        "position": "left",
-        "offset_mm": 3.5,
+        "position": "above",
+        "offset_mm": 4.15,
         "text": "K-LINE:\nSHUNT=SCANNER\nOPEN=SIMU"
       }
     ],
@@ -92,8 +92,8 @@
       {
         "anchor": "bottom_left",
         "offset_mm": [
-          6.0,
-          6.0
+          23.0,
+          1.27
         ],
         "alignment": "left",
         "text": [

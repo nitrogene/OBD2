@@ -141,6 +141,21 @@ class EasyEDASilkscreenClient:
         const items = {json.dumps(js_payload)};
         const createdIds = [];
 
+        // Idempotence : suppression préalable des chaînes autonomes existantes sur les couches cibles
+        try {{
+            const existingStrings = await eda.pcb_PrimitiveString.getAll() || [];
+            const targetLayers = new Set(items.map(it => it.layer));
+            const toDelete = [];
+            for (const s of existingStrings) {{
+                if (targetLayers.has(s.getState_Layer())) {{
+                    toDelete.push(s.getState_PrimitiveId());
+                }}
+            }}
+            if (toDelete.length) {{
+                await eda.pcb_PrimitiveString.delete(toDelete);
+            }}
+        }} catch(e_del) {{}}
+
         for (const item of items) {{
             try {{
                 const strObj = await eda.pcb_PrimitiveString.create(

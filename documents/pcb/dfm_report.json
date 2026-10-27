@@ -1,0 +1,1912 @@
+{
+  "timestamp": "2026-10-27T08:57:41.500534",
+  "verdict": "FAILED",
+  "summary": {
+    "total_violations": 128,
+    "danger_count": 56,
+    "warning_count": 67,
+    "info_count": 5
+  },
+  "pcb_dfm": {
+    "passed": false,
+    "danger_count": 56,
+    "warning_count": 66,
+    "violations": [
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B8' et 'A5' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae27",
+          "bdbead5cc7fc4f6ae28"
+        ],
+        "coordinates": {
+          "x_mm": 39.14,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A5' et 'B7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae28",
+          "bdbead5cc7fc4f6ae29"
+        ],
+        "coordinates": {
+          "x_mm": 39.641,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B7' et 'A6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae29",
+          "bdbead5cc7fc4f6ae30"
+        ],
+        "coordinates": {
+          "x_mm": 40.141,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.096 mm < 0.10 mm) entre pastilles 'A6' et 'A7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.096,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae30",
+          "bdbead5cc7fc4f6ae31"
+        ],
+        "coordinates": {
+          "x_mm": 40.64,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A7' et 'B6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae31",
+          "bdbead5cc7fc4f6ae32"
+        ],
+        "coordinates": {
+          "x_mm": 41.139,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B6' et 'A8' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae32",
+          "bdbead5cc7fc4f6ae33"
+        ],
+        "coordinates": {
+          "x_mm": 41.639,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A8' et 'B5' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae33",
+          "bdbead5cc7fc4f6ae34"
+        ],
+        "coordinates": {
+          "x_mm": 42.14,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '1' et '2' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e54",
+          "ceab62a8f9958a19e55"
+        ],
+        "coordinates": {
+          "x_mm": 71.26,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '2' et '3' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e55",
+          "ceab62a8f9958a19e56"
+        ],
+        "coordinates": {
+          "x_mm": 69.99,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '3' et '4' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e56",
+          "ceab62a8f9958a19e57"
+        ],
+        "coordinates": {
+          "x_mm": 68.72,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '4' et '5' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e57",
+          "ceab62a8f9958a19e58"
+        ],
+        "coordinates": {
+          "x_mm": 67.45,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '5' et '6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e58",
+          "ceab62a8f9958a19e59"
+        ],
+        "coordinates": {
+          "x_mm": 66.18,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '6' et '7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e59",
+          "ceab62a8f9958a19e60"
+        ],
+        "coordinates": {
+          "x_mm": 64.91,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '7' et '8' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e60",
+          "ceab62a8f9958a19e61"
+        ],
+        "coordinates": {
+          "x_mm": 63.64,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '8' et '9' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e61",
+          "ceab62a8f9958a19e62"
+        ],
+        "coordinates": {
+          "x_mm": 62.37,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '9' et '10' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e62",
+          "ceab62a8f9958a19e63"
+        ],
+        "coordinates": {
+          "x_mm": 61.1,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '10' et '11' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e63",
+          "ceab62a8f9958a19e64"
+        ],
+        "coordinates": {
+          "x_mm": 59.83,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '11' et '12' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e64",
+          "ceab62a8f9958a19e65"
+        ],
+        "coordinates": {
+          "x_mm": 58.56,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '12' et '13' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e65",
+          "ceab62a8f9958a19e66"
+        ],
+        "coordinates": {
+          "x_mm": 57.29,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '13' et '14' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e66",
+          "ceab62a8f9958a19e67"
+        ],
+        "coordinates": {
+          "x_mm": 56.02,
+          "y_mm": 26.53
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '27' et '28' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e80",
+          "ceab62a8f9958a19e81"
+        ],
+        "coordinates": {
+          "x_mm": 56.02,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '28' et '29' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e81",
+          "ceab62a8f9958a19e82"
+        ],
+        "coordinates": {
+          "x_mm": 57.29,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '29' et '30' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e82",
+          "ceab62a8f9958a19e83"
+        ],
+        "coordinates": {
+          "x_mm": 58.56,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '30' et '31' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e83",
+          "ceab62a8f9958a19e84"
+        ],
+        "coordinates": {
+          "x_mm": 59.83,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '31' et '32' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e84",
+          "ceab62a8f9958a19e85"
+        ],
+        "coordinates": {
+          "x_mm": 61.1,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '32' et '33' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e85",
+          "ceab62a8f9958a19e86"
+        ],
+        "coordinates": {
+          "x_mm": 62.37,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '33' et '34' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e86",
+          "ceab62a8f9958a19e87"
+        ],
+        "coordinates": {
+          "x_mm": 63.64,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '34' et '35' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e87",
+          "ceab62a8f9958a19e88"
+        ],
+        "coordinates": {
+          "x_mm": 64.91,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '35' et '36' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e88",
+          "ceab62a8f9958a19e89"
+        ],
+        "coordinates": {
+          "x_mm": 66.18,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '36' et '37' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e89",
+          "ceab62a8f9958a19e90"
+        ],
+        "coordinates": {
+          "x_mm": 67.45,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '37' et '38' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e90",
+          "ceab62a8f9958a19e91"
+        ],
+        "coordinates": {
+          "x_mm": 68.72,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '38' et '39' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e91",
+          "ceab62a8f9958a19e92"
+        ],
+        "coordinates": {
+          "x_mm": 69.99,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '39' et '40' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "ceab62a8f9958a19e92",
+          "ceab62a8f9958a19e93"
+        ],
+        "coordinates": {
+          "x_mm": 71.26,
+          "y_mm": 9.03
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '5' et '6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e23",
+          "5f4b613b1e069051e24"
+        ],
+        "coordinates": {
+          "x_mm": 30.104,
+          "y_mm": 5.898
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '6' et '7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e24",
+          "5f4b613b1e069051e25"
+        ],
+        "coordinates": {
+          "x_mm": 30.104,
+          "y_mm": 7.168
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '7' et '8' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e25",
+          "5f4b613b1e069051e26"
+        ],
+        "coordinates": {
+          "x_mm": 30.104,
+          "y_mm": 8.438
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '4' et '3' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e27",
+          "5f4b613b1e069051e28"
+        ],
+        "coordinates": {
+          "x_mm": 24.902,
+          "y_mm": 5.898
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '3' et '2' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e28",
+          "5f4b613b1e069051e29"
+        ],
+        "coordinates": {
+          "x_mm": 24.902,
+          "y_mm": 7.168
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '2' et '1' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "5f4b613b1e069051e29",
+          "5f4b613b1e069051e30"
+        ],
+        "coordinates": {
+          "x_mm": 24.902,
+          "y_mm": 8.438
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '5' et '6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e23",
+          "c4a77813aa89d300e24"
+        ],
+        "coordinates": {
+          "x_mm": 41.079,
+          "y_mm": 14.402
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '6' et '7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e24",
+          "c4a77813aa89d300e25"
+        ],
+        "coordinates": {
+          "x_mm": 41.079,
+          "y_mm": 13.132
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '7' et '8' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e25",
+          "c4a77813aa89d300e26"
+        ],
+        "coordinates": {
+          "x_mm": 41.079,
+          "y_mm": 11.862
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '4' et '3' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e27",
+          "c4a77813aa89d300e28"
+        ],
+        "coordinates": {
+          "x_mm": 46.281,
+          "y_mm": 14.402
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '3' et '2' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e28",
+          "c4a77813aa89d300e29"
+        ],
+        "coordinates": {
+          "x_mm": 46.281,
+          "y_mm": 13.132
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '2' et '1' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.102,
+        "threshold_mm": 0.1,
+        "elements": [
+          "c4a77813aa89d300e29",
+          "c4a77813aa89d300e30"
+        ],
+        "coordinates": {
+          "x_mm": 46.281,
+          "y_mm": 11.862
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "b78cfa0a1174e6f1e14",
+          "e7bcf7202d0900ae"
+        ],
+        "coordinates": {
+          "x_mm": 72.5291,
+          "y_mm": 29.9486
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.325 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.325,
+        "threshold_mm": 0.0,
+        "elements": [
+          "3c8b13851d5003eee14",
+          "f9da3e84ea57523f"
+        ],
+        "coordinates": {
+          "x_mm": 70.104,
+          "y_mm": 28.448
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.086 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.086,
+        "threshold_mm": 0.15,
+        "elements": [
+          "17c5dba2f35d7a35e8",
+          "6014e360d03aba7f"
+        ],
+        "coordinates": {
+          "x_mm": 22.1717,
+          "y_mm": 12.9819
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "7d19d6192bc8f8bfe14",
+          "90e54fb0eb3f3ada"
+        ],
+        "coordinates": {
+          "x_mm": 65.5942,
+          "y_mm": 27.8892
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "e614d5728faafdd8e15",
+          "2c35b13e442b80ef"
+        ],
+        "coordinates": {
+          "x_mm": 37.9755,
+          "y_mm": 17.9083
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.528 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.528,
+        "threshold_mm": 0.0,
+        "elements": [
+          "e702f64efe48eecbe8",
+          "6cad2acf43b4d2b7"
+        ],
+        "coordinates": {
+          "x_mm": 34.2925,
+          "y_mm": 16.7335
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "769cd69ab4fb4003e14",
+          "ba028a427587e543"
+        ],
+        "coordinates": {
+          "x_mm": 36.1823,
+          "y_mm": 9.3878
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.142 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.142,
+        "threshold_mm": 0.15,
+        "elements": [
+          "6978291b7b090b5be9",
+          "0167d8890dd8c7fc"
+        ],
+        "coordinates": {
+          "x_mm": 20.5689,
+          "y_mm": 17.0434
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.165 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.165,
+        "threshold_mm": 0.0,
+        "elements": [
+          "6978291b7b090b5be10",
+          "800c05f05c5f671a"
+        ],
+        "coordinates": {
+          "x_mm": 19.5402,
+          "y_mm": 18.0492
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.353 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.353,
+        "threshold_mm": 0.0,
+        "elements": [
+          "5696bac1568372eae12",
+          "d452f68e97d3ea41"
+        ],
+        "coordinates": {
+          "x_mm": 43.5757,
+          "y_mm": 26.865
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.020 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.02,
+        "threshold_mm": 0.0,
+        "elements": [
+          "0bb2ba17b6507898e11",
+          "0bce703238020bbf"
+        ],
+        "coordinates": {
+          "x_mm": 19.3573,
+          "y_mm": 6.3652
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.126 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.126,
+        "threshold_mm": 0.15,
+        "elements": [
+          "399f9a7cf1779a34e13",
+          "9582f895f7d00cc0"
+        ],
+        "coordinates": {
+          "x_mm": 19.0348,
+          "y_mm": 3.937
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.123 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.123,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5e7e3eaad1f534ffe13",
+          "ed2f341a03c7b3ce"
+        ],
+        "coordinates": {
+          "x_mm": 32.8066,
+          "y_mm": 14.6177
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.129 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.129,
+        "threshold_mm": 0.15,
+        "elements": [
+          "d19f289644971565e13",
+          "574a3afafc63f8ca"
+        ],
+        "coordinates": {
+          "x_mm": 61.3232,
+          "y_mm": 28.6487
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.033 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.033,
+        "threshold_mm": 0.0,
+        "elements": [
+          "af2a0f1e8efa26e5e12",
+          "8934b7dcf6126494"
+        ],
+        "coordinates": {
+          "x_mm": 22.413,
+          "y_mm": 19.7002
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.353 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.353,
+        "threshold_mm": 0.0,
+        "elements": [
+          "725a123fc98ec5b8e12",
+          "1474042607ad631c"
+        ],
+        "coordinates": {
+          "x_mm": 36.3944,
+          "y_mm": 27.4505
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '41' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "ceab62a8f9958a19e95",
+          "2ae5e184e0415c8e"
+        ],
+        "coordinates": {
+          "x_mm": 63.2226,
+          "y_mm": 18.8321
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "DANGER",
+        "description": "Via trop proche de la pastille CMS '41' (0.018 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.018,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ceab62a8f9958a19e100",
+          "a2b84527531c5887"
+        ],
+        "coordinates": {
+          "x_mm": 64.1756,
+          "y_mm": 18.6461
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '41' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "ceab62a8f9958a19e102",
+          "a2b84527531c5887"
+        ],
+        "coordinates": {
+          "x_mm": 64.1756,
+          "y_mm": 18.6461
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '7' (0.098 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.098,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5f4b613b1e069051e25",
+          "24ccef42fe1141bd"
+        ],
+        "coordinates": {
+          "x_mm": 28.9331,
+          "y_mm": 8.3744
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '5' (distance bord = -0.565 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.565,
+        "threshold_mm": 0.0,
+        "elements": [
+          "c4a77813aa89d300e23",
+          "cbe02d6abc88e641"
+        ],
+        "coordinates": {
+          "x_mm": 41.7144,
+          "y_mm": 15.0368
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '4' (distance bord = -0.052 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.052,
+        "threshold_mm": 0.0,
+        "elements": [
+          "c4a77813aa89d300e27",
+          "d3ba93798fe7223d"
+        ],
+        "coordinates": {
+          "x_mm": 45.466,
+          "y_mm": 15.8521
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.099 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ef39304758b0903de20",
+          "6ece048ce039efcc"
+        ],
+        "coordinates": {
+          "x_mm": 34.6024,
+          "y_mm": 20.9042
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '6' (0.091 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.091,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ef39304758b0903de26",
+          "f068864902af2a9b"
+        ],
+        "coordinates": {
+          "x_mm": 38.3184,
+          "y_mm": 23.8303
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "DANGER",
+        "description": "Via trop proche de la pastille CMS '5' (0.007 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.007,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ef39304758b0903de27",
+          "fc251e9ba8f88fb1"
+        ],
+        "coordinates": {
+          "x_mm": 39.7993,
+          "y_mm": 26.0121
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '5' (0.089 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.089,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ef39304758b0903de27",
+          "f068864902af2a9b"
+        ],
+        "coordinates": {
+          "x_mm": 38.3184,
+          "y_mm": 23.8303
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '3' (0.113 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.113,
+        "threshold_mm": 0.15,
+        "elements": [
+          "f0c374ef01d20e81e7",
+          "1a001025a06356fd"
+        ],
+        "coordinates": {
+          "x_mm": 53.848,
+          "y_mm": 7.78
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.065 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.065,
+        "threshold_mm": 0.0,
+        "elements": [
+          "e442a79bd72ca86de19",
+          "7cfd565e2ae4759d"
+        ],
+        "coordinates": {
+          "x_mm": 38.4563,
+          "y_mm": 11.8757
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte '+' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "7d53e89339675070"
+        ],
+        "coordinates": {
+          "x_mm": 20.3302,
+          "y_mm": 31.5011
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie '+' trop proche de la pastille '2' (0.039 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": 0.039,
+        "threshold_mm": 0.15,
+        "elements": [
+          "7d53e89339675070",
+          "e9dd65f413e77e85e6"
+        ],
+        "coordinates": {
+          "x_mm": 20.3302,
+          "y_mm": 31.5011
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte '-' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "20d6d3e5b5512fba"
+        ],
+        "coordinates": {
+          "x_mm": 22.8702,
+          "y_mm": 31.5011
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'STATUS' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "2e92e1a36373cf97"
+        ],
+        "coordinates": {
+          "x_mm": 68.7299,
+          "y_mm": 7.0333
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'SCANNER: POWER OUT' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "aac269d50882f013"
+        ],
+        "coordinates": {
+          "x_mm": 19.05,
+          "y_mm": 26.67
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte '+12V' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "2c0cf89fc3b5142b"
+        ],
+        "coordinates": {
+          "x_mm": 18.73,
+          "y_mm": 29.4996
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'GND' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "734495bcc87ad2ad"
+        ],
+        "coordinates": {
+          "x_mm": 21.27,
+          "y_mm": 29.4996
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte '+12V' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "613fbf4a2604906b"
+        ],
+        "coordinates": {
+          "x_mm": 7.0028,
+          "y_mm": 23.3858
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'K-LINE' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "c64908b58af88269"
+        ],
+        "coordinates": {
+          "x_mm": 6.9723,
+          "y_mm": 20.5867
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'CANH' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "6ac495f7c42b8883"
+        ],
+        "coordinates": {
+          "x_mm": 6.9596,
+          "y_mm": 17.78
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'CANL' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "fbf3d8d1e8b8b856"
+        ],
+        "coordinates": {
+          "x_mm": 6.9723,
+          "y_mm": 14.9733
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'GND' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "897e717de2419661"
+        ],
+        "coordinates": {
+          "x_mm": 7.0028,
+          "y_mm": 12.1742
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'RX' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "f8c94a6c8eff06e4"
+        ],
+        "coordinates": {
+          "x_mm": 29.4589,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'RX' trop proche de la pastille '1' (-0.106 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.106,
+        "threshold_mm": 0.15,
+        "elements": [
+          "f8c94a6c8eff06e4",
+          "3f79e1cb33d3e214e15"
+        ],
+        "coordinates": {
+          "x_mm": 29.4589,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'TX' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "41482cf6d68fe089"
+        ],
+        "coordinates": {
+          "x_mm": 31.9989,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'TX' trop proche de la pastille '2' (-0.601 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.601,
+        "threshold_mm": 0.15,
+        "elements": [
+          "41482cf6d68fe089",
+          "55dd6176cdbbb12be12"
+        ],
+        "coordinates": {
+          "x_mm": 31.9989,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'GND' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "a22976194d3ed3f8"
+        ],
+        "coordinates": {
+          "x_mm": 34.5389,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'RX' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "c939405da741e9d3"
+        ],
+        "coordinates": {
+          "x_mm": 45.4609,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'TX' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "e662ad4b5527145c"
+        ],
+        "coordinates": {
+          "x_mm": 48.0009,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'GND' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "21e2d71d1c1682eb"
+        ],
+        "coordinates": {
+          "x_mm": 50.5409,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'GND' trop proche de la pastille '2' (-0.371 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.371,
+        "threshold_mm": 0.15,
+        "elements": [
+          "21e2d71d1c1682eb",
+          "6b9df555ba832a99e24"
+        ],
+        "coordinates": {
+          "x_mm": 50.5409,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'KLINE' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5de8323f72ff9cc1"
+        ],
+        "coordinates": {
+          "x_mm": 31.9989,
+          "y_mm": 26.7005
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'CAN' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "865b872da412b7fc"
+        ],
+        "coordinates": {
+          "x_mm": 48.0009,
+          "y_mm": 26.7005
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'CAN' trop proche de la pastille '2' (-0.193 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.193,
+        "threshold_mm": 0.15,
+        "elements": [
+          "865b872da412b7fc",
+          "f72416d598ee1d73e7"
+        ],
+        "coordinates": {
+          "x_mm": 48.0009,
+          "y_mm": 26.7005
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'SIMU: POWER IN' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "d0b0768d1b88a25d"
+        ],
+        "coordinates": {
+          "x_mm": 20.0,
+          "y_mm": 27.2999
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'SCANNER: MEASURE ONLY' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5b49b469859b5b87"
+        ],
+        "coordinates": {
+          "x_mm": 20.0,
+          "y_mm": 25.9994
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'CAN BUS:' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "639a9d80f9906390"
+        ],
+        "coordinates": {
+          "x_mm": 17.051,
+          "y_mm": 1.971
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'SHUNT=SIMU' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "260ffb09e7dd1d5b"
+        ],
+        "coordinates": {
+          "x_mm": 17.051,
+          "y_mm": 0.6706
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'OPEN=SCANNER' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "9b7f0e22a9e7ae48"
+        ],
+        "coordinates": {
+          "x_mm": 17.051,
+          "y_mm": -0.6299
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'K-LINE:' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "7985b957ec8e33f7"
+        ],
+        "coordinates": {
+          "x_mm": 63.3451,
+          "y_mm": 4.4145
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'SHUNT=SCANNER' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "adbf14821cbe2760"
+        ],
+        "coordinates": {
+          "x_mm": 63.3451,
+          "y_mm": 3.114
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'OPEN=SIMU' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "57ea21a689fd9afc"
+        ],
+        "coordinates": {
+          "x_mm": 63.3451,
+          "y_mm": 1.8161
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'HW Rev: v2.0 (4-Layer JLC2313)' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "1e809c18c8d5c049"
+        ],
+        "coordinates": {
+          "x_mm": 5.9995,
+          "y_mm": 5.9995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_STROKE",
+        "severity": "WARNING",
+        "description": "Trait de sérigraphie trop fin pour le texte 'OBD-II SCANNER ESP32-S3' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
+        "actual_value_mm": 0.1499,
+        "threshold_mm": 0.15,
+        "elements": [
+          "a08842fdbb9f0a9d"
+        ],
+        "coordinates": {
+          "x_mm": 5.9995,
+          "y_mm": 7.3508
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "e7bcf7202d0900ae"
+        ],
+        "coordinates": {
+          "x_mm": 72.5291,
+          "y_mm": 29.9486
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "e5712a5bc53c0275"
+        ],
+        "coordinates": {
+          "x_mm": 15.5727,
+          "y_mm": 12.9819
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "90e54fb0eb3f3ada"
+        ],
+        "coordinates": {
+          "x_mm": 65.5942,
+          "y_mm": 27.8892
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "2c35b13e442b80ef"
+        ],
+        "coordinates": {
+          "x_mm": 37.9755,
+          "y_mm": 17.9083
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "6cad2acf43b4d2b7"
+        ],
+        "coordinates": {
+          "x_mm": 34.2925,
+          "y_mm": 16.7335
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "ba028a427587e543"
+        ],
+        "coordinates": {
+          "x_mm": 36.1823,
+          "y_mm": 9.3878
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "800c05f05c5f671a"
+        ],
+        "coordinates": {
+          "x_mm": 19.5402,
+          "y_mm": 18.0492
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "d452f68e97d3ea41"
+        ],
+        "coordinates": {
+          "x_mm": 43.5757,
+          "y_mm": 26.865
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "1474042607ad631c"
+        ],
+        "coordinates": {
+          "x_mm": 36.3944,
+          "y_mm": 27.4505
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "2ae5e184e0415c8e"
+        ],
+        "coordinates": {
+          "x_mm": 63.2226,
+          "y_mm": 18.8321
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "a2b84527531c5887"
+        ],
+        "coordinates": {
+          "x_mm": 64.1756,
+          "y_mm": 18.6461
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "72b3cb6a2fba040d"
+        ],
+        "coordinates": {
+          "x_mm": 23.3624,
+          "y_mm": 8.6919
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "cbe02d6abc88e641"
+        ],
+        "coordinates": {
+          "x_mm": 41.7144,
+          "y_mm": 15.0368
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "7cfd565e2ae4759d"
+        ],
+        "coordinates": {
+          "x_mm": 38.4563,
+          "y_mm": 11.8757
+        }
+      },
+      {
+        "category": "PCB_DFM_MIN_DRILL",
+        "severity": "WARNING",
+        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
+        "actual_value_mm": 0.2997,
+        "threshold_mm": 0.3,
+        "elements": [
+          "f9da3e84ea57523f"
+        ],
+        "coordinates": {
+          "x_mm": 70.104,
+          "y_mm": 28.448
+        }
+      }
+    ]
+  },
+  "smt_dfm": {
+    "passed": true,
+    "danger_count": 0,
+    "warning_count": 1,
+    "smt_summary": {
+      "total_bom_components": 85,
+      "total_pcb_components": 85,
+      "smt_pick_and_place_count": 78,
+      "tht_manual_assembly_count": 7,
+      "tht_designators": [
+        "H1",
+        "H2",
+        "H3",
+        "J1",
+        "J2",
+        "JP1",
+        "JP2"
+      ]
+    },
+    "violations": [
+      {
+        "category": "SMT_DFM_RAIL_MARGIN",
+        "severity": "INFO",
+        "description": "Composant 'C3' implanté à 2.687 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 2.687,
+        "threshold_mm": 3.0,
+        "elements": [
+          "c41fbf850dbc6586"
+        ],
+        "coordinates": {
+          "x_mm": 31.5595,
+          "y_mm": 2.6873
+        }
+      },
+      {
+        "category": "SMT_DFM_RAIL_MARGIN",
+        "severity": "INFO",
+        "description": "Composant 'C6' implanté à 3.000 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 3.0,
+        "threshold_mm": 3.0,
+        "elements": [
+          "8ccf735a62a52e90"
+        ],
+        "coordinates": {
+          "x_mm": 58.1558,
+          "y_mm": 2.9997
+        }
+      },
+      {
+        "category": "SMT_DFM_RAIL_MARGIN",
+        "severity": "INFO",
+        "description": "Composant 'JP1' implanté à 2.527 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 2.527,
+        "threshold_mm": 3.0,
+        "elements": [
+          "7dfbe5f5804466bb"
+        ],
+        "coordinates": {
+          "x_mm": 55.2221,
+          "y_mm": 33.0327
+        }
+      },
+      {
+        "category": "SMT_DFM_RAIL_MARGIN",
+        "severity": "INFO",
+        "description": "Composant 'JP2' implanté à 2.347 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 2.347,
+        "threshold_mm": 3.0,
+        "elements": [
+          "d0e9739485f5bc5c"
+        ],
+        "coordinates": {
+          "x_mm": 27.5692,
+          "y_mm": 2.347
+        }
+      },
+      {
+        "category": "SMT_DFM_RAIL_MARGIN",
+        "severity": "INFO",
+        "description": "Composant 'R18' implanté à 2.969 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 2.969,
+        "threshold_mm": 3.0,
+        "elements": [
+          "ab712b0cde0b618a"
+        ],
+        "coordinates": {
+          "x_mm": 21.8262,
+          "y_mm": 2.9693
+        }
+      },
+      {
+        "category": "SMT_DFM_FIDUCIALS_MISSING",
+        "severity": "WARNING",
+        "description": "Seulement 0 repère(s) fiduciaire(s) détecté(s) sur le PCB (recommandé : au moins 3 repères optiques en L / triangle). Prévoir l'ajout de 3 pastilles circulaires 1.0 mm isolées ou des repères sur les bandes d'outillage.",
+        "actual_value_mm": 0,
+        "threshold_mm": 3,
+        "elements": [],
+        "coordinates": {
+          "x_mm": 0,
+          "y_mm": 0
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "vendor": "JLCPCB",
+    "stackup": "JLC2313",
+    "rules_file": "D:\\Dev\\OBD2\\.agents\\skills\\pcb-dfm\\config\\rules_jlcpcb.json"
+  }
+}
