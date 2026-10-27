@@ -322,6 +322,8 @@ L'ensemble de la documentation technique et opérationnelle est structuré dans 
 | 📜 **[agents.md](agents.md)** | **Règles directrices des agents IA** : modularité agnostique, sécurité du pont EasyEDA, méthode séquentielle, post-validation et typographie. |
 | 💡 **[learnings.md](learnings.md)** | **Capitalisation technique** : journal d'apprentissage, spécificités d'API EasyEDA Pro, formats d'unités et pièges évités. |
 | 📥 **[review/](review/guidelines.md)** | **Sas d'entrée pour revues techniques** : répertoire réceptacle des fichiers de revue (`reviewXXX.md`), encadré par [`guidelines.md`](review/guidelines.md). Les revues y sont dépouillées, arbitrées puis supprimées après intégration dans `todo.md`. |
+| ⚖️ **[LICENSE](LICENSE)** | **Cadre juridique & Licences Open-Source** : licence matérielle CERN-OHL-P v2 et logicielle Apache 2.0. |
+| ⚠️ **[DISCLAIMER.md](DISCLAIMER.md)** | **Avertissement de sécurité & Décharge de responsabilité** : clause de non-responsabilité automobile (FR / EN). |
 | 📁 **`documents/easyeda/OBD2.epro2`** | **Fichier projet natif EasyEDA Pro v2** : contient le schéma schématique `P1` et la carte de circuit imprimé `PCB1`. |
 
 ---
@@ -352,3 +354,11 @@ Le projet intègre et exploite 9 compétences logicielles dédiées (*Skills*) s
    - PCB : Menu `Design` → `Check DRC` (doit retourner 0 erreur).
 3. **Pilotage IA :** Le pont local `easyeda-api` (port 49620) est automatiquement géré en tâche de fond par Antigravity via son hook de cycle de vie ([`.agents/hooks.json`](.agents/hooks.json)). Il suffit d'avoir importé l'extension `run-api-gateway.eext` dans EasyEDA Pro (voir [easyeda-api](.agents/skills/easyeda-api/SKILL.md)).
 4. **Contrôle DFM Pré-Fabrication (JLCPCB) :** Pour exécuter les vérifications de fabricabilité DFM directement dans l'interface EasyEDA Pro (détection interactive des ponts de vernis, vias sur pastilles et dégagements sérigraphie avec zoom direct sur l'élément en un clic), installer l'extension officielle [`eext-jlc-order-dfm-checker`](https://github.com/easyeda/eext-jlc-order-dfm-checker) via le menu `Extensions` → `Gestionnaire d'extensions` ou par importation de son paquet `.eext`.
+
+---
+
+## 8. Licences & Avertissement de Sécurité Automobile
+
+* **Conception Matérielle (Hardware) :** [CERN-OHL-P v2](LICENSE) (*CERN Open Hardware Licence Version 2 – Permissive*).
+* **Logiciels, Scripts & Outils (Software) :** [Apache License 2.0](LICENSE).
+* **Avertissement de Sécurité Automobile :** L'ensemble du matériel et des codes associés est mis à disposition à des fins éducatives et expérimentales. Toute utilisation sur véhicule motorisé s'effectue sous l'entière responsabilité de l'utilisateur, conformément aux stipulations de décharge de responsabilité détaillées dans [DISCLAIMER.md](DISCLAIMER.md).

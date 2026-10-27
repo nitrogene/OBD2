@@ -1,0 +1,48 @@
+# Project Licenses
+
+This project is licensed under a dual open-source framework tailored for open-source hardware (OSHW) and software/tooling.
+
+---
+
+## 1. Hardware License (Schematics, PCB Layouts, Manufacturing Files, 3D CAD)
+
+The hardware design files (including but not limited to EasyEDA schematics, PCB layout files, Gerber/drill production files, BOM, Pick-and-Place data, and 3D enclosure CAD models) are licensed under the **CERN Open Hardware Licence Version 2 – Permissive (CERN-OHL-P v2)**.
+
+### CERN Open Hardware Licence Version 2 – Permissive
+
+Copyright (c) 2026 OBD2 ESP32 Project Contributors
+
+Preamble
+CERN has developed this licence to promote collaboration on the hardware design of products, the sharing of technologies and to address specific issues of hardware licensing that are not addressed by conventional software licences. This licence governs the use, copying, modification and distribution of Hardware Designs, and the making and distribution of Products.
+
+You may use, copy, modify, distribute, and manufacture products based on this hardware design under the terms and conditions of the CERN-OHL-P v2.
+
+Full license text: https://ohwr.org/cern_ohl_p_v2.txt
+
+---
+
+## 2. Software & Tooling License (Firmware, Automation Skills, Python Scripts)
+
+All software, firmware templates, test scripts, and automation skill code within this repository are licensed under the **Apache License, Version 2.0**.
+
+```
+Copyright (c) 2026 OBD2 ESP32 Project Contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+---
+
+## 3. Automotive Disclaimer
+
+Any use of this project in connection with motor vehicles is strictly subject to the disclaimer set forth in [DISCLAIMER.md](DISCLAIMER.md).
