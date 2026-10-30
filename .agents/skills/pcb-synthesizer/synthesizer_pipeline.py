@@ -190,27 +190,8 @@ class PcbSynthesizer:
                     logger.error(f"Échec de l'application dans EasyEDA Pro :\n{stderr or stdout}")
                     return False
 
-                # Étape 2b : Fanout d'échappement préalable des pastilles CMS vers les plans internes
-                logger.info(f"[Cycle {cycle} - Étape 2b/5] Fanout d'échappement préalable vers les plans internes (PCB Stitcher)...")
-                default_rules = board_cfg.get("net_classes", {}).get("DEFAULT", {})
-                st_clearance = str(max(0.23, float(default_rules.get("clearance_mm", 0.20))))
-                st_track = str(default_rules.get("track_width_mm", 0.254))
-                st_drill = str(default_rules.get("via_drill_mm", 0.30))
-                st_diameter = str(default_rules.get("via_diameter_mm", 0.60))
-                plane_nets = board_cfg.get("plane_nets", [])
-                for p_net in plane_nets:
-                    fanout_cmd = [
-                        "uv", "run", "python",
-                        str(STITCHER_DIR / "fanout_stitcher.py"),
-                        "--net", str(p_net),
-                        "--clearance-mm", st_clearance,
-                        "--track-width-mm", st_track,
-                        "--via-drill-mm", st_drill,
-                        "--via-diameter-mm", st_diameter,
-                        "--apply"
-                    ]
-                    rc_fo, out_fo, err_fo = run_cmd(fanout_cmd, PROJECT_ROOT)
-                    logger.info(out_fo)
+                # Étape 2b : Bypassed - Le fanout GND est réalisé en étape 5 après le routage des signaux
+                # pour éviter de polluer le DSN avec des micro-nets et des violations holeClearance artificielles.
 
             # -----------------------------------------------------------------
             # Étape 3 : Routage Automatique Headless (FreeRouting)
@@ -218,7 +199,7 @@ class PcbSynthesizer:
             logger.info(f"[Cycle {cycle} - Étape 3/5] Routage Automatique FreeRouting...")
             ses_output = FREEROUTING_DIR / ".cache" / "board_routed.ses"
 
-            cpu_threads = min(4, max(1, os.cpu_count() or 4))
+            cpu_threads = 1  # Mono-thread déterministe requis pour 0 violation de dégagement
             fr_cmd = [
                 "uv", "run", "python",
                 str(FREEROUTING_DIR / "freerouting_pipeline.py"),
@@ -272,8 +253,8 @@ class PcbSynthesizer:
                 "is_valid": report.is_valid
             })
 
-            if report.unrouted_count == 0 and report.violation_count == 0:
-                logger.info(f"✅ [Cycle {cycle}] Routage 100% complet (0 non-routé, 0 violation) !")
+            if report.is_valid:
+                logger.info(f"✅ [Cycle {cycle}] Synthèse 100% certifiée (0 non-routé, 0 violation, métrologie CEM conforme) !")
                 synthesis_success = True
                 break
             else:
@@ -281,13 +262,15 @@ class PcbSynthesizer:
                 if cycle < self.max_cycles:
                     logger.info("⚙️ Rétroaction adaptative : resserrement automatique des contraintes locales...")
                     failed_loop_ids = {l.constraint_id for l in report.loops if not l.ok}
+                    failed_dp_classes = {dp.net_class for dp in report.diff_pairs if not dp.ok}
+                    failed_via_nets = {v.net for v in report.critical_vias if not v.ok}
                     for c in current_manifest.get("placement_constraints", []):
                         if c.get("type") == "loop" and c.get("id") in failed_loop_ids:
                             old_a = c.get("target_max_area_mm2", 25.0)
                             c["target_max_area_mm2"] = round(old_a * 0.85, 2)
                             c["weight"] = c.get("weight", 8) + 2
                             logger.info(f"  • Boucle {c.get('id')} : réduction cible aire {old_a} -> {c['target_max_area_mm2']} mm²")
-                        elif c.get("type") == "proximity" and report.unrouted_count > 0:
+                        elif c.get("type") == "proximity" and (report.unrouted_count > 0 or bool(failed_dp_classes) or bool(failed_via_nets)):
                             old_m = c.get("max_mm", 3.0)
                             c["max_mm"] = round(old_m * 0.95, 2)
                             c["weight"] = c.get("weight", 5) + 1

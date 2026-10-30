@@ -23,6 +23,13 @@
       "min_text_stroke_mm": 0.15,
       "recommended_text_stroke_mm": 0.18,
       "min_text_height_mm": 0.80,
+      "default_font_height_mm": 1.00,
+      "default_stroke_width_mm": 0.15,
+      "pad_clearance_mm": 0.20,
+      "text_clearance_mm": 0.20,
+      "board_edge_clearance_mm": 0.40,
+      "dense_zone_crown_max_mm": 1.20,
+      "voronoi_safety_margin_mm": 0.40,
       "description": "Dégagement sérigraphie face aux ouvertures de vernis et perçages pour éviter le rognage automatique (auto-clipping)"
     },
     "copper": {
@@ -55,6 +62,70 @@
       "min_diameter_mm": 1.0,
       "min_clearance_mm": 1.0,
       "description": "Repères optiques de cadrage pour machine Pick & Place automatique"
+    }
+  },
+  "ipc_courtyard_margins_mm": {
+    "default": 0.30,
+    "0402": 0.25,
+    "0603": 0.30,
+    "0805": 0.30,
+    "1206": 0.35,
+    "1812": 0.40,
+    "SOD-323": 0.30,
+    "SOD-123": 0.35,
+    "SOD-123FL": 0.35,
+    "SOT-23": 0.35,
+    "SOT-223-4": 0.45,
+    "SOIC-8": 0.40,
+    "SMA": 0.40,
+    "SMB": 0.40,
+    "SMD_IND_7X7": 0.40,
+    "MODULE_ESP32_S3": 0.50,
+    "USB_C_16P": 0.40,
+    "CONN_JST_XH_5P_90": 0.50,
+    "HEADER_1X2_2.54": 0.40,
+    "HEADER_1X3_2.54": 0.40,
+    "JUMPER_1X2_2.54": 0.40,
+    "TACT_SWITCH_SMD": 0.40,
+    "TEST_PAD": 0.35
+  },
+  "stackup_definitions": {
+    "4_layer_jlc2313": {
+      "total_thickness_mm": 1.60,
+      "epsilon_r": 4.05,
+      "prepreg_top_inner1_mm": 0.11,
+      "core_inner1_inner2_mm": 1.26,
+      "prepreg_inner2_bottom_mm": 0.11,
+      "layer_distance_to_inner1_mm": {
+        "TopLayer": 0.11,
+        "1": 0.11,
+        "Inner1": 0.0,
+        "15": 0.0,
+        "Inner2": 1.26,
+        "16": 1.26,
+        "BottomLayer": 1.37,
+        "2": 1.37
+      }
+    }
+  },
+  "enclosure_print_profiles": {
+    "SLA_Resin_JLCPCB": {
+      "wall_thickness_mm": 2.0,
+      "pcb_xy_clearance_mm": 0.25,
+      "cutout_clearance_mm": 0.30,
+      "snap_interference_mm": 0.30
+    },
+    "SLS_Nylon_PA12": {
+      "wall_thickness_mm": 2.0,
+      "pcb_xy_clearance_mm": 0.30,
+      "cutout_clearance_mm": 0.35,
+      "snap_interference_mm": 0.40
+    },
+    "FDM_Standard": {
+      "wall_thickness_mm": 2.4,
+      "pcb_xy_clearance_mm": 0.35,
+      "cutout_clearance_mm": 0.40,
+      "snap_interference_mm": 0.35
     }
   }
 }

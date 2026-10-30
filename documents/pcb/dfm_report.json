@@ -1,17 +1,32 @@
 {
-  "timestamp": "2026-10-27T08:57:41.500534",
+  "timestamp": "2026-10-30T19:54:53.641738",
   "verdict": "FAILED",
   "summary": {
-    "total_violations": 128,
-    "danger_count": 56,
+    "total_violations": 122,
+    "danger_count": 53,
     "warning_count": 67,
-    "info_count": 5
+    "info_count": 2
   },
   "pcb_dfm": {
     "passed": false,
-    "danger_count": 56,
+    "danger_count": 53,
     "warning_count": 66,
     "violations": [
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "DANGER",
+        "description": "Pont de vernis épargne insuffisant (-0.017 mm < 0.10 mm) entre pastilles '2' et '2' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": -0.017,
+        "threshold_mm": 0.1,
+        "elements": [
+          "fc0650fe62becc62e13",
+          "0ec21b02291b6dcce7"
+        ],
+        "coordinates": {
+          "x_mm": 14.081,
+          "y_mm": 7.121
+        }
+      },
       {
         "category": "PCB_DFM_SOLDERMASK_BRIDGE",
         "severity": "WARNING",
@@ -518,8 +533,8 @@
           "5f4b613b1e069051e24"
         ],
         "coordinates": {
-          "x_mm": 30.104,
-          "y_mm": 5.898
+          "x_mm": 44.105,
+          "y_mm": 25.055
         }
       },
       {
@@ -533,8 +548,8 @@
           "5f4b613b1e069051e25"
         ],
         "coordinates": {
-          "x_mm": 30.104,
-          "y_mm": 7.168
+          "x_mm": 44.105,
+          "y_mm": 26.325
         }
       },
       {
@@ -548,8 +563,8 @@
           "5f4b613b1e069051e26"
         ],
         "coordinates": {
-          "x_mm": 30.104,
-          "y_mm": 8.438
+          "x_mm": 44.105,
+          "y_mm": 27.595
         }
       },
       {
@@ -563,8 +578,8 @@
           "5f4b613b1e069051e28"
         ],
         "coordinates": {
-          "x_mm": 24.902,
-          "y_mm": 5.898
+          "x_mm": 38.903,
+          "y_mm": 25.055
         }
       },
       {
@@ -578,8 +593,8 @@
           "5f4b613b1e069051e29"
         ],
         "coordinates": {
-          "x_mm": 24.902,
-          "y_mm": 7.168
+          "x_mm": 38.903,
+          "y_mm": 26.325
         }
       },
       {
@@ -593,98 +608,8 @@
           "5f4b613b1e069051e30"
         ],
         "coordinates": {
-          "x_mm": 24.902,
-          "y_mm": 8.438
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '5' et '6' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e23",
-          "c4a77813aa89d300e24"
-        ],
-        "coordinates": {
-          "x_mm": 41.079,
-          "y_mm": 14.402
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '6' et '7' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e24",
-          "c4a77813aa89d300e25"
-        ],
-        "coordinates": {
-          "x_mm": 41.079,
-          "y_mm": 13.132
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '7' et '8' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e25",
-          "c4a77813aa89d300e26"
-        ],
-        "coordinates": {
-          "x_mm": 41.079,
-          "y_mm": 11.862
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '4' et '3' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e27",
-          "c4a77813aa89d300e28"
-        ],
-        "coordinates": {
-          "x_mm": 46.281,
-          "y_mm": 14.402
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '3' et '2' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e28",
-          "c4a77813aa89d300e29"
-        ],
-        "coordinates": {
-          "x_mm": 46.281,
-          "y_mm": 13.132
-        }
-      },
-      {
-        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
-        "severity": "DANGER",
-        "description": "Pont de vernis épargne insuffisant (-0.102 mm < 0.10 mm) entre pastilles '2' et '1' (layer 1). Risque d'arrachement de vernis / gang mask.",
-        "actual_value_mm": -0.102,
-        "threshold_mm": 0.1,
-        "elements": [
-          "c4a77813aa89d300e29",
-          "c4a77813aa89d300e30"
-        ],
-        "coordinates": {
-          "x_mm": 46.281,
-          "y_mm": 11.862
+          "x_mm": 38.903,
+          "y_mm": 27.595
         }
       },
       {
@@ -694,42 +619,42 @@
         "actual_value_mm": -0.114,
         "threshold_mm": 0.0,
         "elements": [
-          "b78cfa0a1174e6f1e14",
-          "e7bcf7202d0900ae"
+          "3c8b13851d5003eee14",
+          "e256df8b723878a1"
         ],
         "coordinates": {
-          "x_mm": 72.5291,
-          "y_mm": 29.9486
+          "x_mm": 69.1921,
+          "y_mm": 29.9809
         }
       },
       {
         "category": "PCB_DFM_VIA_IN_PAD",
         "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.325 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.325,
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
         "threshold_mm": 0.0,
         "elements": [
-          "3c8b13851d5003eee14",
-          "f9da3e84ea57523f"
+          "c41fbf850dbc6586e14",
+          "1fa700eaa7c2ce46"
         ],
         "coordinates": {
-          "x_mm": 70.104,
-          "y_mm": 28.448
+          "x_mm": 44.4703,
+          "y_mm": 22.9959
         }
       },
       {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.086 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.086,
-        "threshold_mm": 0.15,
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
         "elements": [
-          "17c5dba2f35d7a35e8",
-          "6014e360d03aba7f"
+          "5d7b8f75a781c667e15",
+          "1595dacdc71a87f2"
         ],
         "coordinates": {
-          "x_mm": 22.1717,
-          "y_mm": 12.9819
+          "x_mm": 48.5084,
+          "y_mm": 23.7496
         }
       },
       {
@@ -740,41 +665,11 @@
         "threshold_mm": 0.0,
         "elements": [
           "7d19d6192bc8f8bfe14",
-          "90e54fb0eb3f3ada"
+          "dd11df71e10d6327"
         ],
         "coordinates": {
-          "x_mm": 65.5942,
-          "y_mm": 27.8892
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_IN_PAD",
-        "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.114,
-        "threshold_mm": 0.0,
-        "elements": [
-          "e614d5728faafdd8e15",
-          "2c35b13e442b80ef"
-        ],
-        "coordinates": {
-          "x_mm": 37.9755,
-          "y_mm": 17.9083
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_IN_PAD",
-        "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.528 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.528,
-        "threshold_mm": 0.0,
-        "elements": [
-          "e702f64efe48eecbe8",
-          "6cad2acf43b4d2b7"
-        ],
-        "coordinates": {
-          "x_mm": 34.2925,
-          "y_mm": 16.7335
+          "x_mm": 66.4693,
+          "y_mm": 29.431
         }
       },
       {
@@ -784,42 +679,117 @@
         "actual_value_mm": -0.114,
         "threshold_mm": 0.0,
         "elements": [
-          "769cd69ab4fb4003e14",
-          "ba028a427587e543"
+          "de843b2f14b43f86e14",
+          "592eade1f2fd8316"
         ],
         "coordinates": {
-          "x_mm": 36.1823,
-          "y_mm": 9.3878
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.142 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.142,
-        "threshold_mm": 0.15,
-        "elements": [
-          "6978291b7b090b5be9",
-          "0167d8890dd8c7fc"
-        ],
-        "coordinates": {
-          "x_mm": 20.5689,
-          "y_mm": 17.0434
+          "x_mm": 34.7528,
+          "y_mm": 26.1792
         }
       },
       {
         "category": "PCB_DFM_VIA_IN_PAD",
         "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.165 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.165,
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.274 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.274,
         "threshold_mm": 0.0,
         "elements": [
-          "6978291b7b090b5be10",
-          "800c05f05c5f671a"
+          "3a58d57caa62a78de7",
+          "87298bf8199843e9"
         ],
         "coordinates": {
-          "x_mm": 19.5402,
-          "y_mm": 18.0492
+          "x_mm": 35.6946,
+          "y_mm": 21.3817
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "DANGER",
+        "description": "Via trop proche de la pastille CMS '2' (0.033 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.033,
+        "threshold_mm": 0.15,
+        "elements": [
+          "0ec21b02291b6dcce7",
+          "cc96797e702941c8"
+        ],
+        "coordinates": {
+          "x_mm": 12.2377,
+          "y_mm": 4.6685
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '2' (0.124 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.124,
+        "threshold_mm": 0.15,
+        "elements": [
+          "7425ba8a7fe1f937e5",
+          "4457e7385f616d89"
+        ],
+        "coordinates": {
+          "x_mm": 31.2801,
+          "y_mm": 22.9133
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.071 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.071,
+        "threshold_mm": 0.15,
+        "elements": [
+          "6978291b7b090b5be9",
+          "c0e511aae11aace0"
+        ],
+        "coordinates": {
+          "x_mm": 64.0664,
+          "y_mm": 5.2908
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.130 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.13,
+        "threshold_mm": 0.15,
+        "elements": [
+          "0bb2ba17b6507898e12",
+          "986003ddbd36a3b5"
+        ],
+        "coordinates": {
+          "x_mm": 32.3139,
+          "y_mm": 17.206
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '1' (0.099 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5fa42201d633eadee13",
+          "3ef3eebbc74709c7"
+        ],
+        "coordinates": {
+          "x_mm": 26.0375,
+          "y_mm": 15.9791
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '2' (0.105 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.105,
+        "threshold_mm": 0.15,
+        "elements": [
+          "d8c3fa3650d810fce12",
+          "d243ff0ac955772f"
+        ],
+        "coordinates": {
+          "x_mm": 16.7716,
+          "y_mm": 27.846
         }
       },
       {
@@ -829,87 +799,12 @@
         "actual_value_mm": -0.353,
         "threshold_mm": 0.0,
         "elements": [
-          "5696bac1568372eae12",
-          "d452f68e97d3ea41"
+          "399f9a7cf1779a34e12",
+          "138ed81d33523930"
         ],
         "coordinates": {
-          "x_mm": 43.5757,
-          "y_mm": 26.865
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_IN_PAD",
-        "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.020 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.02,
-        "threshold_mm": 0.0,
-        "elements": [
-          "0bb2ba17b6507898e11",
-          "0bce703238020bbf"
-        ],
-        "coordinates": {
-          "x_mm": 19.3573,
-          "y_mm": 6.3652
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.126 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.126,
-        "threshold_mm": 0.15,
-        "elements": [
-          "399f9a7cf1779a34e13",
-          "9582f895f7d00cc0"
-        ],
-        "coordinates": {
-          "x_mm": 19.0348,
-          "y_mm": 3.937
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.123 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.123,
-        "threshold_mm": 0.15,
-        "elements": [
-          "5e7e3eaad1f534ffe13",
-          "ed2f341a03c7b3ce"
-        ],
-        "coordinates": {
-          "x_mm": 32.8066,
-          "y_mm": 14.6177
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.129 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.129,
-        "threshold_mm": 0.15,
-        "elements": [
-          "d19f289644971565e13",
-          "574a3afafc63f8ca"
-        ],
-        "coordinates": {
-          "x_mm": 61.3232,
-          "y_mm": 28.6487
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_IN_PAD",
-        "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.033 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.033,
-        "threshold_mm": 0.0,
-        "elements": [
-          "af2a0f1e8efa26e5e12",
-          "8934b7dcf6126494"
-        ],
-        "coordinates": {
-          "x_mm": 22.413,
-          "y_mm": 19.7002
+          "x_mm": 48.4208,
+          "y_mm": 28.8328
         }
       },
       {
@@ -920,11 +815,71 @@
         "threshold_mm": 0.0,
         "elements": [
           "725a123fc98ec5b8e12",
-          "1474042607ad631c"
+          "b85f417d7352abb2"
         ],
         "coordinates": {
-          "x_mm": 36.3944,
-          "y_mm": 27.4505
+          "x_mm": 23.4861,
+          "y_mm": 10.2337
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.020 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.02,
+        "threshold_mm": 0.0,
+        "elements": [
+          "ab712b0cde0b618ae11",
+          "e680abf6ad4cc307"
+        ],
+        "coordinates": {
+          "x_mm": 10.602,
+          "y_mm": 5.9258
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '2' (0.103 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.103,
+        "threshold_mm": 0.15,
+        "elements": [
+          "3b720f78bea64f62e12",
+          "f09696a8ddc09b2b"
+        ],
+        "coordinates": {
+          "x_mm": 18.3058,
+          "y_mm": 13.65
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '3' (distance bord = -0.165 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.165,
+        "threshold_mm": 0.0,
+        "elements": [
+          "402f3e23e3ae6844e22",
+          "47462d6fa1537bf3"
+        ],
+        "coordinates": {
+          "x_mm": 20.8973,
+          "y_mm": 8.4899
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '14' (distance bord = -0.055 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.055,
+        "threshold_mm": 0.0,
+        "elements": [
+          "ceab62a8f9958a19e67",
+          "a42802f9438c4fcd"
+        ],
+        "coordinates": {
+          "x_mm": 54.3839,
+          "y_mm": 26.5303
         }
       },
       {
@@ -935,26 +890,71 @@
         "threshold_mm": 0.0,
         "elements": [
           "ceab62a8f9958a19e95",
-          "2ae5e184e0415c8e"
+          "34c74c65d1df8e9e"
         ],
         "coordinates": {
-          "x_mm": 63.2226,
-          "y_mm": 18.8321
+          "x_mm": 62.3245,
+          "y_mm": 19.7302
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_IN_PAD",
+        "severity": "DANGER",
+        "description": "Via chevauche directement la pastille CMS '41' (distance bord = -0.114 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.114,
+        "threshold_mm": 0.0,
+        "elements": [
+          "ceab62a8f9958a19e96",
+          "f731bf91a0c57402"
+        ],
+        "coordinates": {
+          "x_mm": 62.2236,
+          "y_mm": 20.3632
         }
       },
       {
         "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
         "severity": "DANGER",
-        "description": "Via trop proche de la pastille CMS '41' (0.018 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.018,
+        "description": "Via trop proche de la pastille CMS '41' (0.021 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.021,
         "threshold_mm": 0.15,
         "elements": [
-          "ceab62a8f9958a19e100",
-          "a2b84527531c5887"
+          "ceab62a8f9958a19e97",
+          "65e85ced4517baad"
         ],
         "coordinates": {
-          "x_mm": 64.1756,
-          "y_mm": 18.6461
+          "x_mm": 64.9455,
+          "y_mm": 20.2362
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "DANGER",
+        "description": "Via trop proche de la pastille CMS '41' (0.015 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.015,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ceab62a8f9958a19e98",
+          "0455be7d1b9bbb8a"
+        ],
+        "coordinates": {
+          "x_mm": 64.8106,
+          "y_mm": 19.2811
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '41' (0.140 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.14,
+        "threshold_mm": 0.15,
+        "elements": [
+          "ceab62a8f9958a19e101",
+          "65e85ced4517baad"
+        ],
+        "coordinates": {
+          "x_mm": 64.9455,
+          "y_mm": 20.2362
         }
       },
       {
@@ -965,146 +965,131 @@
         "threshold_mm": 0.0,
         "elements": [
           "ceab62a8f9958a19e102",
-          "a2b84527531c5887"
+          "0455be7d1b9bbb8a"
         ],
         "coordinates": {
-          "x_mm": 64.1756,
-          "y_mm": 18.6461
+          "x_mm": 64.8106,
+          "y_mm": 19.2811
         }
       },
       {
         "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
         "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '7' (0.098 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.098,
+        "description": "Via trop proche de la pastille CMS '5' (0.085 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.085,
         "threshold_mm": 0.15,
         "elements": [
-          "5f4b613b1e069051e25",
-          "24ccef42fe1141bd"
+          "5f4b613b1e069051e23",
+          "f6e6a7f4a4d42a1a"
         ],
         "coordinates": {
-          "x_mm": 28.9331,
-          "y_mm": 8.3744
+          "x_mm": 42.9819,
+          "y_mm": 25.0546
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '6' (0.085 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.085,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5f4b613b1e069051e24",
+          "f6e6a7f4a4d42a1a"
+        ],
+        "coordinates": {
+          "x_mm": 42.9819,
+          "y_mm": 25.0546
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '3' (0.064 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.064,
+        "threshold_mm": 0.15,
+        "elements": [
+          "5f4b613b1e069051e28",
+          "8ee2de9fd095b15b"
+        ],
+        "coordinates": {
+          "x_mm": 39.516,
+          "y_mm": 26.7952
         }
       },
       {
         "category": "PCB_DFM_VIA_IN_PAD",
         "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '5' (distance bord = -0.565 mm). Risque majeur de siphonnage de brasure.",
+        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.565 mm). Risque majeur de siphonnage de brasure.",
         "actual_value_mm": -0.565,
         "threshold_mm": 0.0,
         "elements": [
-          "c4a77813aa89d300e23",
-          "cbe02d6abc88e641"
+          "5f4b613b1e069051e29",
+          "8ee2de9fd095b15b"
         ],
         "coordinates": {
-          "x_mm": 41.7144,
-          "y_mm": 15.0368
+          "x_mm": 39.516,
+          "y_mm": 26.7952
         }
       },
       {
         "category": "PCB_DFM_VIA_IN_PAD",
         "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '4' (distance bord = -0.052 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.052,
+        "description": "Via chevauche directement la pastille CMS '8' (distance bord = -0.346 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.346,
         "threshold_mm": 0.0,
+        "elements": [
+          "c4a77813aa89d300e26",
+          "99b34cea21d0bbb4"
+        ],
+        "coordinates": {
+          "x_mm": 35.0876,
+          "y_mm": 15.9918
+        }
+      },
+      {
+        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
+        "severity": "WARNING",
+        "description": "Via trop proche de la pastille CMS '4' (0.090 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.09,
+        "threshold_mm": 0.15,
         "elements": [
           "c4a77813aa89d300e27",
-          "d3ba93798fe7223d"
+          "9ec0ce73eb1b1a32"
         ],
         "coordinates": {
-          "x_mm": 45.466,
-          "y_mm": 15.8521
+          "x_mm": 39.083,
+          "y_mm": 12.2428
         }
       },
       {
         "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
         "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '1' (0.099 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.099,
+        "description": "Via trop proche de la pastille CMS '3' (0.110 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
+        "actual_value_mm": 0.11,
         "threshold_mm": 0.15,
         "elements": [
-          "ef39304758b0903de20",
-          "6ece048ce039efcc"
+          "c4a77813aa89d300e28",
+          "9ec0ce73eb1b1a32"
         ],
         "coordinates": {
-          "x_mm": 34.6024,
-          "y_mm": 20.9042
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '6' (0.091 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.091,
-        "threshold_mm": 0.15,
-        "elements": [
-          "ef39304758b0903de26",
-          "f068864902af2a9b"
-        ],
-        "coordinates": {
-          "x_mm": 38.3184,
-          "y_mm": 23.8303
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "DANGER",
-        "description": "Via trop proche de la pastille CMS '5' (0.007 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.007,
-        "threshold_mm": 0.15,
-        "elements": [
-          "ef39304758b0903de27",
-          "fc251e9ba8f88fb1"
-        ],
-        "coordinates": {
-          "x_mm": 39.7993,
-          "y_mm": 26.0121
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '5' (0.089 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.089,
-        "threshold_mm": 0.15,
-        "elements": [
-          "ef39304758b0903de27",
-          "f068864902af2a9b"
-        ],
-        "coordinates": {
-          "x_mm": 38.3184,
-          "y_mm": 23.8303
-        }
-      },
-      {
-        "category": "PCB_DFM_VIA_TO_PAD_PROXIMITY",
-        "severity": "WARNING",
-        "description": "Via trop proche de la pastille CMS '3' (0.113 mm < 0.15 mm). Insérer un col de piste dog-bone >= 0.15 mm.",
-        "actual_value_mm": 0.113,
-        "threshold_mm": 0.15,
-        "elements": [
-          "f0c374ef01d20e81e7",
-          "1a001025a06356fd"
-        ],
-        "coordinates": {
-          "x_mm": 53.848,
-          "y_mm": 7.78
+          "x_mm": 39.083,
+          "y_mm": 12.2428
         }
       },
       {
         "category": "PCB_DFM_VIA_IN_PAD",
         "severity": "DANGER",
-        "description": "Via chevauche directement la pastille CMS '2' (distance bord = -0.065 mm). Risque majeur de siphonnage de brasure.",
-        "actual_value_mm": -0.065,
+        "description": "Via chevauche directement la pastille CMS '1' (distance bord = -0.159 mm). Risque majeur de siphonnage de brasure.",
+        "actual_value_mm": -0.159,
         "threshold_mm": 0.0,
         "elements": [
-          "e442a79bd72ca86de19",
-          "7cfd565e2ae4759d"
+          "ef39304758b0903de20",
+          "57d11d3e58fb3a25"
         ],
         "coordinates": {
-          "x_mm": 38.4563,
-          "y_mm": 11.8757
+          "x_mm": 20.5689,
+          "y_mm": 20.4597
         }
       },
       {
@@ -1153,39 +1138,26 @@
       {
         "category": "PCB_DFM_SILKSCREEN_STROKE",
         "severity": "WARNING",
-        "description": "Trait de sérigraphie trop fin pour le texte 'STATUS' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
-        "actual_value_mm": 0.1499,
-        "threshold_mm": 0.15,
-        "elements": [
-          "2e92e1a36373cf97"
-        ],
-        "coordinates": {
-          "x_mm": 68.7299,
-          "y_mm": 7.0333
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_STROKE",
-        "severity": "WARNING",
-        "description": "Trait de sérigraphie trop fin pour le texte 'SCANNER: POWER OUT' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
-        "actual_value_mm": 0.1499,
-        "threshold_mm": 0.15,
-        "elements": [
-          "aac269d50882f013"
-        ],
-        "coordinates": {
-          "x_mm": 19.05,
-          "y_mm": 26.67
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_STROKE",
-        "severity": "WARNING",
         "description": "Trait de sérigraphie trop fin pour le texte '+12V' (0.150 mm < 0.15 mm). Augmenter à >= 0.18 mm pour un rendu net.",
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "2c0cf89fc3b5142b"
+          "157df5df4dac042d"
+        ],
+        "coordinates": {
+          "x_mm": 18.73,
+          "y_mm": 29.4996
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie '+12V' trop proche de la pastille '2' (0.128 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": 0.128,
+        "threshold_mm": 0.15,
+        "elements": [
+          "157df5df4dac042d",
+          "55dd6176cdbbb12be12"
         ],
         "coordinates": {
           "x_mm": 18.73,
@@ -1199,7 +1171,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "734495bcc87ad2ad"
+          "5e8f97ddbe4e6f34"
         ],
         "coordinates": {
           "x_mm": 21.27,
@@ -1213,7 +1185,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "613fbf4a2604906b"
+          "3f3fe6209d34badc"
         ],
         "coordinates": {
           "x_mm": 7.0028,
@@ -1227,7 +1199,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "c64908b58af88269"
+          "839bc22e7aa5a448"
         ],
         "coordinates": {
           "x_mm": 6.9723,
@@ -1241,7 +1213,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "6ac495f7c42b8883"
+          "8cb891c7cc7ce39c"
         ],
         "coordinates": {
           "x_mm": 6.9596,
@@ -1255,7 +1227,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "fbf3d8d1e8b8b856"
+          "4a7de0c1c3b08729"
         ],
         "coordinates": {
           "x_mm": 6.9723,
@@ -1269,7 +1241,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "897e717de2419661"
+          "6e4919262c3558a7"
         ],
         "coordinates": {
           "x_mm": 7.0028,
@@ -1283,22 +1255,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "f8c94a6c8eff06e4"
-        ],
-        "coordinates": {
-          "x_mm": 29.4589,
-          "y_mm": 28.6995
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
-        "severity": "WARNING",
-        "description": "Texte de sérigraphie 'RX' trop proche de la pastille '1' (-0.106 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
-        "actual_value_mm": -0.106,
-        "threshold_mm": 0.15,
-        "elements": [
-          "f8c94a6c8eff06e4",
-          "3f79e1cb33d3e214e15"
+          "562fa0182ce86678"
         ],
         "coordinates": {
           "x_mm": 29.4589,
@@ -1312,22 +1269,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "41482cf6d68fe089"
-        ],
-        "coordinates": {
-          "x_mm": 31.9989,
-          "y_mm": 28.6995
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
-        "severity": "WARNING",
-        "description": "Texte de sérigraphie 'TX' trop proche de la pastille '2' (-0.601 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
-        "actual_value_mm": -0.601,
-        "threshold_mm": 0.15,
-        "elements": [
-          "41482cf6d68fe089",
-          "55dd6176cdbbb12be12"
+          "739b81b04ed108df"
         ],
         "coordinates": {
           "x_mm": 31.9989,
@@ -1341,7 +1283,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "a22976194d3ed3f8"
+          "46d55bcab47f0029"
         ],
         "coordinates": {
           "x_mm": 34.5389,
@@ -1355,7 +1297,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "c939405da741e9d3"
+          "5a8bd484e3ca1e3b"
         ],
         "coordinates": {
           "x_mm": 45.4609,
@@ -1369,7 +1311,22 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "e662ad4b5527145c"
+          "4729ee407dfb34c3"
+        ],
+        "coordinates": {
+          "x_mm": 48.0009,
+          "y_mm": 28.6995
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'TX' trop proche de la pastille '2' (0.068 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": 0.068,
+        "threshold_mm": 0.15,
+        "elements": [
+          "4729ee407dfb34c3",
+          "399f9a7cf1779a34e12"
         ],
         "coordinates": {
           "x_mm": 48.0009,
@@ -1383,22 +1340,7 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "21e2d71d1c1682eb"
-        ],
-        "coordinates": {
-          "x_mm": 50.5409,
-          "y_mm": 28.6995
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
-        "severity": "WARNING",
-        "description": "Texte de sérigraphie 'GND' trop proche de la pastille '2' (-0.371 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
-        "actual_value_mm": -0.371,
-        "threshold_mm": 0.15,
-        "elements": [
-          "21e2d71d1c1682eb",
-          "6b9df555ba832a99e24"
+          "1395f3f1451d7f98"
         ],
         "coordinates": {
           "x_mm": 50.5409,
@@ -1412,11 +1354,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "5de8323f72ff9cc1"
+          "a5130d048cfb2b22"
         ],
         "coordinates": {
           "x_mm": 31.9989,
-          "y_mm": 26.7005
+          "y_mm": 36.2991
         }
       },
       {
@@ -1426,26 +1368,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "865b872da412b7fc"
+          "8bb88ac32b8428f7"
         ],
         "coordinates": {
           "x_mm": 48.0009,
-          "y_mm": 26.7005
-        }
-      },
-      {
-        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
-        "severity": "WARNING",
-        "description": "Texte de sérigraphie 'CAN' trop proche de la pastille '2' (-0.193 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
-        "actual_value_mm": -0.193,
-        "threshold_mm": 0.15,
-        "elements": [
-          "865b872da412b7fc",
-          "f72416d598ee1d73e7"
-        ],
-        "coordinates": {
-          "x_mm": 48.0009,
-          "y_mm": 26.7005
+          "y_mm": 36.2991
         }
       },
       {
@@ -1455,11 +1382,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "d0b0768d1b88a25d"
+          "488493a336476c19"
         ],
         "coordinates": {
           "x_mm": 20.0,
-          "y_mm": 27.2999
+          "y_mm": 37.5996
         }
       },
       {
@@ -1469,11 +1396,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "5b49b469859b5b87"
+          "4d7eebaf355a1a0d"
         ],
         "coordinates": {
           "x_mm": 20.0,
-          "y_mm": 25.9994
+          "y_mm": 36.2991
         }
       },
       {
@@ -1483,11 +1410,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "639a9d80f9906390"
+          "9ca5dc3d56d480b2"
         ],
         "coordinates": {
-          "x_mm": 17.051,
-          "y_mm": 1.971
+          "x_mm": 17.0459,
+          "y_mm": 27.9527
         }
       },
       {
@@ -1497,11 +1424,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "260ffb09e7dd1d5b"
+          "9e1a712bad7763f8"
         ],
         "coordinates": {
-          "x_mm": 17.051,
-          "y_mm": 0.6706
+          "x_mm": 17.0459,
+          "y_mm": 26.6522
         }
       },
       {
@@ -1511,11 +1438,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "9b7f0e22a9e7ae48"
+          "37632b6eb45ea5b6"
         ],
         "coordinates": {
-          "x_mm": 17.051,
-          "y_mm": -0.6299
+          "x_mm": 17.0459,
+          "y_mm": 25.3517
         }
       },
       {
@@ -1525,11 +1452,26 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "7985b957ec8e33f7"
+          "f9cbb21f33a99dc0"
         ],
         "coordinates": {
-          "x_mm": 63.3451,
-          "y_mm": 4.4145
+          "x_mm": 30.0482,
+          "y_mm": 19.7383
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'K-LINE:' trop proche de la pastille '2' (-0.008 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.008,
+        "threshold_mm": 0.15,
+        "elements": [
+          "f9cbb21f33a99dc0",
+          "2816e80b421569e7e12"
+        ],
+        "coordinates": {
+          "x_mm": 30.0482,
+          "y_mm": 19.7383
         }
       },
       {
@@ -1539,11 +1481,26 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "adbf14821cbe2760"
+          "2d8ff19184a6022a"
         ],
         "coordinates": {
-          "x_mm": 63.3451,
-          "y_mm": 3.114
+          "x_mm": 30.0482,
+          "y_mm": 18.4379
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'SHUNT=SCANNER' trop proche de la pastille '2' (-0.064 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.064,
+        "threshold_mm": 0.15,
+        "elements": [
+          "2d8ff19184a6022a",
+          "2816e80b421569e7e12"
+        ],
+        "coordinates": {
+          "x_mm": 30.0482,
+          "y_mm": 18.4379
         }
       },
       {
@@ -1553,11 +1510,26 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "57ea21a689fd9afc"
+          "d44ca9d2fc9e6db8"
         ],
         "coordinates": {
-          "x_mm": 63.3451,
-          "y_mm": 1.8161
+          "x_mm": 30.0482,
+          "y_mm": 17.1399
+        }
+      },
+      {
+        "category": "PCB_DFM_SILKSCREEN_TO_PAD",
+        "severity": "WARNING",
+        "description": "Texte de sérigraphie 'OPEN=SIMU' trop proche de la pastille '1' (-0.637 mm < 0.15 mm). Risque d'auto-clipping ou de bavure.",
+        "actual_value_mm": -0.637,
+        "threshold_mm": 0.15,
+        "elements": [
+          "d44ca9d2fc9e6db8",
+          "2816e80b421569e7e11"
+        ],
+        "coordinates": {
+          "x_mm": 30.0482,
+          "y_mm": 17.1399
         }
       },
       {
@@ -1567,11 +1539,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "1e809c18c8d5c049"
+          "c9ab4740a05388db"
         ],
         "coordinates": {
-          "x_mm": 5.9995,
-          "y_mm": 5.9995
+          "x_mm": 22.9997,
+          "y_mm": 1.27
         }
       },
       {
@@ -1581,11 +1553,11 @@
         "actual_value_mm": 0.1499,
         "threshold_mm": 0.15,
         "elements": [
-          "a08842fdbb9f0a9d"
+          "f6d54dcb2c63023e"
         ],
         "coordinates": {
-          "x_mm": 5.9995,
-          "y_mm": 7.3508
+          "x_mm": 22.9997,
+          "y_mm": 2.6187
         }
       },
       {
@@ -1595,11 +1567,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "e7bcf7202d0900ae"
+          "e256df8b723878a1"
         ],
         "coordinates": {
-          "x_mm": 72.5291,
-          "y_mm": 29.9486
+          "x_mm": 69.1921,
+          "y_mm": 29.9809
         }
       },
       {
@@ -1609,11 +1581,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "e5712a5bc53c0275"
+          "1fa700eaa7c2ce46"
         ],
         "coordinates": {
-          "x_mm": 15.5727,
-          "y_mm": 12.9819
+          "x_mm": 44.4703,
+          "y_mm": 22.9959
         }
       },
       {
@@ -1623,11 +1595,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "90e54fb0eb3f3ada"
+          "1595dacdc71a87f2"
         ],
         "coordinates": {
-          "x_mm": 65.5942,
-          "y_mm": 27.8892
+          "x_mm": 48.5084,
+          "y_mm": 23.7496
         }
       },
       {
@@ -1637,11 +1609,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "2c35b13e442b80ef"
+          "dd11df71e10d6327"
         ],
         "coordinates": {
-          "x_mm": 37.9755,
-          "y_mm": 17.9083
+          "x_mm": 66.4693,
+          "y_mm": 29.431
         }
       },
       {
@@ -1651,11 +1623,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "6cad2acf43b4d2b7"
+          "592eade1f2fd8316"
         ],
         "coordinates": {
-          "x_mm": 34.2925,
-          "y_mm": 16.7335
+          "x_mm": 34.7528,
+          "y_mm": 26.1792
         }
       },
       {
@@ -1665,11 +1637,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "ba028a427587e543"
+          "87298bf8199843e9"
         ],
         "coordinates": {
-          "x_mm": 36.1823,
-          "y_mm": 9.3878
+          "x_mm": 35.6946,
+          "y_mm": 21.3817
         }
       },
       {
@@ -1679,11 +1651,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "800c05f05c5f671a"
+          "138ed81d33523930"
         ],
         "coordinates": {
-          "x_mm": 19.5402,
-          "y_mm": 18.0492
+          "x_mm": 48.4208,
+          "y_mm": 28.8328
         }
       },
       {
@@ -1693,11 +1665,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "d452f68e97d3ea41"
+          "b85f417d7352abb2"
         ],
         "coordinates": {
-          "x_mm": 43.5757,
-          "y_mm": 26.865
+          "x_mm": 23.4861,
+          "y_mm": 10.2337
         }
       },
       {
@@ -1707,11 +1679,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "1474042607ad631c"
+          "47462d6fa1537bf3"
         ],
         "coordinates": {
-          "x_mm": 36.3944,
-          "y_mm": 27.4505
+          "x_mm": 20.8973,
+          "y_mm": 8.4899
         }
       },
       {
@@ -1721,11 +1693,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "2ae5e184e0415c8e"
+          "34c74c65d1df8e9e"
         ],
         "coordinates": {
-          "x_mm": 63.2226,
-          "y_mm": 18.8321
+          "x_mm": 62.3245,
+          "y_mm": 19.7302
         }
       },
       {
@@ -1735,11 +1707,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "a2b84527531c5887"
+          "f731bf91a0c57402"
         ],
         "coordinates": {
-          "x_mm": 64.1756,
-          "y_mm": 18.6461
+          "x_mm": 62.2236,
+          "y_mm": 20.3632
         }
       },
       {
@@ -1749,11 +1721,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "72b3cb6a2fba040d"
+          "65e85ced4517baad"
         ],
         "coordinates": {
-          "x_mm": 23.3624,
-          "y_mm": 8.6919
+          "x_mm": 64.9455,
+          "y_mm": 20.2362
         }
       },
       {
@@ -1763,11 +1735,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "cbe02d6abc88e641"
+          "0455be7d1b9bbb8a"
         ],
         "coordinates": {
-          "x_mm": 41.7144,
-          "y_mm": 15.0368
+          "x_mm": 64.8106,
+          "y_mm": 19.2811
         }
       },
       {
@@ -1777,25 +1749,11 @@
         "actual_value_mm": 0.2997,
         "threshold_mm": 0.3,
         "elements": [
-          "7cfd565e2ae4759d"
+          "8ee2de9fd095b15b"
         ],
         "coordinates": {
-          "x_mm": 38.4563,
-          "y_mm": 11.8757
-        }
-      },
-      {
-        "category": "PCB_DFM_MIN_DRILL",
-        "severity": "WARNING",
-        "description": "Perçage de via 0.300 mm inférieur au seuil standard de 0.30 mm. Surcoût fabrication micro-perçage.",
-        "actual_value_mm": 0.2997,
-        "threshold_mm": 0.3,
-        "elements": [
-          "f9da3e84ea57523f"
-        ],
-        "coordinates": {
-          "x_mm": 70.104,
-          "y_mm": 28.448
+          "x_mm": 39.516,
+          "y_mm": 26.7952
         }
       }
     ]
@@ -1823,71 +1781,29 @@
       {
         "category": "SMT_DFM_RAIL_MARGIN",
         "severity": "INFO",
-        "description": "Composant 'C3' implanté à 2.687 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
-        "actual_value_mm": 2.687,
+        "description": "Composant 'D4' implanté à 1.811 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 1.811,
         "threshold_mm": 3.0,
         "elements": [
-          "c41fbf850dbc6586"
+          "6b9df555ba832a99"
         ],
         "coordinates": {
-          "x_mm": 31.5595,
-          "y_mm": 2.6873
+          "x_mm": 32.6161,
+          "y_mm": 1.811
         }
       },
       {
         "category": "SMT_DFM_RAIL_MARGIN",
         "severity": "INFO",
-        "description": "Composant 'C6' implanté à 3.000 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
-        "actual_value_mm": 3.0,
+        "description": "Composant 'R6' implanté à 2.657 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
+        "actual_value_mm": 2.657,
         "threshold_mm": 3.0,
         "elements": [
-          "8ccf735a62a52e90"
+          "e5fdfa4431f2dc9e"
         ],
         "coordinates": {
-          "x_mm": 58.1558,
-          "y_mm": 2.9997
-        }
-      },
-      {
-        "category": "SMT_DFM_RAIL_MARGIN",
-        "severity": "INFO",
-        "description": "Composant 'JP1' implanté à 2.527 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
-        "actual_value_mm": 2.527,
-        "threshold_mm": 3.0,
-        "elements": [
-          "7dfbe5f5804466bb"
-        ],
-        "coordinates": {
-          "x_mm": 55.2221,
-          "y_mm": 33.0327
-        }
-      },
-      {
-        "category": "SMT_DFM_RAIL_MARGIN",
-        "severity": "INFO",
-        "description": "Composant 'JP2' implanté à 2.347 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
-        "actual_value_mm": 2.347,
-        "threshold_mm": 3.0,
-        "elements": [
-          "d0e9739485f5bc5c"
-        ],
-        "coordinates": {
-          "x_mm": 27.5692,
-          "y_mm": 2.347
-        }
-      },
-      {
-        "category": "SMT_DFM_RAIL_MARGIN",
-        "severity": "INFO",
-        "description": "Composant 'R18' implanté à 2.969 mm du bord long (recommandé >= 3.0 mm sans bande martyr / breakaway panel). Un panel avec rails d'outillage (tooling strips) sera nécessaire pour l'assemblage SMT automatisé.",
-        "actual_value_mm": 2.969,
-        "threshold_mm": 3.0,
-        "elements": [
-          "ab712b0cde0b618a"
-        ],
-        "coordinates": {
-          "x_mm": 21.8262,
-          "y_mm": 2.9693
+          "x_mm": 71.054,
+          "y_mm": 32.9032
         }
       },
       {

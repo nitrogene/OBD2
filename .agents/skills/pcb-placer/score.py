@@ -49,10 +49,24 @@ from emc_physics import (
     magnetic_field_coupling,
     electric_field_coupling,
     decoupling_effective_inductance_nh,
+    in_line_path_metrics,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger("PCBScorer")
+
+
+def load_manufacturer_courtyards() -> Dict[str, float]:
+    """Charge les marges de courtyard IPC-7351 depuis le profil fabricant JLCPCB."""
+    rules_path = Path(__file__).resolve().parent.parent / "pcb-dfm" / "config" / "rules_jlcpcb.json"
+    if rules_path.is_file():
+        try:
+            with open(rules_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return {k: float(v) for k, v in data.get("ipc_courtyard_margins_mm", {}).items()}
+        except Exception:
+            pass
+    return {"default": 0.30}
 
 
 @dataclass
@@ -300,7 +314,11 @@ class PCBScorer:
                     except Exception:
                         pass
 
+        self.mfg_courtyards = load_manufacturer_courtyards()
         self.packages = manifest.get("packages", {})
+        for pkg_k, pkg_v in self.packages.items():
+            if "courtyard_margin_mm" not in pkg_v:
+                pkg_v["courtyard_margin_mm"] = self.mfg_courtyards.get(pkg_k, self.mfg_courtyards.get("default", 0.30))
         self.manifest_comps = manifest.get("components", {})
         self.rigid_groups = manifest.get("rigid_groups", [])
         self.placement_constraints = manifest.get("placement_constraints", [])
@@ -774,6 +792,66 @@ class PCBScorer:
                         "ok": d_edge <= max_d
                     })
 
+            elif ctype == "in_line_path":
+                src_ref = c.get("source", {}).get("ref") if isinstance(c.get("source"), dict) else c.get("source")
+                prot_ref = c.get("protection", {}).get("ref") if isinstance(c.get("protection"), dict) else c.get("protection")
+                tgt_ref = c.get("target", {}).get("ref") if isinstance(c.get("target"), dict) else c.get("target")
+                max_detour = float(c.get("max_detour_mm", 4.0))
+                if src_ref in comp_positions and prot_ref in comp_positions and tgt_ref in comp_positions:
+                    s_pt = (comp_positions[src_ref][0], comp_positions[src_ref][1])
+                    p_pt = (comp_positions[prot_ref][0], comp_positions[prot_ref][1])
+                    t_pt = (comp_positions[tgt_ref][0], comp_positions[tgt_ref][1])
+                    is_ordered, detour_mm, order_viol_mm = in_line_path_metrics(s_pt, p_pt, t_pt)
+                    is_ok = is_ordered and (detour_mm <= max_detour)
+                    if not is_ok:
+                        pen_il = (order_viol_mm / 2.0) + max(0.0, (detour_mm - max_detour) / max(1.0, max_detour))
+                        prox_penalty_sum += weight * pen_il
+                        if is_hard:
+                            hard_violations.append(HardViolation(
+                                violation_type="in_line_path",
+                                subject=prot_ref,
+                                target=tgt_ref,
+                                details=f"Topologie en-ligne {cid} ({src_ref}->{prot_ref}->{tgt_ref}) non conforme : détour={detour_mm:.2f} mm, ordre={is_ordered}",
+                                amount=max(order_viol_mm, detour_mm - max_detour)
+                            ))
+                    metrics.constraint_details.append({
+                        "id": cid,
+                        "type": "in_line_path",
+                        "source": src_ref,
+                        "protection": prot_ref,
+                        "target": tgt_ref,
+                        "detour_mm": detour_mm,
+                        "is_ordered": is_ordered,
+                        "ok": is_ok
+                    })
+                prox_weights_sum += weight
+
+        # Déduction automatique des topologies en-ligne (Connecteur -> Protection TVS/ESD/Fusible -> IC maître du bloc)
+        for c in self.placement_constraints:
+            if c.get("type") == "proximity":
+                prot_ref = c.get("subject", {}).get("ref")
+                src_ref = c.get("target", {}).get("ref")
+                if src_ref in self.anchors and prot_ref in comp_positions and src_ref in comp_positions:
+                    p_meta = self.manifest_comps.get(prot_ref, {})
+                    fb_id = p_meta.get("block")
+                    if fb_id and fb_id in self.functional_blocks:
+                        fb_members = self.functional_blocks[fb_id].get("components", [])
+                        ic_cands = [
+                            m for m in fb_members
+                            if m != prot_ref and m != src_ref and m in comp_positions and (
+                                m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic")
+                            )
+                        ]
+                        if ic_cands:
+                            tgt_ref = ic_cands[0]
+                            s_pt = (comp_positions[src_ref][0], comp_positions[src_ref][1])
+                            p_pt = (comp_positions[prot_ref][0], comp_positions[prot_ref][1])
+                            t_pt = (comp_positions[tgt_ref][0], comp_positions[tgt_ref][1])
+                            is_ordered, detour_mm, order_viol_mm = in_line_path_metrics(s_pt, p_pt, t_pt)
+                            if not is_ordered:
+                                prox_penalty_sum += 4.0 * (order_viol_mm / 3.0)
+                                prox_weights_sum += 4.0
+
         metrics.f_proximity_cem = round(prox_penalty_sum / max(1.0, prox_weights_sum), 4)
 
         # C. Règles de séparation CEM isotropes 2D avec lois physiques de couplage
@@ -814,8 +892,10 @@ class PCBScorer:
                 cls_name = group_b_cfg["emc_class"]
                 comps_b.update(self._get_components_by_emc_class(cls_name))
 
-            # Calcul de la distance 2D euclidienne minimale
+            # Calcul de la distance 2D euclidienne minimale et des orientations associées
             min_dist_2d = float("inf")
+            closest_rot_a = 0.0
+            closest_rot_b = 0.0
             valid_comps_a = [c for c in comps_a if c in comp_boxes]
 
             if valid_comps_a and target_zone_box:
@@ -823,6 +903,8 @@ class PCBScorer:
                     d = comp_boxes[ca].distance_to_box(target_zone_box)
                     if d < min_dist_2d:
                         min_dist_2d = d
+                        closest_rot_a = comp_positions[ca][2]
+                        closest_rot_b = 0.0
             elif valid_comps_a and comps_b:
                 valid_comps_b = [c for c in comps_b if c in comp_boxes and c not in comps_a]
                 for ca in valid_comps_a:
@@ -830,16 +912,20 @@ class PCBScorer:
                         d = comp_boxes[ca].distance_to_box(comp_boxes[cb])
                         if d < min_dist_2d:
                             min_dist_2d = d
+                            closest_rot_a = comp_positions[ca][2]
+                            closest_rot_b = comp_positions[cb][2]
 
             if min_dist_2d < float("inf"):
                 rule_penalty = 0.0
                 if min_dist_2d < req_d:
                     if coupling_type == "H_field":
-                        # Décroissance dipolaire magnétique en 1/r³
-                        coupling_factor = (req_d / max(0.5, min_dist_2d)) ** 3 - 1.0
+                        # Décroissance dipolaire magnétique en 1/r³ + atténuation angulaire d'orthogonalité (90°)
+                        raw_h = magnetic_field_coupling(max(2.0, min_dist_2d), closest_rot_a, closest_rot_b, min_dist_mm=req_d)
+                        ref_h = magnetic_field_coupling(req_d, closest_rot_a, closest_rot_b, min_dist_mm=req_d)
+                        coupling_factor = min(8.0, max(0.0, (raw_h / max(0.1, ref_h)) - 1.0))
                     elif coupling_type == "E_field":
                         # Décroissance capacitive électrique en 1/r²
-                        coupling_factor = (req_d / max(0.5, min_dist_2d)) ** 2 - 1.0
+                        coupling_factor = min(8.0, electric_field_coupling(max(2.0, min_dist_2d), min_dist_mm=req_d) - 1.0)
                     else:
                         coupling_factor = (req_d - min_dist_2d) / req_d
 
@@ -891,7 +977,10 @@ class PCBScorer:
                 continue
 
             # Trouver le composant maître du bloc (priorité IC 'U*', sinon composant avec silicon_ic)
-            anchor_candidates = [m for m in valid_members if m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic")]
+            anchor_candidates = [
+                m for m in valid_members
+                if m not in external_anchored and (m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic"))
+            ]
             anchor_comp = anchor_candidates[0] if anchor_candidates else None
 
             if anchor_comp:

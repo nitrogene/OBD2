@@ -17,7 +17,7 @@
       {
         "component": "H3",
         "side": "below",
-        "offset_mm": 2.0,
+        "offset_mm": 1.7,
         "pins": {
           "1": "+12V",
           "2": "GND"
@@ -26,7 +26,7 @@
       {
         "component": "J1",
         "side": "outside",
-        "offset_mm": 3.2,
+        "offset_mm": 3.1,
         "pins": {
           "1": "+12V",
           "2": "K-LINE",
@@ -38,7 +38,7 @@
       {
         "component": "H1",
         "side": "below",
-        "offset_mm": 2.8,
+        "offset_mm": 1.7,
         "pins": {
           "1": "RX",
           "2": "TX",
@@ -48,7 +48,7 @@
       {
         "component": "H2",
         "side": "below",
-        "offset_mm": 2.8,
+        "offset_mm": 1.7,
         "pins": {
           "1": "RX",
           "2": "TX",
@@ -59,32 +59,32 @@
     "component_legends": [
       {
         "component": "H1",
-        "position": "above",
-        "offset_mm": 4.8,
+        "position": "below",
+        "offset_mm": 3.8,
         "text": "KLINE"
       },
       {
         "component": "H2",
-        "position": "above",
-        "offset_mm": 4.8,
+        "position": "below",
+        "offset_mm": 3.8,
         "text": "CAN"
       },
       {
         "component": "H3",
-        "position": "above",
-        "offset_mm": 4.8,
+        "position": "below",
+        "offset_mm": 6.0,
         "text": "SIMU: POWER IN\nSCANNER: MEASURE ONLY"
       },
       {
         "component": "JP1",
         "position": "right",
-        "offset_mm": 11.8,
+        "offset_mm": 5.7,
         "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER"
       },
       {
         "component": "JP2",
-        "position": "above",
-        "offset_mm": 4.15,
+        "position": "below",
+        "offset_mm": 6.7,
         "text": "K-LINE:\nSHUNT=SCANNER\nOPEN=SIMU"
       }
     ],
@@ -92,14 +92,15 @@
       {
         "anchor": "bottom_left",
         "offset_mm": [
-          23.0,
+          67.5,
           1.27
         ],
-        "alignment": "left",
+        "alignment": "center",
         "text": [
           "HW Rev: v2.0 (4-Layer JLC2313)",
           "OBD-II SCANNER ESP32-S3"
-        ]
+        ],
+        "font_size_mm": 0.8
       }
     ]
   }

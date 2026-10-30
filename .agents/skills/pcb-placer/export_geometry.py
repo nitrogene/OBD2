@@ -46,6 +46,7 @@ class PadGeometry:
     height_mm: float = 0.0
     shape: str = "RECT"
     drill_mm: float = 0.0
+    primitive_id: str = ""
 
 
 @dataclass
@@ -201,7 +202,8 @@ def extract_board_geometry(client: Optional[EasyEDAClient] = None) -> BoardGeome
                 width_mm=round(pad_w, 4),
                 height_mm=round(pad_h, 4),
                 shape=shape,
-                drill_mm=round(drill_mm, 4)
+                drill_mm=round(drill_mm, 4),
+                primitive_id=str(p.get("id", "")),
             )
             pads_list.append(pad_obj)
             total_pads += 1

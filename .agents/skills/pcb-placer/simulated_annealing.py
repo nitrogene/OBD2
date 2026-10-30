@@ -34,7 +34,10 @@ from placement_constraints import get_power_nets
 from emc_physics import (
     polygon_area_shoelace,
     estimate_loop_inductance_nh,
+    magnetic_field_coupling,
+    electric_field_coupling,
     decoupling_effective_inductance_nh,
+    in_line_path_metrics,
 )
 from score import (
     PCBScorer,
@@ -42,7 +45,8 @@ from score import (
     RectBox,
     get_component_courtyard_box,
     rotate_offset,
-    get_all_keepouts
+    get_all_keepouts,
+    load_manufacturer_courtyards,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
@@ -114,7 +118,38 @@ class FastAnnealingEngine:
         self.keepouts = board_constraints.get("keepout_zones", [])
         self.anchors = board_constraints.get("anchors", {})
 
+        self.mfg_courtyards = load_manufacturer_courtyards()
         self.packages = manifest.get("packages", {})
+        for pkg_k, pkg_v in self.packages.items():
+            if "courtyard_margin_mm" not in pkg_v:
+                pkg_v["courtyard_margin_mm"] = self.mfg_courtyards.get(pkg_k, self.mfg_courtyards.get("default", 0.30))
+
+        # Résolution de la sémantique liée (functional_blocks + package/block des composants) avant instanciation des items
+        sem_ref = manifest.get("schema_semantics")
+        if sem_ref:
+            candidate_paths = [
+                Path("documents/schema/semantics.json"),
+                Path("documents/pcb") / sem_ref,
+                Path(sem_ref)
+            ]
+            for cp in candidate_paths:
+                if cp.exists():
+                    try:
+                        with open(cp, "r", encoding="utf-8") as sf:
+                            sdata = json.load(sf)
+                        if "functional_blocks" not in manifest and "functional_blocks" in sdata:
+                            manifest["functional_blocks"] = sdata["functional_blocks"]
+                        for des, s_comp in sdata.get("components", {}).items():
+                            if des in manifest.get("components", {}):
+                                for k, v in s_comp.items():
+                                    if k not in manifest["components"][des]:
+                                        manifest["components"][des][k] = v
+                        break
+                    except Exception:
+                        pass
+        self.functional_blocks = manifest.get("functional_blocks", {})
+        self.net_classes = board_constraints.get("net_classes", {})
+
         self.manifest_comps = manifest.get("components", {})
         self.placement_constraints = manifest.get("placement_constraints", [])
 
@@ -222,27 +257,6 @@ class FastAnnealingEngine:
                     if a != b:
                         self.neighbors[a].add(b)
 
-        # Résolution de la sémantique liée si functional_blocks est absent
-        sem_ref = manifest.get("schema_semantics")
-        if sem_ref and "functional_blocks" not in manifest:
-            candidate_paths = [
-                Path("documents/schema/semantics.json"),
-                Path("documents/pcb") / sem_ref,
-                Path(sem_ref)
-            ]
-            for cp in candidate_paths:
-                if cp.exists():
-                    try:
-                        with open(cp, "r", encoding="utf-8") as sf:
-                            sdata = json.load(sf)
-                            if "functional_blocks" in sdata:
-                                manifest["functional_blocks"] = sdata["functional_blocks"]
-                            break
-                    except Exception:
-                        pass
-        self.functional_blocks = manifest.get("functional_blocks", {})
-        self.net_classes = board_constraints.get("net_classes", {})
-
         # Contraintes de proximité CEM indexées
         self.hard_proximities: List[Tuple[int, str, int, str, float]] = []
         self.soft_proximities: List[Tuple[int, str, int, str, float, float]] = []
@@ -286,6 +300,27 @@ class FastAnnealingEngine:
             s_idx, s_pin, t_idx, t_pin, max_d = hp
             self.item_to_hard_proximities[s_idx].append(hp)
             self.item_to_hard_proximities[t_idx].append(hp)
+
+        # Indexation agnostique des sanctuaires de découplage / CEM (exclusion des intrus)
+        # Chaque cible IC t_idx avec broche t_pin soumise à contrainte de proximité dure (<= 6.0 mm)
+        # réserve une couronne d'accès prioritaire pour ses seuls composants de découplage/filtrage.
+        from collections import defaultdict
+        target_groups: Dict[int, Set[int]] = defaultdict(set)
+        target_sanctuaries: Dict[Tuple[int, str], float] = {}
+
+        for s_idx, s_pin, t_idx, t_pin, max_d in self.hard_proximities:
+            target_groups[t_idx].add(s_idx)
+            target_groups[t_idx].add(t_idx)
+            if t_pin is not None and max_d <= 5.0:
+                key = (t_idx, t_pin)
+                target_sanctuaries[key] = max(target_sanctuaries.get(key, 0.0), max_d + 0.4)
+
+        self.item_to_sanctuaries: Dict[int, List[Tuple[int, str, float]]] = {i: [] for i in range(self.n_items)}
+        for (t_idx, t_pin), r_sanc in target_sanctuaries.items():
+            authorized_for_target = target_groups[t_idx]
+            for i in range(self.n_items):
+                if i not in authorized_for_target and not self.items[i].is_fixed:
+                    self.item_to_sanctuaries[i].append((t_idx, t_pin, r_sanc))
 
         # Indexation des proximités douces et boucles par composant
         self.item_to_soft_proximities: Dict[int, List[Tuple[int, str, int, str, float, float]]] = {i: [] for i in range(self.n_items)}
@@ -340,6 +375,98 @@ class FastAnnealingEngine:
                 if sub_ref in self.des_to_index:
                     s_idx = self.des_to_index[sub_ref]
                     self.item_to_edge_access[s_idx].append((edge, max_d, w))
+
+        # Indexation des contraintes de compacité de nœud commuté (net_compact, ex: PH_BUCK)
+        self.net_compact_constraints: List[Tuple[List[Tuple[int, str]], float, float]] = []
+        self.item_to_net_compact: Dict[int, List[Tuple[List[Tuple[int, str]], float, float]]] = {i: [] for i in range(self.n_items)}
+        for c in self.placement_constraints:
+            if c.get("type") == "net_compact":
+                net_name = c.get("net")
+                target_max = float(c.get("target_max_mm", 12.0))
+                w = float(c.get("weight", 6.0))
+                if net_name and net_name in geometry.nets:
+                    net_pins = []
+                    for d_ref, p_num in geometry.nets[net_name]:
+                        if d_ref in self.des_to_index:
+                            net_pins.append((self.des_to_index[d_ref], p_num))
+                    if len(net_pins) >= 2:
+                        rule_tuple = (net_pins, target_max, w)
+                        self.net_compact_constraints.append(rule_tuple)
+                        for m_idx, _ in net_pins:
+                            self.item_to_net_compact[m_idx].append(rule_tuple)
+
+        # Indexation de la cohésion des blocs fonctionnels (cluster_cohesion autour de l'IC maître)
+        external_anchored = set()
+        for c in self.placement_constraints:
+            if c.get("type") == "proximity":
+                s_ref = c.get("subject", {}).get("ref")
+                t_ref = c.get("target", {}).get("ref")
+                if t_ref in self.anchors and s_ref in self.des_to_index:
+                    external_anchored.add(self.des_to_index[s_ref])
+
+        self.cluster_cohesion_rules: List[Tuple[int, int, float, float]] = []  # (member_idx, anchor_idx, max_r, weight)
+        self.item_to_cluster_cohesion: Dict[int, List[Tuple[int, int, float, float]]] = {i: [] for i in range(self.n_items)}
+        max_cluster_radius_mm = 10.0
+        for fb_id, fb_info in self.functional_blocks.items():
+            members = fb_info.get("components", [])
+            valid_m = [m for m in members if m in self.des_to_index and m not in self.anchors]
+            if len(valid_m) <= 1:
+                continue
+            anchor_cands = [
+                m for m in valid_m
+                if m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic")
+            ]
+            if not anchor_cands:
+                continue
+            anc_ref = anchor_cands[0]
+            if anc_ref in external_anchored:
+                continue
+            anc_idx = self.des_to_index[anc_ref]
+            for m in valid_m:
+                m_idx = self.des_to_index[m]
+                if m_idx == anc_idx or m_idx in external_anchored:
+                    continue
+                rule_c = (m_idx, anc_idx, max_cluster_radius_mm, 1.5)
+                self.cluster_cohesion_rules.append(rule_c)
+                self.item_to_cluster_cohesion[m_idx].append(rule_c)
+                self.item_to_cluster_cohesion[anc_idx].append(rule_c)
+
+        # Indexation des topologies CEM En-Ligne (in_line_path : Source -> Protection -> Cible)
+        self.in_line_constraints: List[Tuple[int, int, int, float, float]] = []  # (src_idx, prot_idx, tgt_idx, max_detour, weight)
+        self.item_to_in_line: Dict[int, List[Tuple[int, int, int, float, float]]] = {i: [] for i in range(self.n_items)}
+        for c in self.placement_constraints:
+            if c.get("type") == "in_line_path":
+                src_ref = c.get("source", {}).get("ref") if isinstance(c.get("source"), dict) else c.get("source")
+                prot_ref = c.get("protection", {}).get("ref") if isinstance(c.get("protection"), dict) else c.get("protection")
+                tgt_ref = c.get("target", {}).get("ref") if isinstance(c.get("target"), dict) else c.get("target")
+                max_det = float(c.get("max_detour_mm", 4.0))
+                w = float(c.get("weight", 5.0))
+                if src_ref in self.des_to_index and prot_ref in self.des_to_index and tgt_ref in self.des_to_index:
+                    il_rule = (self.des_to_index[src_ref], self.des_to_index[prot_ref], self.des_to_index[tgt_ref], max_det, w)
+                    self.in_line_constraints.append(il_rule)
+                    for idx_x in il_rule[:3]:
+                        self.item_to_in_line[idx_x].append(il_rule)
+            elif c.get("type") == "proximity":
+                prot_ref = c.get("subject", {}).get("ref")
+                src_ref = c.get("target", {}).get("ref")
+                if src_ref in self.anchors and prot_ref in self.des_to_index and src_ref in self.des_to_index:
+                    p_meta = self.manifest_comps.get(prot_ref, {})
+                    role_str = str(p_meta.get("role", "")).lower()
+                    if any(k in role_str for k in ("tvs", "esd", "fuse", "protection", "clamp")) or prot_ref.startswith(("F", "D")):
+                        fb_id = p_meta.get("block")
+                        if fb_id and fb_id in self.functional_blocks:
+                            fb_members = self.functional_blocks[fb_id].get("components", [])
+                            ic_cands = [
+                                m for m in fb_members
+                                if m != prot_ref and m != src_ref and m in self.des_to_index and (
+                                    m.startswith("U") or self.manifest_comps.get(m, {}).get("constraints", {}).get("silicon_ic")
+                                )
+                            ]
+                            if ic_cands:
+                                il_rule = (self.des_to_index[src_ref], self.des_to_index[prot_ref], self.des_to_index[ic_cands[0]], 4.0, 4.0)
+                                self.in_line_constraints.append(il_rule)
+                                for idx_x in il_rule[:3]:
+                                    self.item_to_in_line[idx_x].append(il_rule)
 
         # Résolution des keepouts dynamiques (packages + carte)
         init_pos_map = {it.designator: (it.x, it.y, it.rotation) for it in self.items}
@@ -529,9 +656,11 @@ class FastAnnealingEngine:
             if min_ret_d > max_d:
                 pen += (min_ret_d - max_d) * (w * 1.2)
 
-        # 4. Règles de séparation CEM 2D (Champs H 1/r³ et E 1/r²)
+        # 4. Règles de séparation CEM 2D (Champs H 1/r³ + orthogonalité 90° et E 1/r²)
         for target_type, target_data, req_d, coupling, w in self.item_to_separations.get(item_idx, []):
             it_box = self.items[item_idx].box
+            rot_a = self.items[item_idx].rotation
+            rot_b = 0.0
             min_d = float("inf")
             if target_type == "zone":
                 min_d = it_box.distance_to_box(target_data)
@@ -541,14 +670,17 @@ class FastAnnealingEngine:
                         d = it_box.distance_to_box(self.items[other_idx].box)
                         if d < min_d:
                             min_d = d
+                            rot_b = self.items[other_idx].rotation
             if min_d < req_d:
                 if coupling == "H_field":
-                    c_factor = (req_d / max(0.5, min_d)) ** 3 - 1.0
+                    raw_h = magnetic_field_coupling(max(2.0, min_d), rot_a, rot_b, min_dist_mm=req_d)
+                    ref_h = magnetic_field_coupling(req_d, rot_a, rot_b, min_dist_mm=req_d)
+                    c_factor = min(8.0, max(0.0, (raw_h / max(0.1, ref_h)) - 1.0))
                 elif coupling == "E_field":
-                    c_factor = (req_d / max(0.5, min_d)) ** 2 - 1.0
+                    c_factor = min(8.0, electric_field_coupling(max(2.0, min_d), min_dist_mm=req_d) - 1.0)
                 else:
                     c_factor = (req_d - min_d) / req_d
-                pen += max(0.0, c_factor) * (w * 2.0)
+                pen += max(0.0, c_factor) * (w * 1.0)
 
         # 5. Accessibilité bord de carte
         for edge, max_d, w in self.item_to_edge_access.get(item_idx, []):
@@ -565,6 +697,32 @@ class FastAnnealingEngine:
                 d_edge = box.x_min
             if d_edge > max_d:
                 pen += (d_edge - max_d) * (w * 1.5)
+
+        # 6. Compacité des nœuds commutés à fort dv/dt (net_compact, ex: PH_BUCK)
+        for net_pins, target_max, w in self.item_to_net_compact.get(item_idx, []):
+            pts = [self.items[m_idx].get_pad_abs(m_pin) for m_idx, m_pin in net_pins]
+            pts_valid = [p for p in pts if p is not None]
+            if len(pts_valid) >= 2:
+                xs = [p[0] for p in pts_valid]
+                ys = [p[1] for p in pts_valid]
+                net_hpwl = (max(xs) - min(xs)) + (max(ys) - min(ys))
+                if net_hpwl > target_max:
+                    pen += ((net_hpwl - target_max) / max(1.0, target_max)) * (w * 2.0)
+
+        # 7. Cohésion des blocs fonctionnels autour de leur IC maître (cluster_cohesion)
+        for m_idx, anc_idx, max_r, w in self.item_to_cluster_cohesion.get(item_idx, []):
+            d_anc = math.hypot(self.items[m_idx].x - self.items[anc_idx].x, self.items[m_idx].y - self.items[anc_idx].y)
+            if d_anc > max_r:
+                pen += (((d_anc - max_r) / max_r) ** 2) * (w * 0.5)
+
+        # 8. Topologie CEM En-Ligne (in_line_path : Source -> Protection -> Cible)
+        for src_idx, prot_idx, tgt_idx, max_det, w in self.item_to_in_line.get(item_idx, []):
+            s_pt = (self.items[src_idx].x, self.items[src_idx].y)
+            p_pt = (self.items[prot_idx].x, self.items[prot_idx].y)
+            t_pt = (self.items[tgt_idx].x, self.items[tgt_idx].y)
+            is_ordered, detour_mm, order_viol_mm = in_line_path_metrics(s_pt, p_pt, t_pt)
+            if not is_ordered:
+                pen += (order_viol_mm / 3.0) * w
 
         return pen
 
@@ -637,6 +795,14 @@ class FastAnnealingEngine:
                 if dist > max_d:
                     penalty += (dist - max_d) * 60.0 + 30.0
 
+        # 5. Respect des sanctuaires de broches critiques (exclusion des intrus)
+        for t_idx, t_pin, r_sanc in self.item_to_sanctuaries.get(it.index, []):
+            p_tgt = self.items[t_idx].get_pad_abs(t_pin)
+            if p_tgt:
+                d_to_tgt = box.distance_to_point(p_tgt[0], p_tgt[1])
+                if d_to_tgt < r_sanc:
+                    penalty += (r_sanc - d_to_tgt) * 50.0 + 30.0
+
         return penalty
 
     def compute_proximity_and_loop_penalties(self) -> float:
@@ -695,10 +861,12 @@ class FastAnnealingEngine:
                 if min_ret_d > max_d:
                     penalty += (min_ret_d - max_d) * (w * 1.2)
 
-        # 5. Séparation CEM 2D
+        # 5. Séparation CEM 2D (Champs H 1/r³ + orthogonalité 90° et E 1/r²)
         for idx in range(self.n_items):
             for target_type, target_data, req_d, coupling, w in self.item_to_separations.get(idx, []):
                 it_box = self.items[idx].box
+                rot_a = self.items[idx].rotation
+                rot_b = 0.0
                 min_d = float("inf")
                 if target_type == "zone":
                     min_d = it_box.distance_to_box(target_data)
@@ -708,14 +876,17 @@ class FastAnnealingEngine:
                             d = it_box.distance_to_box(self.items[other_idx].box)
                             if d < min_d:
                                 min_d = d
+                                rot_b = self.items[other_idx].rotation
                 if min_d < req_d:
                     if coupling == "H_field":
-                        c_factor = (req_d / max(0.5, min_d)) ** 3 - 1.0
+                        raw_h = magnetic_field_coupling(max(2.0, min_d), rot_a, rot_b, min_dist_mm=req_d)
+                        ref_h = magnetic_field_coupling(req_d, rot_a, rot_b, min_dist_mm=req_d)
+                        c_factor = min(8.0, max(0.0, (raw_h / max(0.1, ref_h)) - 1.0))
                     elif coupling == "E_field":
-                        c_factor = (req_d / max(0.5, min_d)) ** 2 - 1.0
+                        c_factor = min(8.0, electric_field_coupling(max(2.0, min_d), min_dist_mm=req_d) - 1.0)
                     else:
                         c_factor = (req_d - min_d) / req_d
-                    penalty += max(0.0, c_factor) * (w * 2.0)
+                    penalty += max(0.0, c_factor) * (w * 1.0)
 
         # 6. Accessibilité bord
         for s_idx, access_list in self.item_to_edge_access.items():
@@ -734,10 +905,76 @@ class FastAnnealingEngine:
                 if d_edge > max_d:
                     penalty += (d_edge - max_d) * (w * 1.5)
 
+        # 7. Compacité des nœuds commutés (net_compact)
+        for net_pins, target_max, w in self.net_compact_constraints:
+            pts = [self.items[m_idx].get_pad_abs(m_pin) for m_idx, m_pin in net_pins]
+            pts_valid = [p for p in pts if p is not None]
+            if len(pts_valid) >= 2:
+                xs = [p[0] for p in pts_valid]
+                ys = [p[1] for p in pts_valid]
+                net_hpwl = (max(xs) - min(xs)) + (max(ys) - min(ys))
+                if net_hpwl > target_max:
+                    penalty += ((net_hpwl - target_max) / max(1.0, target_max)) * (w * 2.0)
+
+        # 8. Cohésion des blocs fonctionnels (cluster_cohesion)
+        for m_idx, anc_idx, max_r, w in self.cluster_cohesion_rules:
+            d_anc = math.hypot(self.items[m_idx].x - self.items[anc_idx].x, self.items[m_idx].y - self.items[anc_idx].y)
+            if d_anc > max_r:
+                penalty += (((d_anc - max_r) / max_r) ** 2) * (w * 0.5)
+
+        # 9. Topologie CEM En-Ligne (in_line_path)
+        for src_idx, prot_idx, tgt_idx, max_det, w in self.in_line_constraints:
+            s_pt = (self.items[src_idx].x, self.items[src_idx].y)
+            p_pt = (self.items[prot_idx].x, self.items[prot_idx].y)
+            t_pt = (self.items[tgt_idx].x, self.items[tgt_idx].y)
+            is_ordered, detour_mm, order_viol_mm = in_line_path_metrics(s_pt, p_pt, t_pt)
+            if not is_ordered:
+                penalty += (order_viol_mm / 3.0) * w
+
         return penalty
 
     def compute_all_hard_penalties(self) -> float:
         return sum(self.compute_item_hard_violations(it) for it in self.items)
+
+    def count_true_hard_violations(self) -> Tuple[int, float]:
+        count = 0
+        severity = 0.0
+        min_x = self.edge_clearance
+        max_x = self.board_w - self.edge_clearance
+        min_y = self.edge_clearance
+        max_y = self.board_h - self.edge_clearance
+        for it in self.items:
+            if it.is_fixed:
+                continue
+            box = it.box
+            dx = max(0.0, min_x - box.x_min) + max(0.0, box.x_max - max_x)
+            dy = max(0.0, min_y - box.y_min) + max(0.0, box.y_max - max_y)
+            if dx > 1e-4 or dy > 1e-4:
+                count += 1
+                severity += dx + dy
+            for h in self.mounting_holes:
+                hx = h.get("x_mm", 0.0)
+                hy = h.get("y_mm", 0.0)
+                hr = h.get("head_clearance_mm", 4.5) / 2.0
+                hole_box = RectBox(hx - hr, hx + hr, hy - hr, hy + hr)
+                if box.intersects(hole_box):
+                    count += 1
+                    severity += box.intersection_area(hole_box)
+            for kz in self.keepouts:
+                rect = kz.get("rect_mm", {})
+                kbox = RectBox(rect.get("x_min", 0.0), rect.get("x_max", 0.0), rect.get("y_min", 0.0), rect.get("y_max", 0.0))
+                if it.designator not in set(kz.get("exempt_refs", [])) and box.intersects(kbox):
+                    count += 1
+                    severity += box.intersection_area(kbox)
+        for s_idx, s_pin, t_idx, t_pin, max_d in self.hard_proximities:
+            p1 = self.items[s_idx].get_pad_abs(s_pin)
+            p2 = self.items[t_idx].get_pad_abs(t_pin)
+            if p1 and p2:
+                dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                if dist > max_d:
+                    count += 1
+                    severity += dist - max_d
+        return count, severity
 
     def run(
         self,
@@ -780,8 +1017,8 @@ class FastAnnealingEngine:
 
         best_energy = current_energy
         best_state = [(it.x, it.y, it.rotation) for it in self.items]
-        best_valid_energy = current_energy if (self.total_overlap < 0.005 and current_hard < 0.005) else None
-        best_valid_state = [(it.x, it.y, it.rotation) for it in self.items] if best_valid_energy is not None else None
+        best_valid_energy = None
+        best_valid_state = None
 
         T = t_start
         alpha_cool = (t_end / t_start) ** (1.0 / steps)
@@ -848,17 +1085,36 @@ class FastAnnealingEngine:
                     it.rotation = random.choice(it.allowed_rotations)
 
             elif r_move < 0.85:
-                # 4. Attraction barycentrique
-                connected = list(self.neighbors.get(idx, []))
-                if connected:
-                    tgt = self.items[random.choice(connected)]
-                    pull = random.uniform(0.2, 0.5)
-                    new_x = it.x + pull * (tgt.x - it.x)
-                    new_y = it.y + pull * (tgt.y - it.y)
-                    hw = it.current_half_w
-                    hh = it.current_half_h
-                    it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, new_x))
-                    it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
+                # 4. Attraction ciblée vers une contrainte de proximité dure (si applicable) ou un voisin connecté
+                hp_rules = self.item_to_hard_proximities.get(idx, [])
+                if hp_rules and random.random() < 0.70:
+                    s_idx, s_pin, t_idx, t_pin, max_d = random.choice(hp_rules)
+                    other_idx = t_idx if s_idx == idx else s_idx
+                    other_pin = t_pin if s_idx == idx else s_pin
+                    my_pin = s_pin if s_idx == idx else t_pin
+                    p_tgt = self.items[other_idx].get_pad_abs(other_pin)
+                    if p_tgt:
+                        dx0, dy0 = it.pads_dx0_dy0.get(my_pin, (0.0, 0.0))
+                        pdx, pdy = rotate_offset(dx0, dy0, it.rotation)
+                        angle = random.uniform(0, 2 * math.pi)
+                        rad_d = random.uniform(0.35 * max_d, 0.90 * max_d)
+                        new_x = p_tgt[0] + rad_d * math.cos(angle) - pdx
+                        new_y = p_tgt[1] + rad_d * math.sin(angle) - pdy
+                        hw = it.current_half_w
+                        hh = it.current_half_h
+                        it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, new_x))
+                        it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
+                else:
+                    connected = list(self.neighbors.get(idx, []))
+                    if connected:
+                        tgt = self.items[random.choice(connected)]
+                        pull = random.uniform(0.2, 0.5)
+                        new_x = it.x + pull * (tgt.x - it.x)
+                        new_y = it.y + pull * (tgt.y - it.y)
+                        hw = it.current_half_w
+                        hh = it.current_half_h
+                        it.x = max(self.edge_clearance + hw, min(self.board_w - self.edge_clearance - hw, new_x))
+                        it.y = max(self.edge_clearance + hh, min(self.board_h - self.edge_clearance - hh, new_y))
 
             else:
                 # 5. Éjection anti-collision directe
@@ -970,9 +1226,16 @@ class FastAnnealingEngine:
                     best_energy = current_energy
                     best_state = [(item.x, item.y, item.rotation) for item in self.items]
 
-                if self.total_overlap < 0.005 and current_hard < 0.005:
-                    if best_valid_energy is None or current_energy < best_valid_energy:
-                        best_valid_energy = current_energy
+                if frac >= 0.60 or self.total_overlap < 0.5:
+                    h_cnt, h_sev = self.count_true_hard_violations()
+                    state_key = (
+                        round(max(0.0, self.total_overlap), 2),
+                        h_cnt,
+                        round(h_sev, 2),
+                        current_hpwl + w_prox * current_prox + w_dens * current_density_var
+                    )
+                    if best_valid_energy is None or state_key < best_valid_energy:
+                        best_valid_energy = state_key
                         best_valid_state = [(item.x, item.y, item.rotation) for item in self.items]
             else:
                 # Rollback de position
@@ -986,6 +1249,8 @@ class FastAnnealingEngine:
             self.items[k].x = bx
             self.items[k].y = by
             self.items[k].rotation = brot
+
+        pre_leg_state = [(it.x, it.y, it.rotation) for it in self.items]
 
         # Passe de légalisation géométrique agnostique pour éliminer toute micro-pénétration résiduelle
         self.legalize()
@@ -1021,7 +1286,7 @@ class FastAnnealingEngine:
             hh = hw_c if r in (90, 270) else hh_c
             return RectBox(item.x - hw, item.x + hw, item.y - hh, item.y + hh), hw, hh
 
-        for _ in range(max_passes):
+        for pass_idx in range(max_passes):
             moved = False
             for i in range(self.n_items):
                 it_a = self.items[i]
@@ -1036,46 +1301,102 @@ class FastAnnealingEngine:
                         if inter_area <= 0.001:
                             continue
 
-                        pen_x = min(box_a.x_max, box_b.x_max) - max(box_a.x_min, box_b.x_min)
-                        pen_y = min(box_a.y_max, box_b.y_max) - max(box_a.y_min, box_b.y_min)
-                        push_margin = 0.08
+                        # Théorème des Axes Séparateurs (SAT) : sélection d'axe anti-blocage
+                        dx_pos = box_b.x_max - box_a.x_min  # déplacer A vers +X (droite de B)
+                        dx_neg = box_a.x_max - box_b.x_min  # déplacer A vers -X (gauche de B)
+                        pen_x = min(dx_pos, dx_neg)
+                        sign_x = 1.0 if dx_pos <= dx_neg else -1.0
 
-                        if pen_x < pen_y:
+                        dy_pos = box_b.y_max - box_a.y_min  # déplacer A vers +Y (haut de B)
+                        dy_neg = box_a.y_max - box_b.y_min  # déplacer A vers -Y (bas de B)
+                        pen_y = min(dy_pos, dy_neg)
+                        sign_y = 1.0 if dy_pos <= dy_neg else -1.0
+
+                        push_margin = 0.05
+                        use_x = (pen_x < pen_y)
+
+                        # Détection d'impasse (coincé contre le bord ou un keepout)
+                        if not use_x:
+                            if (
+                                (not it_a.is_fixed and (it_a.y + sign_y * (pen_y + push_margin) + hh_a > self.board_h - self.edge_clearance or it_a.y + sign_y * (pen_y + push_margin) - hh_a < self.edge_clearance)) or
+                                (not it_b.is_fixed and (it_b.y - sign_y * (pen_y + push_margin) + hh_b > self.board_h - self.edge_clearance or it_b.y - sign_y * (pen_y + push_margin) - hh_b < self.edge_clearance))
+                            ):
+                                use_x = True
+                        else:
+                            if (
+                                (not it_a.is_fixed and (it_a.x + sign_x * (pen_x + push_margin) + hw_a > self.board_w - self.edge_clearance or it_a.x + sign_x * (pen_x + push_margin) - hw_a < self.edge_clearance)) or
+                                (not it_b.is_fixed and (it_b.x - sign_x * (pen_x + push_margin) + hw_b > self.board_w - self.edge_clearance or it_b.x - sign_x * (pen_x + push_margin) - hw_b < self.edge_clearance))
+                            ):
+                                use_x = False
+
+                        if use_x:
                             dist_x = pen_x + push_margin
-                            sign = 1.0 if it_a.x >= it_b.x else -1.0
+                            sign = sign_x
                             if not it_a.is_fixed and it_b.is_fixed:
                                 if sign > 0 and (it_a.x + dist_x + hw_a > self.board_w - self.edge_clearance):
+                                    dist_x = dx_neg + push_margin
                                     sign = -1.0
                                 elif sign < 0 and (it_a.x - dist_x - hw_a < self.edge_clearance):
+                                    dist_x = dx_pos + push_margin
                                     sign = 1.0
                                 it_a.x += sign * dist_x
                             elif not it_b.is_fixed and it_a.is_fixed:
                                 if sign > 0 and (it_b.x - dist_x - hw_b < self.edge_clearance):
+                                    dist_x = dx_neg + push_margin
                                     sign = -1.0
                                 elif sign < 0 and (it_b.x + dist_x + hw_b > self.board_w - self.edge_clearance):
+                                    dist_x = dx_pos + push_margin
                                     sign = 1.0
                                 it_b.x -= sign * dist_x
                             elif not it_a.is_fixed and not it_b.is_fixed:
                                 it_a.x += sign * (dist_x / 2.0)
                                 it_b.x -= sign * (dist_x / 2.0)
+                                if it_a.x - hw_a < self.edge_clearance:
+                                    it_b.x += (self.edge_clearance + hw_a) - it_a.x
+                                    it_a.x = self.edge_clearance + hw_a
+                                elif it_a.x + hw_a > self.board_w - self.edge_clearance:
+                                    it_b.x -= it_a.x - (self.board_w - self.edge_clearance - hw_a)
+                                    it_a.x = self.board_w - self.edge_clearance - hw_a
+                                if it_b.x - hw_b < self.edge_clearance:
+                                    it_a.x += (self.edge_clearance + hw_b) - it_b.x
+                                    it_b.x = self.edge_clearance + hw_b
+                                elif it_b.x + hw_b > self.board_w - self.edge_clearance:
+                                    it_a.x -= it_b.x - (self.board_w - self.edge_clearance - hw_b)
+                                    it_b.x = self.board_w - self.edge_clearance - hw_b
                         else:
                             dist_y = pen_y + push_margin
-                            sign = 1.0 if it_a.y >= it_b.y else -1.0
+                            sign = sign_y
                             if not it_a.is_fixed and it_b.is_fixed:
                                 if sign > 0 and (it_a.y + dist_y + hh_a > self.board_h - self.edge_clearance):
+                                    dist_y = dy_neg + push_margin
                                     sign = -1.0
                                 elif sign < 0 and (it_a.y - dist_y - hh_a < self.edge_clearance):
+                                    dist_y = dy_pos + push_margin
                                     sign = 1.0
                                 it_a.y += sign * dist_y
                             elif not it_b.is_fixed and it_a.is_fixed:
                                 if sign > 0 and (it_b.y - dist_y - hh_b < self.edge_clearance):
+                                    dist_y = dy_neg + push_margin
                                     sign = -1.0
                                 elif sign < 0 and (it_b.y + dist_y + hh_b > self.board_h - self.edge_clearance):
+                                    dist_y = dy_pos + push_margin
                                     sign = 1.0
                                 it_b.y -= sign * dist_y
                             elif not it_a.is_fixed and not it_b.is_fixed:
                                 it_a.y += sign * (dist_y / 2.0)
                                 it_b.y -= sign * (dist_y / 2.0)
+                                if it_a.y - hh_a < self.edge_clearance:
+                                    it_b.y += (self.edge_clearance + hh_a) - it_a.y
+                                    it_a.y = self.edge_clearance + hh_a
+                                elif it_a.y + hh_a > self.board_h - self.edge_clearance:
+                                    it_b.y -= it_a.y - (self.board_h - self.edge_clearance - hh_a)
+                                    it_a.y = self.board_h - self.edge_clearance - hh_a
+                                if it_b.y - hh_b < self.edge_clearance:
+                                    it_a.y += (self.edge_clearance + hh_b) - it_b.y
+                                    it_b.y = self.edge_clearance + hh_b
+                                elif it_b.y + hh_b > self.board_h - self.edge_clearance:
+                                    it_a.y -= it_b.y - (self.board_h - self.edge_clearance - hh_b)
+                                    it_b.y = self.board_h - self.edge_clearance - hh_b
 
                         for it, hw, hh in ((it_a, hw_a, hh_a), (it_b, hw_b, hh_b)):
                             if not it.is_fixed:
@@ -1134,8 +1455,595 @@ class FastAnnealingEngine:
                         moved = True
 
             if not moved:
+                break
+
+        # Résolution chirurgicale sur couronne pour tout composant présentant encore un chevauchement ou une violation de proximité dure
+        def is_pose_collision_free(item: MovableItem) -> bool:
+            c_box, _, _ = get_real_box(item)
+            if (
+                c_box.x_min < self.edge_clearance or
+                c_box.x_max > self.board_w - self.edge_clearance or
+                c_box.y_min < self.edge_clearance or
+                c_box.y_max > self.board_h - self.edge_clearance
+            ):
+                return False
+            if any(
+                c_box.intersection_area(get_real_box(self.items[k])[0]) > 0.005
+                for k in range(self.n_items) if k != item.index
+            ):
+                return False
+            if any(
+                c_box.intersects(RectBox(h.get("x_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("x_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0))
+                for h in self.mounting_holes
+            ):
+                return False
+            if any(
+                item.designator not in set(kz.get("exempt_refs", [])) and c_box.intersects(RectBox(kz.get("rect_mm", {}).get("x_min", 0.0), kz.get("rect_mm", {}).get("x_max", 0.0), kz.get("rect_mm", {}).get("y_min", 0.0), kz.get("rect_mm", {}).get("y_max", 0.0)))
+                for kz in self.keepouts
+            ):
+                return False
+            if any(
+                c_box.distance_to_point(self.items[t_idx].get_pad_abs(t_pin)[0], self.items[t_idx].get_pad_abs(t_pin)[1]) < r_sanc
+                for t_idx, t_pin, r_sanc in self.item_to_sanctuaries.get(item.index, [])
+                if self.items[t_idx].get_pad_abs(t_pin) is not None
+            ):
+                return False
+            return True
+
+        # 1. Placement en couronne des composants liés à une proximité dure violée ou en collision
+        for s_idx, s_pin, t_idx, t_pin, max_d in self.hard_proximities:
+            it_s = self.items[s_idx]
+            it_t = self.items[t_idx]
+            if it_s.is_fixed:
+                continue
+            p1 = it_s.get_pad_abs(s_pin)
+            p2 = it_t.get_pad_abs(t_pin)
+            if not (p1 and p2):
+                continue
+            cur_d = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+            has_overlap = not is_pose_collision_free(it_s)
+            if cur_d <= max_d and not has_overlap:
+                continue
+
+            orig_x, orig_y, orig_rot = it_s.x, it_s.y, it_s.rotation
+            best_pose = None
+            dx0, dy0 = it_s.pads_dx0_dy0.get(s_pin, (0.0, 0.0))
+            for radius in (max_d * 0.40, max_d * 0.55, max_d * 0.70, max_d * 0.84, max_d * 0.96):
+                for deg in range(0, 360, 10):
+                    rad = math.radians(deg)
+                    cand_p1x = p2[0] + radius * math.cos(rad)
+                    cand_p1y = p2[1] + radius * math.sin(rad)
+                    for r_cand in it_s.allowed_rotations:
+                        pdx, pdy = rotate_offset(dx0, dy0, r_cand)
+                        it_s.x = cand_p1x - pdx
+                        it_s.y = cand_p1y - pdy
+                        it_s.rotation = r_cand
+                        if not is_pose_collision_free(it_s):
+                            continue
+                        all_hp_ok = True
+                        for os_idx, os_pin, ot_idx, ot_pin, o_max_d in self.item_to_hard_proximities.get(s_idx, []):
+                            op1 = self.items[os_idx].get_pad_abs(os_pin)
+                            op2 = self.items[ot_idx].get_pad_abs(ot_pin)
+                            if op1 and op2 and math.hypot(op1[0] - op2[0], op1[1] - op2[1]) > o_max_d:
+                                all_hp_ok = False
+                                break
+                        if all_hp_ok:
+                            best_pose = (it_s.x, it_s.y, it_s.rotation)
+                            break
+                    if best_pose:
+                        break
+                if best_pose:
+                    break
+            if best_pose:
+                it_s.x, it_s.y, it_s.rotation = best_pose
+            else:
+                it_s.x, it_s.y, it_s.rotation = orig_x, orig_y, orig_rot
+
+        # 2. Recherche spirale locale pour tout composant libre ayant encore une collision résiduelle
+        for i in range(self.n_items):
+            it = self.items[i]
+            if it.is_fixed or is_pose_collision_free(it):
+                continue
+            orig_x, orig_y, orig_rot = it.x, it.y, it.rotation
+            found = False
+            for r_step in range(1, 70):
+                radius = r_step * 0.35
+                for deg in range(0, 360, 10):
+                    rad = math.radians(deg)
+                    for r_cand in it.allowed_rotations:
+                        it.x = orig_x + radius * math.cos(rad)
+                        it.y = orig_y + radius * math.sin(rad)
+                        it.rotation = r_cand
+                        if not is_pose_collision_free(it):
+                            continue
+                        all_hp_ok = True
+                        for os_idx, os_pin, ot_idx, ot_pin, o_max_d in self.item_to_hard_proximities.get(i, []):
+                            op1 = self.items[os_idx].get_pad_abs(os_pin)
+                            op2 = self.items[ot_idx].get_pad_abs(ot_pin)
+                            if op1 and op2 and math.hypot(op1[0] - op2[0], op1[1] - op2[1]) > o_max_d:
+                                all_hp_ok = False
+                                break
+                        if all_hp_ok:
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    break
+            if not found:
+                it.x, it.y, it.rotation = orig_x, orig_y, orig_rot
+
+        # 3. Seconde passe de placement en couronne après libération de l'espace par les voisins
+        for s_idx, s_pin, t_idx, t_pin, max_d in self.hard_proximities:
+            it_s = self.items[s_idx]
+            it_t = self.items[t_idx]
+            if it_s.is_fixed:
+                continue
+            p1 = it_s.get_pad_abs(s_pin)
+            p2 = it_t.get_pad_abs(t_pin)
+            if not (p1 and p2):
+                continue
+            cur_d = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+            if cur_d <= max_d and is_pose_collision_free(it_s):
+                continue
+            orig_x, orig_y, orig_rot = it_s.x, it_s.y, it_s.rotation
+            best_pose = None
+            dx0, dy0 = it_s.pads_dx0_dy0.get(s_pin, (0.0, 0.0))
+            for radius in (max_d * 0.35, max_d * 0.50, max_d * 0.65, max_d * 0.80, max_d * 0.92, max_d * 0.98):
+                for deg in range(0, 360, 6):
+                    rad = math.radians(deg)
+                    cand_p1x = p2[0] + radius * math.cos(rad)
+                    cand_p1y = p2[1] + radius * math.sin(rad)
+                    for r_cand in it_s.allowed_rotations:
+                        pdx, pdy = rotate_offset(dx0, dy0, r_cand)
+                        it_s.x = cand_p1x - pdx
+                        it_s.y = cand_p1y - pdy
+                        it_s.rotation = r_cand
+                        if not is_pose_collision_free(it_s):
+                            continue
+                        all_hp_ok = True
+                        for os_idx, os_pin, ot_idx, ot_pin, o_max_d in self.item_to_hard_proximities.get(s_idx, []):
+                            op1 = self.items[os_idx].get_pad_abs(os_pin)
+                            op2 = self.items[ot_idx].get_pad_abs(ot_pin)
+                            if op1 and op2 and math.hypot(op1[0] - op2[0], op1[1] - op2[1]) > o_max_d:
+                                all_hp_ok = False
+                                break
+                        if all_hp_ok:
+                            best_pose = (it_s.x, it_s.y, it_s.rotation)
+                            break
+                    if best_pose:
+                        break
+                if best_pose:
+                    break
+            if best_pose:
+                it_s.x, it_s.y, it_s.rotation = best_pose
+            else:
+                it_s.x, it_s.y, it_s.rotation = orig_x, orig_y, orig_rot
+
+        # 4. Dernière passe spirale d'urgence sans contrainte de proximité dure pour garantir 0 chevauchement physique
+        for i in range(self.n_items):
+            it = self.items[i]
+            if it.is_fixed or is_pose_collision_free(it):
+                continue
+            orig_x, orig_y, orig_rot = it.x, it.y, it.rotation
+            found = False
+            for r_step in range(1, 90):
+                radius = r_step * 0.35
+                for deg in range(0, 360, 10):
+                    rad = math.radians(deg)
+                    for r_cand in it.allowed_rotations:
+                        it.x = orig_x + radius * math.cos(rad)
+                        it.y = orig_y + radius * math.sin(rad)
+                        it.rotation = r_cand
+                        if is_pose_collision_free(it):
+                            found = True
+                            break
+                    if found:
+                        break
+                if found:
+                    break
+            if not found:
+                # Recherche sur toute la grille du PCB en cas d'encerclement local
+                for gx in range(int(self.edge_clearance + 2), int(self.board_w - self.edge_clearance - 2), 2):
+                    for gy in range(int(self.edge_clearance + 2), int(self.board_h - self.edge_clearance - 2), 2):
+                        for r_cand in it.allowed_rotations:
+                            it.x = float(gx)
+                            it.y = float(gy)
+                            it.rotation = r_cand
+                            if is_pose_collision_free(it):
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+            if not found:
+                it.x, it.y, it.rotation = orig_x, orig_y, orig_rot
+
+        def _relocate_blocker(it_b: MovableItem) -> bool:
+            bx0, by0, brot0 = it_b.x, it_b.y, it_b.rotation
+            b_hps = [
+                hp for hp in self.item_to_hard_proximities.get(it_b.index, [])
+                if hp[0] in placed_hp_subjects
+            ]
+
+            def _b_hp_valid() -> bool:
+                for obs_idx, obs_pin, obt_idx, obt_pin, ob_max_d in b_hps:
+                    if self.items[obs_idx].x < -500.0 or self.items[obt_idx].x < -500.0:
+                        continue
+                    op1 = self.items[obs_idx].get_pad_abs(obs_pin)
+                    op2 = self.items[obt_idx].get_pad_abs(obt_pin)
+                    if op1 and op2 and math.hypot(op1[0] - op2[0], op1[1] - op2[1]) > ob_max_d:
+                        return False
                 return True
-        return False
+
+            for br_step in range(1, 25):
+                brad = br_step * 0.60
+                for bdeg in range(0, 360, 15):
+                    ang = math.radians(bdeg)
+                    for b_rot in it_b.allowed_rotations:
+                        it_b.rotation = b_rot
+                        _, b_hw, b_hh = get_real_box(it_b)
+                        it_b.x = max(self.edge_clearance + b_hw, min(self.board_w - self.edge_clearance - b_hw, bx0 + brad * math.cos(ang)))
+                        it_b.y = max(self.edge_clearance + b_hh, min(self.board_h - self.edge_clearance - b_hh, by0 + brad * math.sin(ang)))
+                        if _b_hp_valid() and is_pose_collision_free(it_b):
+                            return True
+
+            # Fallback grille globale (pas de 2.5 mm trié par distance à bx0, by0)
+            grid_pts = [
+                (gx * 2.5, gy * 2.5)
+                for gx in range(int((self.edge_clearance + 1.0) / 2.5) + 1, int((self.board_w - self.edge_clearance - 1.0) / 2.5) + 1)
+                for gy in range(int((self.edge_clearance + 1.0) / 2.5) + 1, int((self.board_h - self.edge_clearance - 1.0) / 2.5) + 1)
+            ]
+            grid_pts.sort(key=lambda pt: math.hypot(pt[0] - bx0, pt[1] - by0))
+            for gx, gy in grid_pts:
+                for b_rot in it_b.allowed_rotations:
+                    it_b.rotation = b_rot
+                    _, b_hw, b_hh = get_real_box(it_b)
+                    it_b.x = max(self.edge_clearance + b_hw, min(self.board_w - self.edge_clearance - b_hw, gx))
+                    it_b.y = max(self.edge_clearance + b_hh, min(self.board_h - self.edge_clearance - b_hh, gy))
+                    if _b_hp_valid() and is_pose_collision_free(it_b):
+                        return True
+
+            it_b.x, it_b.y, it_b.rotation = bx0, by0, brot0
+            return False
+
+        # 5. Ultime passe de placement en couronne pour les proximités dures
+        # Tri topologique : 1) cibles racines d'abord (puis cibles qui sont elles-mêmes sujets comme L1), 2) cible la plus lourde, 3) max_d croissant
+        all_s_indices = {hp[0] for hp in self.hard_proximities}
+        hp_sorted = sorted(
+            self.hard_proximities,
+            key=lambda hp: (
+                1 if hp[2] in all_s_indices else 0,
+                -(ipc_half_dims[hp[2]][0] * ipc_half_dims[hp[2]][1]),
+                hp[4]
+            )
+        )
+        placed_hp_subjects: Set[int] = set()
+        for _pass_hp in range(2):
+            for s_idx, s_pin, t_idx, t_pin, max_d in hp_sorted:
+                it_s = self.items[s_idx]
+                it_t = self.items[t_idx]
+                if it_s.is_fixed:
+                    continue
+                p1 = it_s.get_pad_abs(s_pin)
+                p2 = it_t.get_pad_abs(t_pin)
+                if not (p1 and p2):
+                    continue
+                cur_d = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
+                if cur_d <= max_d and is_pose_collision_free(it_s):
+                    placed_hp_subjects.add(s_idx)
+                    continue
+
+                # Essai de placement en couronne (et si la cible it_t est au bord de la carte ou gênée, recul/rotation de it_t si nécessaire)
+                t_orig_x, t_orig_y, t_orig_rot = it_t.x, it_t.y, it_t.rotation
+                t_nudge_candidates = [(0.0, 0.0, t_orig_rot)]
+                if not it_t.is_fixed:
+                    cx_dir = 1.0 if it_t.x < self.board_w * 0.5 else -1.0
+                    cy_dir = 1.0 if it_t.y < self.board_h * 0.5 else -1.0
+                    for tr in it_t.allowed_rotations:
+                        if tr != t_orig_rot:
+                            t_nudge_candidates.append((0.0, 0.0, tr))
+                    t_nudge_candidates.extend([
+                        (0.0, cy_dir * 2.5, t_orig_rot),
+                        (cx_dir * 2.5, 0.0, t_orig_rot),
+                        (cx_dir * 2.5, cy_dir * 2.5, t_orig_rot),
+                        (0.0, cy_dir * 4.5, t_orig_rot),
+                    ])
+                    for tr in it_t.allowed_rotations:
+                        if tr != t_orig_rot:
+                            t_nudge_candidates.append((0.0, cy_dir * 2.5, tr))
+                            t_nudge_candidates.append((cx_dir * 2.5, cy_dir * 2.5, tr))
+
+                orig_x, orig_y, orig_rot = it_s.x, it_s.y, it_s.rotation
+                best_pose = None
+                dx0, dy0 = it_s.pads_dx0_dy0.get(s_pin, (0.0, 0.0))
+
+                for t_dx, t_dy, t_rot in t_nudge_candidates:
+                    saved_t_evicted = []
+                    if t_dx != 0.0 or t_dy != 0.0 or t_rot != t_orig_rot:
+                        it_t.x = t_orig_x + t_dx
+                        it_t.y = t_orig_y + t_dy
+                        it_t.rotation = t_rot
+                        t_box, _, _ = get_real_box(it_t)
+                        if (
+                            t_box.x_min < self.edge_clearance or
+                            t_box.x_max > self.board_w - self.edge_clearance or
+                            t_box.y_min < self.edge_clearance or
+                            t_box.y_max > self.board_h - self.edge_clearance
+                        ):
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                        if any(
+                            t_box.intersects(RectBox(h.get("x_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("x_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0))
+                            for h in self.mounting_holes
+                        ):
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                        if any(
+                            it_t.designator not in set(kz.get("exempt_refs", [])) and t_box.intersects(RectBox(kz.get("rect_mm", {}).get("x_min", 0.0), kz.get("rect_mm", {}).get("x_max", 0.0), kz.get("rect_mm", {}).get("y_min", 0.0), kz.get("rect_mm", {}).get("y_max", 0.0)))
+                            for kz in self.keepouts
+                        ):
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                        # Vérifier que le nudge de it_t ne viole aucune proximité déjà placée (ou déplace ses enfants déjà placés avec lui)
+                        child_indices = [
+                            (os_idx if os_idx != t_idx else ot_idx)
+                            for os_idx, os_pin, ot_idx, ot_pin, o_max_d in self.item_to_hard_proximities.get(t_idx, [])
+                            if (os_idx if os_idx != t_idx else ot_idx) in placed_hp_subjects
+                        ]
+                        if child_indices and t_rot != t_orig_rot:
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                        child_set = set(child_indices)
+                        for ck in child_set:
+                            saved_t_evicted.append((ck, self.items[ck].x, self.items[ck].y, self.items[ck].rotation))
+                            self.items[ck].x += t_dx
+                            self.items[ck].y += t_dy
+                        # Identifier tous les bloqueurs de it_t ET de ses enfants déjà placés (en excluant s_idx qui va être replacé)
+                        group_indices = {t_idx, s_idx} | child_set
+                        group_boxes = [get_real_box(self.items[gi])[0] for gi in ({t_idx} | child_set)]
+                        t_colliding = [
+                            k for k in range(self.n_items)
+                            if k not in group_indices and any(gb.intersection_area(get_real_box(self.items[k])[0]) > 0.005 for gb in group_boxes)
+                        ]
+                        if any(self.items[k].is_fixed or k in placed_hp_subjects for k in t_colliding):
+                            for rk, rx0, ry0, rrot0 in saved_t_evicted:
+                                self.items[rk].x, self.items[rk].y, self.items[rk].rotation = rx0, ry0, rrot0
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                        # Écarter temporairement it_s pendant l'éviction des bloqueurs de it_t
+                        it_s.x, it_s.y = -1000.0, -1000.0
+                        t_evict_ok = True
+                        for bk in t_colliding:
+                            it_b = self.items[bk]
+                            saved_t_evicted.append((bk, it_b.x, it_b.y, it_b.rotation))
+                            bx0, by0, brot0 = it_b.x, it_b.y, it_b.rotation
+                            b_found = False
+                            for br_step in range(1, 55):
+                                brad = br_step * 0.45
+                                for bdeg in range(0, 360, 15):
+                                    ang = math.radians(bdeg)
+                                    for b_rot in it_b.allowed_rotations:
+                                        it_b.x = bx0 + brad * math.cos(ang)
+                                        it_b.y = by0 + brad * math.sin(ang)
+                                        it_b.rotation = b_rot
+                                        if is_pose_collision_free(it_b):
+                                            b_found = True
+                                            break
+                                    if b_found:
+                                        break
+                                if b_found:
+                                    break
+                            if not b_found:
+                                t_evict_ok = False
+                                break
+                        if t_evict_ok:
+                            for ck in child_set:
+                                if not is_pose_collision_free(self.items[ck]):
+                                    t_evict_ok = False
+                                    break
+                        it_s.x, it_s.y, it_s.rotation = orig_x, orig_y, orig_rot
+                        if not t_evict_ok:
+                            for rk, rx0, ry0, rrot0 in saved_t_evicted:
+                                self.items[rk].x, self.items[rk].y, self.items[rk].rotation = rx0, ry0, rrot0
+                            it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                            continue
+                    p2 = it_t.get_pad_abs(t_pin)
+                    if not p2:
+                        for rk, rx0, ry0, rrot0 in saved_t_evicted:
+                            self.items[rk].x, self.items[rk].y, self.items[rk].rotation = rx0, ry0, rrot0
+                        it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                        continue
+
+                    t_curr_box, _, _ = get_real_box(it_t)
+                    lim_r = max_d * 0.98
+                    nx = int(lim_r / 0.35) + 1
+                    ny = int(lim_r / 0.15) + 1
+                    pad_grid = sorted(
+                        [
+                            (ix * 0.35, iy * 0.15)
+                            for ix in range(-nx, nx + 1)
+                            for iy in range(-ny, ny + 1)
+                            if math.hypot(ix * 0.35, iy * 0.15) <= lim_r
+                        ],
+                        key=lambda pt: math.hypot(pt[0], pt[1]),
+                    )
+                    horiz_edge = abs(p2[1] - it_t.y) >= abs(p2[0] - it_t.x)
+                    ordered_rots = sorted(
+                        it_s.allowed_rotations,
+                        key=lambda r: (0 if (int(round(r)) % 180 == (90 if horiz_edge else 0)) else 1)
+                    )
+                    for allow_evict in (False, True):
+                        grid_iter = pad_grid if not allow_evict else pad_grid[::3]
+                        for gx, gy in grid_iter:
+                            cand_p1x = p2[0] + gx
+                            cand_p1y = p2[1] + gy
+                            for r_cand in ordered_rots:
+                                pdx, pdy = rotate_offset(dx0, dy0, r_cand)
+                                it_s.x = cand_p1x - pdx
+                                it_s.y = cand_p1y - pdy
+                                it_s.rotation = r_cand
+                                c_box, _, _ = get_real_box(it_s)
+                                if c_box.intersection_area(t_curr_box) > 0.005:
+                                    continue
+                                if (
+                                    c_box.x_min < self.edge_clearance or
+                                    c_box.x_max > self.board_w - self.edge_clearance or
+                                    c_box.y_min < self.edge_clearance or
+                                    c_box.y_max > self.board_h - self.edge_clearance
+                                ):
+                                    continue
+                                if any(
+                                    c_box.intersects(RectBox(h.get("x_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("x_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0))
+                                    for h in self.mounting_holes
+                                ):
+                                    continue
+                                if any(
+                                    it_s.designator not in set(kz.get("exempt_refs", [])) and c_box.intersects(RectBox(kz.get("rect_mm", {}).get("x_min", 0.0), kz.get("rect_mm", {}).get("x_max", 0.0), kz.get("rect_mm", {}).get("y_min", 0.0), kz.get("rect_mm", {}).get("y_max", 0.0)))
+                                    for kz in self.keepouts
+                                ):
+                                    continue
+                                colliding_k = [
+                                    k for k in range(self.n_items)
+                                    if k != s_idx and c_box.intersection_area(get_real_box(self.items[k])[0]) > 0.005
+                                ]
+                                if not colliding_k:
+                                    best_pose = (it_s.x, it_s.y, it_s.rotation)
+                                    break
+                                elif allow_evict and len(colliding_k) <= 4 and all(
+                                    not self.items[k].is_fixed and k != t_idx and k not in placed_hp_subjects
+                                    for k in colliding_k
+                                ):
+                                    saved_blockers = [(k, self.items[k].x, self.items[k].y, self.items[k].rotation) for k in colliding_k]
+                                    evict_ok = True
+                                    for bk in colliding_k:
+                                        if not _relocate_blocker(self.items[bk]):
+                                            evict_ok = False
+                                            break
+                                    if evict_ok:
+                                        best_pose = (it_s.x, it_s.y, it_s.rotation)
+                                        break
+                                    else:
+                                        for bk, bx0, by0, brot0 in reversed(saved_blockers):
+                                            self.items[bk].x, self.items[bk].y, self.items[bk].rotation = bx0, by0, brot0
+                            if best_pose:
+                                break
+                        if best_pose:
+                            break
+                    if best_pose:
+                        break
+                    for rk, rx0, ry0, rrot0 in saved_t_evicted:
+                        self.items[rk].x, self.items[rk].y, self.items[rk].rotation = rx0, ry0, rrot0
+                    it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                if best_pose:
+                    it_s.x, it_s.y, it_s.rotation = best_pose
+                    placed_hp_subjects.add(s_idx)
+                else:
+                    it_t.x, it_t.y, it_t.rotation = t_orig_x, t_orig_y, t_orig_rot
+                    it_s.x, it_s.y, it_s.rotation = orig_x, orig_y, orig_rot
+                    # Fallback d'assignation conjointe de couronne : si plusieurs condensateurs HP partagent le même composant cible (ex. U1),
+                    # on dégage d'abord d'un bloc les bloqueurs passifs de la zone de couronne, on place conjointement les frères HP, puis on relocalise les bloqueurs une seule fois !
+                    sibling_hps = [hp for hp in hp_sorted if hp[2] == t_idx and not self.items[hp[0]].is_fixed]
+                    if len(sibling_hps) >= 2:
+                        sib_indices = {hp[0] for hp in sibling_hps}
+                        saved_all = [(k, self.items[k].x, self.items[k].y, self.items[k].rotation) for k in range(self.n_items)]
+                        t_curr_box, _, _ = get_real_box(it_t)
+                        crown_boxes = []
+                        for _, _, sub_t, sub_tpin, sub_maxd in sibling_hps:
+                            sp2 = self.items[sub_t].get_pad_abs(sub_tpin)
+                            if sp2:
+                                r_m = sub_maxd + 1.8
+                                crown_boxes.append(RectBox(sp2[0] - r_m, sp2[0] + r_m, sp2[1] - r_m, sp2[1] + r_m))
+                        crown_blockers = [
+                            k for k in range(self.n_items)
+                            if not self.items[k].is_fixed and k != t_idx and k not in sib_indices and k not in placed_hp_subjects
+                            and any(cb.intersects(get_real_box(self.items[k])[0]) for cb in crown_boxes)
+                        ]
+                        saved_cb = [(k, self.items[k].x, self.items[k].y, self.items[k].rotation) for k in crown_blockers]
+                        for sk in (sib_indices | set(crown_blockers)):
+                            self.items[sk].x, self.items[sk].y = -1000.0, -1000.0
+                        joint_ok = True
+                        for sub_s, sub_spin, sub_t, sub_tpin, sub_maxd in sorted(sibling_hps, key=lambda x: x[4]):
+                            it_sub_s = self.items[sub_s]
+                            sub_p2 = self.items[sub_t].get_pad_abs(sub_tpin)
+                            sub_dx0, sub_dy0 = it_sub_s.pads_dx0_dy0.get(sub_spin, (0.0, 0.0))
+                            if not sub_p2:
+                                joint_ok = False
+                                break
+                            s_horiz_edge = abs(sub_p2[1] - it_t.y) >= abs(sub_p2[0] - it_t.x)
+                            perp_rots = [r for r in it_sub_s.allowed_rotations if int(round(r)) % 180 == (90 if s_horiz_edge else 0)]
+                            para_rots = [r for r in it_sub_s.allowed_rotations if r not in perp_rots]
+                            rot_batches = [b for b in (perp_rots, para_rots) if b]
+                            slim = sub_maxd * 0.98
+                            snx = int(slim / 0.25) + 1
+                            sny = int(slim / 0.15) + 1
+                            s_grid = sorted(
+                                [
+                                    (ix * 0.25, iy * 0.15)
+                                    for ix in range(-snx, snx + 1)
+                                    for iy in range(-sny, sny + 1)
+                                    if math.hypot(ix * 0.25, iy * 0.15) <= slim
+                                ],
+                                key=lambda pt: math.hypot(pt[0], pt[1]),
+                            )
+                            sub_placed = False
+                            for r_batch in rot_batches:
+                                for sgx, sgy in s_grid:
+                                    scx = sub_p2[0] + sgx
+                                    scy = sub_p2[1] + sgy
+                                    for s_rot in r_batch:
+                                        spdx, spdy = rotate_offset(sub_dx0, sub_dy0, s_rot)
+                                        it_sub_s.x = scx - spdx
+                                        it_sub_s.y = scy - spdy
+                                        it_sub_s.rotation = s_rot
+                                        sc_box, _, _ = get_real_box(it_sub_s)
+                                        if sc_box.intersection_area(t_curr_box) > 0.005:
+                                            continue
+                                        if (
+                                            sc_box.x_min < self.edge_clearance or
+                                            sc_box.x_max > self.board_w - self.edge_clearance or
+                                            sc_box.y_min < self.edge_clearance or
+                                            sc_box.y_max > self.board_h - self.edge_clearance
+                                        ):
+                                            continue
+                                        if any(
+                                            sc_box.intersects(RectBox(h.get("x_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("x_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) - h.get("head_clearance_mm", 4.5) / 2.0, h.get("y_mm", 0.0) + h.get("head_clearance_mm", 4.5) / 2.0))
+                                            for h in self.mounting_holes
+                                        ):
+                                            continue
+                                        if any(
+                                            it_sub_s.designator not in set(kz.get("exempt_refs", [])) and sc_box.intersects(RectBox(kz.get("rect_mm", {}).get("x_min", 0.0), kz.get("rect_mm", {}).get("x_max", 0.0), kz.get("rect_mm", {}).get("y_min", 0.0), kz.get("rect_mm", {}).get("y_max", 0.0)))
+                                            for kz in self.keepouts
+                                        ):
+                                            continue
+                                        if not any(
+                                            k != sub_s and self.items[k].x > -500.0 and sc_box.intersection_area(get_real_box(self.items[k])[0]) > 0.005
+                                            for k in range(self.n_items)
+                                        ):
+                                            sub_placed = True
+                                            break
+                                    if sub_placed:
+                                        break
+                                if sub_placed:
+                                    break
+                            if not sub_placed:
+                                joint_ok = False
+                                break
+                        if joint_ok:
+                            for bk, bx0, by0, brot0 in saved_cb:
+                                self.items[bk].x, self.items[bk].y, self.items[bk].rotation = bx0, by0, brot0
+                                if not is_pose_collision_free(self.items[bk]):
+                                    if not _relocate_blocker(self.items[bk]):
+                                        joint_ok = False
+                                        break
+                        if joint_ok:
+                            placed_hp_subjects.update(sib_indices)
+                        else:
+                            for k, kx0, ky0, krot0 in saved_all:
+                                self.items[k].x, self.items[k].y, self.items[k].rotation = kx0, ky0, krot0
+
+        return all(is_pose_collision_free(it) for it in self.items if not it.is_fixed)
 
 
 def optimize_placement_multistart(

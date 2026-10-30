@@ -110,10 +110,10 @@ def magnetic_field_coupling(
 ) -> float:
     """
     Calcule le couplage magnétique dipolaire H (di/dt) entre deux blocs ou composants.
-    Décroissance dipolaire en 1/r³ au-delà de la distance minimale.
+    Décroissance dipolaire en 1/r³ normalisée à min_dist_mm.
     Orientation angulaire : couplage maximal si parallèles (0° ou 180°), minimal si orthogonaux (90° ou 270°).
     """
-    effective_dist = max(min_dist_mm, dist_mm)
+    effective_dist = max(0.5, dist_mm)
     # Facteur de décroissance spatiale en 1/r³
     spatial_factor = (min_dist_mm / effective_dist) ** 3
 
@@ -131,9 +131,9 @@ def electric_field_coupling(
 ) -> float:
     """
     Calcule le couplage capacitif / champ électrique E (dv/dt).
-    Décroissance monopolaire/capacitive en 1/r².
+    Décroissance monopolaire/capacitive en 1/r² normalisée à min_dist_mm.
     """
-    effective_dist = max(min_dist_mm, dist_mm)
+    effective_dist = max(0.5, dist_mm)
     return (min_dist_mm / effective_dist) ** 2
 
 
@@ -151,3 +151,26 @@ def decoupling_effective_inductance_nh(
     l_trace = trace_inductance_nh_per_mm * max(0.0, dist_mm)
     l_vias = (via_inductance_nh / max(1, via_count)) * 2.0  # aller + retour
     return round(l_trace + l_vias, 3)
+
+
+def in_line_path_metrics(
+    source_pt: Tuple[float, float],
+    protection_pt: Tuple[float, float],
+    target_pt: Tuple[float, float]
+) -> Tuple[bool, float, float]:
+    """
+    Évalue la topologie CEM « En-Ligne » (In-Line Path : Source -> Protection -> Cible)
+    pour prévenir les embranchements inductifs (stubs) sur les protections TVS/ESD/Fusibles.
+    Retourne :
+      - is_ordered (bool) : True si dist(Source, Protection) <= dist(Source, Cible)
+      - detour_mm (float) : Sur-longueur de détour (d(S,P) + d(P,T) - d(S,T)) en mm
+      - order_violation_mm (float) : Dépassement d'ordre max(0, d(S,P) - d(S,T)) en mm
+    """
+    d_sp = math.hypot(protection_pt[0] - source_pt[0], protection_pt[1] - source_pt[1])
+    d_pt = math.hypot(target_pt[0] - protection_pt[0], target_pt[1] - protection_pt[1])
+    d_st = math.hypot(target_pt[0] - source_pt[0], target_pt[1] - source_pt[1])
+
+    detour_mm = max(0.0, (d_sp + d_pt) - d_st)
+    order_violation_mm = max(0.0, d_sp - d_st)
+    is_ordered = (d_sp <= d_st + 0.5)
+    return is_ordered, round(detour_mm, 3), round(order_violation_mm, 3)

@@ -239,25 +239,47 @@ class DsnMetrologyAnalyzer:
                 target_nets_set = set(target_nets)
                 associated_nets = []
                 total_loop_len_mm = 0.0
+                vertical_loop_area_mm2 = 0.0
+                loop_vias_count = 0
+
+                # Chargement des hauteurs diélectriques par couche depuis le profil fabricant JLC2313
+                layer_h_map = {"TopLayer": 0.11, "1": 0.11, "Inner1": 0.0, "15": 0.0, "Inner2": 1.26, "16": 1.26, "BottomLayer": 1.37, "2": 1.37}
+                rules_path = Path(__file__).resolve().parent.parent / "pcb-dfm" / "config" / "rules_jlcpcb.json"
+                if rules_path.is_file():
+                    try:
+                        r_data = json.loads(rules_path.read_text(encoding="utf-8"))
+                        s_type = self.board.get("board", {}).get("stackup", {}).get("type", "4_layer_jlc2313")
+                        custom_h = r_data.get("stackup_definitions", {}).get(s_type, {}).get("layer_distance_to_inner1_mm")
+                        if custom_h:
+                            layer_h_map.update({str(k): float(v) for k, v in custom_h.items()})
+                    except Exception:
+                        pass
 
                 for net_name, n_met in self.parser.nets_metrics.items():
                     if net_name in target_nets_set:
                         associated_nets.append(net_name)
                         total_loop_len_mm += n_met.total_length_mm
+                        loop_vias_count += n_met.via_count
                         for seg in n_met.segments:
                             loop_points.extend(seg.points)
+                            h_seg = layer_h_map.get(seg.layer, 0.20)
+                            vertical_loop_area_mm2 += seg.length_mm * h_seg
 
                 stackup_layers = self.board.get("board", {}).get("stackup", {}).get("layers", [])
                 has_internal_plane = any(lay.get("type") == "plane" for lay in stackup_layers)
 
                 if len(loop_points) >= 3:
+                    horiz_area = polygon_area_shoelace(loop_points)
                     if has_internal_plane:
-                        # Sur stackup multicouche avec plan interne (ex. JLC2313 h=0.11..0.20 mm),
-                        # la boucle magnétique de retour se referme verticalement sous la piste (A = L * h)
-                        area = total_loop_len_mm * 0.20
+                        # Modèle 3D hybride : somme de l'aire verticale réelle sous piste par couche
+                        # + fraction de l'ouverture horizontale de fermeture entre pastilles GND
+                        area = vertical_loop_area_mm2 + 0.15 * horiz_area
+                        eff_h = (vertical_loop_area_mm2 / max(0.1, total_loop_len_mm)) if total_loop_len_mm > 0 else 0.11
                     else:
-                        area = polygon_area_shoelace(loop_points)
-                    ind = estimate_loop_inductance_nh(loop_points, trace_width_mm=0.8, reference_plane_height_mm=0.2)
+                        area = horiz_area
+                        eff_h = 0.0
+                    base_ind = estimate_loop_inductance_nh(loop_points, trace_width_mm=0.8, reference_plane_height_mm=eff_h)
+                    ind = base_ind + 0.45 * loop_vias_count
                 else:
                     area = 0.0
                     ind = 0.0

@@ -1,192 +1,22 @@
 {
-  "date": "2026-10-26T21:20:43.984579",
+  "date": "2026-10-30T17:01:34.281417",
   "success": false,
   "cycles": [
     {
       "cycle": 1,
-      "unrouted": 10,
-      "violations": 284,
-      "wire_length_mm": 1573.66,
-      "vias": 73,
-      "loop_area_mm2": 7.6,
-      "max_skew_mm": 50.1,
-      "is_valid": false
-    },
-    {
-      "cycle": 2,
-      "unrouted": 16,
-      "violations": 290,
-      "wire_length_mm": 1608.91,
-      "vias": 79,
-      "loop_area_mm2": 9.17,
-      "max_skew_mm": 23.84,
-      "is_valid": false
-    },
-    {
-      "cycle": 3,
-      "unrouted": 18,
-      "violations": 289,
-      "wire_length_mm": 1605.25,
+      "unrouted": 0,
+      "violations": 16,
+      "wire_length_mm": 1550.95,
       "vias": 74,
-      "loop_area_mm2": 5.08,
-      "max_skew_mm": 14.89,
+      "loop_area_mm2": 73.08,
+      "max_skew_mm": 29.24,
       "is_valid": false
     }
   ],
   "drc": {
-    "errorCount": 10,
+    "errorCount": 0,
     "warningCount": 0,
-    "groups": [
-      {
-        "name": "Clearance Error",
-        "count": 4
-      },
-      {
-        "name": "Connection Error",
-        "count": 6
-      }
-    ],
-    "items": [
-      {
-        "category": "Clearance Error",
-        "subCategory": "SMD Pad to SMD Pad",
-        "net": "SMD Pad to SMD Pad",
-        "obj1": "(ESP_EN): U1_3",
-        "obj2": "(3.3V): C1_1",
-        "minDistance": "0mm",
-        "requiredDistance": ">= 0.152mm",
-        "errorType": "Clearance Error",
-        "position": {
-          "x": 271.27785,
-          "y": 107.4008
-        }
-      },
-      {
-        "category": "Clearance Error",
-        "subCategory": "SMD Pad to SMD Pad",
-        "net": "SMD Pad to SMD Pad",
-        "obj1": "(ESP_EN): U1_3",
-        "obj2": "(GND): C1_2",
-        "minDistance": "0mm",
-        "requiredDistance": ">= 0.152mm",
-        "errorType": "Clearance Error",
-        "position": {
-          "x": 271.65165,
-          "y": 101.49625000000003
-        }
-      },
-      {
-        "category": "Clearance Error",
-        "subCategory": "SMD Pad to SMD Pad",
-        "net": "SMD Pad to SMD Pad",
-        "obj1": "(KLINE_RX): U1_4",
-        "obj2": "(3.3V): C1_1",
-        "minDistance": "0mm",
-        "requiredDistance": ">= 0.152mm",
-        "errorType": "Clearance Error",
-        "position": {
-          "x": 266.27785,
-          "y": 107.40174999999999
-        }
-      },
-      {
-        "category": "Clearance Error",
-        "subCategory": "SMD Pad to SMD Pad",
-        "net": "SMD Pad to SMD Pad",
-        "obj1": "(KLINE_RX): U1_4",
-        "obj2": "(GND): C1_2",
-        "minDistance": "0mm",
-        "requiredDistance": ">= 0.152mm",
-        "errorType": "Clearance Error",
-        "position": {
-          "x": 266.27785,
-          "y": 107.40174999999999
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "3.3V",
-        "net": "3.3V",
-        "obj1": "(3.3V): U1_2",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 278.04949999999997,
-          "y": 104.44899999999996
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "3.3V",
-        "net": "3.3V",
-        "obj1": "(3.3V): C1_1",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 269.88,
-          "y": 105.82599999999996
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "KLINE_RX",
-        "net": "KLINE_RX",
-        "obj1": "(KLINE_RX): R1_2",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 226.68,
-          "y": 120.584
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "KLINE_RX",
-        "net": "KLINE_RX",
-        "obj1": "(KLINE_RX): U1_4",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 268.04949999999997,
-          "y": 104.44899999999996
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "$7N25",
-        "net": "$7N25",
-        "obj1": "($7N25): J2_A5",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 155.079,
-          "y": 24.7405
-        }
-      },
-      {
-        "category": "Connection Error",
-        "subCategory": "$7N25",
-        "net": "$7N25",
-        "obj1": "($7N25): e7197",
-        "obj2": "",
-        "minDistance": "",
-        "requiredDistance": "",
-        "errorType": "Connection Error",
-        "position": {
-          "x": 139.1,
-          "y": 55.54
-        }
-      }
-    ]
+    "groups": [],
+    "items": []
   }
 }
