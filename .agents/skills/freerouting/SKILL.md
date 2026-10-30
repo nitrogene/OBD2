@@ -1,114 +1,115 @@
 ---
 name: freerouting
-description: "Moteur d'auto-routage headless agnostique intégrant FreeRouting CLI et EasyEDA Pro. Gère le bootstrap portable JRE 25, l'export/import Specctra DSN/SES, l'injection de classes de nets et contraintes géométriques/CEM, et le monitoring des passes d'optimisation."
+description: "Agnostic headless auto-routing engine integrating FreeRouting CLI and EasyEDA Pro. Manages portable OpenJDK JRE 25 bootstrapping, Specctra DSN/SES export/import, net class and geometric/EMC constraint injection, and optimization pass monitoring."
 ---
 
-# Skill : FreeRouting Headless pour EasyEDA Pro
+# Skill: Headless FreeRouting for EasyEDA Pro
 
-## 1. Vue d'Ensemble & Architecture
+## 1. Overview & Architecture
 
-Le skill `freerouting` fournit une suite logicielle autonome et portable permettant d'effectuer le routage automatique d'un circuit imprimé conçu sous EasyEDA Pro à l'aide du moteur open-source **FreeRouting v2.4.1** exécuté en ligne de commande.
+The `freerouting` skill provides an autonomous and portable software suite for automated printed circuit board routing in EasyEDA Pro using the open-source **FreeRouting v2.4.1** engine executed in command-line mode.
 
-### Chaîne d'Exécution du Pipeline :
+### Pipeline Execution Flow:
 ```
 [EasyEDA Pro PCB]
        │
-       ▼ (1) dsn_exporter.py : Exportation Specctra DSN via l'API EasyEDA Pro
+       ▼ (1) dsn_exporter.py: Specctra DSN export via the EasyEDA Pro API
 [board_raw.dsn]
        │
-       ▼ (2) dsn_patcher.py : Injection des contraintes depuis --config (largeurs, isolements, vias)
+       ▼ (2) dsn_patcher.py: Constraint injection from --config (widths, clearances, vias)
 [board_patched.dsn]
        │
-       ▼ (3) router.py : Exécution headless CLI FreeRouting (OpenJDK Temurin JRE 25)
+       ▼ (3) router.py: Headless CLI FreeRouting execution (OpenJDK Temurin JRE 25)
 [board_routed.ses]
        │
-       ▼ (4) ses_importer.py : Réimportation de la session SES dans EasyEDA Pro
-[EasyEDA Pro PCB Routé]
+       ▼ (4) ses_importer.py: Re-import SES session file into EasyEDA Pro
+[Routed EasyEDA Pro PCB]
 ```
 
 ---
 
-## 2. Conformité aux Règles du Projet (agents.md)
+## 2. Project Rules Compliance (AGENTS.md)
 
-- **Règle 1 (Modularité & Moteur Agnostique) :**
-  - **Zéro composant en dur :** Aucune référence à un composant (`U4`, `R13`, etc.), aucune coordonnée physique ni net spécifique n'est codé dans les scripts.
-  - **Origine des données :** Toutes les règles (classes de nets, largeurs de pistes, dégagements, diamètres de vias) proviennent exclusivement du fichier de configuration formel passé en argument (`--config <fichier.json>`).
-  - **Exécution stricte via `uv` :** Tout script Python du skill doit être exécuté impérativement via `uv run python <script>.py`.
-- **Règle 1 (Transparence et Sécurité) :**
-  - Toute interaction avec le pont local EasyEDA (`http://localhost:49620`) doit être explicitée avant exécution (intention, motif technique, action concrète).
+- **Rule 1 (Modularity & Agnostic Engine):**
+  - **Zero hardcoded components:** No component references (`U4`, `R13`, etc.), physical coordinates, or specific net names are hardcoded in the scripts.
+  - **Data source:** All rules (net classes, trace widths, clearances, via diameters) originate exclusively from the formal configuration file provided as a CLI argument (`--config <file.json>`).
+  - **Strict execution via `uv`:** Every Python script in this skill must be executed via `uv run python <script>.py`.
+- **Rule 2 (Transparency and Safety):**
+  - All interactions with the local EasyEDA bridge (`http://localhost:49620`) must be explicitly declared before execution (intent, technical rationale, concrete action).
 
 ---
 
-## 3. Composants du Skill
+## 3. Skill Components
 
-| Script | Rôle | Description |
+| Script | Role | Description |
 | :--- | :--- | :--- |
-| `jre_manager.py` | Gestionnaire d'environnement | Télécharge et déballe automatiquement dans `.cache/runtime/` l'environnement portable OpenJDK Temurin JRE 25 et le JAR FreeRouting v2.4.1 si non présents. |
-| `dsn_exporter.py` | Exportateur DSN | Interroge l'API EasyEDA Pro (`eda.pcb_ManufactureData.getDsnFile`) pour exporter en direct le layout au format Specctra DSN. |
-| `dsn_patcher.py` | Patcher de contraintes | Parse le DSN Specctra, convertit les dimensions millimétriques en unités DSN (mil), injecte les padstacks de vias personnalisés et met à jour les règles des classes de nets selon le fichier JSON. |
-| `router.py` | Exécuteur headless | Pilote FreeRouting en ligne de commande, analyse la progression en temps réel (fanout, passes d'autoroutage, optimisation) et produit le fichier de session `.ses`. |
-| `ses_importer.py` | Importateur SES | Injecte le fichier `.ses` dans le document PCB actif via `eda.pcb_Document.importAutoRouteSesFile`. |
-| `freerouting_pipeline.py` | Orchestrateur maître | Coordonne les étapes 1 à 4 dans un pipeline unifié avec gestion des erreurs et métriques récapitulatives. |
+| `jre_manager.py` | Environment manager | Automatically downloads and unpacks the portable OpenJDK Temurin JRE 25 runtime and FreeRouting v2.4.1 JAR into `.cache/runtime/` if not present. |
+| `dsn_exporter.py` | DSN exporter | Queries the EasyEDA Pro API (`eda.pcb_ManufactureData.getDsnFile`) to export the live PCB layout in Specctra DSN format. |
+| `dsn_patcher.py` | Constraint patcher | Parses the Specctra DSN, converts millimeter dimensions into DSN units (mils), injects custom via padstacks, and updates net class rules based on the JSON configuration. |
+| `router.py` | Headless runner | Drives FreeRouting via the command line, parses real-time routing progress (fanout, autoroute passes, optimization), and outputs the `.ses` session file. |
+| `ses_importer.py` | SES importer | Injects the `.ses` file into the active PCB document via `eda.pcb_Document.importAutoRouteSesFile`. |
+| `drc_checker.py` | EasyEDA DRC checker | Triggers the physical DRC audit in EasyEDA Pro via the API (`eda.pcb_Drc.check`) and summarizes errors and warnings. |
+| `freerouting_pipeline.py` | Master orchestrator | Coordinates steps 1 through 4 into a unified pipeline with error handling and summary metrics. |
 
 ---
 
-## 4. Utilisation en Ligne de Commande
+## 4. Command-Line Usage
 
-### Pipeline Complet Unifié (Recommandé)
+### Complete Unified Pipeline (Recommended)
 ```bash
-# Routage complet depuis EasyEDA Pro avec réimport automatique
+# Full routing run from EasyEDA Pro with automatic re-import
 uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --passes 10
 
-# Routage en mode incrémental (préserve les pistes déjà routées)
+# Incremental routing mode (preserves pre-existing routed traces)
 uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --incremental
 
-# Génération du fichier SES sans réimport dans le PCB (simulation / analyse)
+# Generate the SES file without re-importing into the PCB (simulation / analysis)
 uv run python .agents/skills/freerouting/freerouting_pipeline.py --config documents/pcb/constraints.json --no-import
 ```
 
-### Options du Pipeline :
-- `--config <path>` : Fichier JSON contenant les règles de conception et classes de nets (défaut: `documents/pcb/constraints.json`).
-- `--dsn <path>` : Fichier DSN source (optionnel ; si omis, exporté directement depuis EasyEDA Pro).
-- `--passes <int>` : Nombre maximal de passes d'autoroutage (défaut : `10`).
-- `--threads <int>` : Nombre de threads pour le moteur (défaut : `1` pour garantir l'absence de violations d'isolement lors de l'optimisation).
-- `--strategy <str>` : Stratégie de mise à jour (`greedy`, `global`, `hybrid` ; défaut : `hybrid`).
-- `--incremental` : Protège les pistes pré-existantes dans le DSN (`type protect`).
-- `--no-import` : Exécute le routage et produit le `.ses` sans l'injecter dans EasyEDA Pro.
-- `--save` : Sauvegarde automatiquement le document PCB après l'importation.
-- `--route-all-nets` : Force le routage filaire de tous les nets y compris les plans de masse (par défaut, les nets déclarés dans `plane_nets` comme `GND` sont exclus du routage filaire et réservés aux plans de cuivre).
+### Pipeline Options:
+- `--config <path>`: JSON file containing design rules and net classes (default: `documents/pcb/constraints.json`).
+- `--dsn <path>`: Source DSN file (optional; if omitted, exported directly from EasyEDA Pro).
+- `--passes <int>`: Maximum number of autorouting passes (default: `10`).
+- `--threads <int>`: Number of engine threads (default: `1` to avoid clearance violations during optimization).
+- `--strategy <str>`: Routing update strategy (`greedy`, `global`, `hybrid`; default: `hybrid`).
+- `--incremental`: Protects pre-existing traces in the DSN (`type protect`).
+- `--no-import`: Runs routing and produces the `.ses` file without injecting it into EasyEDA Pro.
+- `--save`: Automatically saves the PCB document after import.
+- `--route-all-nets`: Forces track routing of all nets including ground planes (by default, nets declared in `plane_nets` like `GND` are excluded from track routing and reserved for copper pours).
 
-### Utilisation Modulaire des Scripts
+### Modular Script Usage
 
-#### 1. Vérification / Installation de l'environnement JRE :
+#### 1. JRE Environment Verification / Installation:
 ```bash
 uv run python .agents/skills/freerouting/jre_manager.py --check
 ```
 
-#### 2. Exportation seule du DSN :
+#### 2. DSN Export Only:
 ```bash
 uv run python .agents/skills/freerouting/dsn_exporter.py --out .agents/skills/freerouting/.cache/board.dsn
 ```
 
-#### 3. Patching seul des contraintes :
+#### 3. Constraint Patching Only:
 ```bash
 uv run python .agents/skills/freerouting/dsn_patcher.py --dsn input.dsn --config documents/pcb/constraints.json --out patched.dsn
 ```
 
-#### 4. Exécution seule du moteur de routage :
+#### 4. Routing Engine Execution Only:
 ```bash
 uv run python .agents/skills/freerouting/router.py --dsn patched.dsn --ses output.ses --passes 10 --threads 1
 ```
 
-#### 5. Importation seule du fichier SES :
+#### 5. SES File Import Only:
 ```bash
 uv run python .agents/skills/freerouting/ses_importer.py --ses output.ses
 ```
 
 ---
 
-## 5. Spécification du Fichier de Contraintes (`--config`)
+## 5. Constraint File Specification (`--config`)
 
-Le moteur `dsn_patcher.py` attend une section `net_classes` structurée comme suit :
+The `dsn_patcher.py` engine expects a `net_classes` section structured as follows:
 
 ```json
 {
@@ -142,4 +143,4 @@ Le moteur `dsn_patcher.py` attend une section `net_classes` structurée comme su
 }
 ```
 
-Tous les signaux présents sur le PCB qui ne sont pas explicitement listés dans une classe spécifique adoptent automatiquement les contraintes définies dans la classe `DEFAULT`.
+All PCB signals not explicitly listed in a specific class automatically inherit the constraints defined in the `DEFAULT` class.

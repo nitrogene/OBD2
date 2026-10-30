@@ -1,313 +1,313 @@
-# Spécifications Logicielles & Document d'Amorçage Firmware (Software Handover)
+# Software Specifications & Firmware Handover Document
 
-Ce document constitue le **cahier des charges fonctionnel, technique et matériel** destiné à l'initialisation du **dépôt dédié au firmware embarqué** du Scanner OBD-II ESP32. Il réunit l'ensemble des données d'interface matérielle (pinout, timings, caractéristiques électriques, protocoles et formules) indispensables pour développer, qualifier et déployer la stack logicielle sur la carte électronique.
+This document constitutes the **functional, technical, and hardware requirements specification** for initializing the **dedicated embedded firmware repository** for the ESP32 OBD-II Scanner. It compiles all hardware interface definitions (pinouts, timings, electrical ratings, communication protocols, and conversion formulas) necessary to develop, validate, and deploy the software stack on the physical board.
 
 ---
 
-## 1. Vision & Rôles du Firmware
+## 1. Vision & Firmware Operating Roles
 
-Le matériel est une **carte universelle** capable d'assumer deux rôles selon sa configuration logicielle et matérielle :
+The physical board is a **universal hardware platform** capable of assuming two distinct roles depending on its hardware jumper configuration and flashed firmware image:
 
 ```
                         ┌──────────────────────────────────────────────┐
-                        │           CARTE UNIVERSELLE OBD2             │
+                        │          UNIVERSAL OBD2 HARDWARE             │
                         │           (ESP32-S3-WROOM-1)                 │
                         └───────┬──────────────────────────────┬───────┘
                                 │                              │
-                Firmware Client │              Firmware Serveur│
+                 Client Firmware│               Server Firmware│
                                 ▼                              ▼
                  ┌─────────────────────────────┐┌─────────────────────────────┐
-                 │       SCANNER OBD-II        ││      SIMULATEUR D'ECU       │
-                 │   (Outil de diagnostic)     ││   (Banc d'essais labo)      │
+                 │       OBD-II SCANNER        ││        ECU SIMULATOR        │
+                 │     (Diagnostic Tool)       ││      (Lab Test Bench)       │
                  ├─────────────────────────────┤├─────────────────────────────┤
-                 │ • Maître de communication   ││ • Esclave répondeur         │
-                 │ • Envoi requêtes OBD-II     ││ • Émission trames cycliques │
-                 │ • Décodage PIDs & DTCs      ││ • Réponse PIDs / Freeze     │
-                 │ • Stream BLE / Wi-Fi / USB  ││ • Injection dynamique DTCs  │
-                 │ • Cavalier JP1 : OUVERT     ││ • Cavalier JP1 : FERMÉ      │
-                 │ • Cavalier JP2 : FERMÉ      ││ • Cavalier JP2 : OUVERT     │
+                 │ • Communication Master      ││ • Responding Slave          │
+                 │ • OBD-II Query Dispatcher   ││ • Cyclic Frame Broadcaster  │
+                 │ • PIDs & DTCs Decoder       ││ • PIDs / Freeze Responder   │
+                 │ • BLE / Wi-Fi / USB Stream  ││ • Dynamic Fault Injection   │
+                 │ • Jumper JP1: OPEN          ││ • Jumper JP1: CLOSED        │
+                 │ • Jumper JP2: CLOSED        ││ • Jumper JP2: OPEN          │
                  └─────────────────────────────┘└─────────────────────────────┘
 ```
 
-1. **Rôle 1 : Scanner OBD-II (Mode Nominal Véhicule) :**
-   - Connecté sur la prise diagnostic SAE J1962 d'une voiture 12V.
-   - Initialise et interroge les calculateurs via TWAI/CAN (ISO 15765-4) et K-Line (ISO 9141-2 / ISO 14230 KWP2000).
-   - Mesure en continu la tension batterie (`VBAT_SENSE`), gère la veille basse consommation (plancher matériel réaliste ~8 à 15 mA).
-   - Diffuse les données télémétriques vers un smartphone / tablette via BLE 5.0 ou Wi-Fi, ou vers un PC via USB-C.
-2. **Rôle 2 : Simulateur d'ECU Automobile (Mode Qualification sur Table / Banc Miroir) :**
-   - Flashé sur une seconde carte identique interconnectée via son connecteur JST-XH 5 broches `J1` (et embase labo `H3`) à la carte Scanner.
-   - Simule un calculateur moteur (ECM) et ses périphériques (TCM, ABS).
-   - Émet des trames périodiques TWAI/CAN (régime moteur RPM, vitesse véhicule, température d'eau).
-   - Répond aux requêtes OBD-II (Modes 01, 02, 03, 04, 07, 09) et aux initialisations K-Line 5-baud / Fast-Init.
-   - Fournit une console interactive CLI (via USB-C ou BLE) pour faire varier dynamiquement les capteurs et injecter des pannes (`P0300`, `P0420`).
+1. **Role 1: OBD-II Scanner (Nominal In-Vehicle Mode):**
+   - Connected directly to the SAE J1962 diagnostic port of a 12V vehicle.
+   - Initializes and queries ECUs via TWAI/CAN (ISO 15765-4) and K-Line (ISO 9141-2 / ISO 14230 KWP2000).
+   - Continuously monitors battery voltage (`VBAT_SENSE`), manages low-power sleep (realistic hardware baseline ~8 to 15 mA).
+   - Streams live telemetry to a smartphone/tablet via BLE 5.0 or Wi-Fi, or to a PC via USB-C.
+2. **Role 2: Automotive ECU Simulator (Bench Qualification / Mirror Board Mode):**
+   - Flashed onto an identical second board interconnected via its JST-XH 5-pin connector `J1` (and lab header `H3`) to the Scanner board.
+   - Emulates an Engine Control Module (ECM) and companion controllers (TCM, ABS).
+   - Broadcasts periodic TWAI/CAN frames (engine RPM, vehicle speed, coolant temperature).
+   - Responds to standard OBD-II queries (Modes 01, 02, 03, 04, 07, 09) and K-Line 5-baud / Fast-Init wake-up sequences.
+   - Provides an interactive CLI console (via USB-C or BLE) to dynamically modulate sensor values and inject diagnostic fault codes (`P0300`, `P0420`).
 
 ---
 
-## 2. Interface Matérielle & Table d'Assignation des GPIOs
+## 2. Hardware Interface & GPIO Pinout Mapping
 
-### 2.1 Cœur de Traitement : ESP32-S3-WROOM-1-N16R2
-- **SoC :** ESP32-S3 (Xtensa Dual-Core 32 bits LX7 cadencé jusqu'à 240 MHz).
-- **Mémoires :** 16 Mo Flash Quad SPI (NVS, partitions firmware), 2 Mo PSRAM Octal SPI.
-- **Plage thermique :** –40 °C à +85 °C (conforme habitacle automobile).
-- **Alimentation logique :** 3.3V régulé par LDO LDL1117S33R et purifié par perle de ferrite `FB1`.
-- **Règle absolue :** Les broches d'E/S de l'ESP32-S3 **ne sont pas tolérantes 5V** ($V_{max} = 3.6\,\text{V}$). Tous les étages périphériques sont adaptés en 3.3V.
+### 2.1 Processing Core: ESP32-S3-WROOM-1-N16R2
+- **SoC:** ESP32-S3 (Xtensa Dual-Core 32-bit LX7 clocked up to 240 MHz).
+- **Memory:** 16 MB Quad SPI Flash (NVS storage, firmware partitions), 2 MB Octal SPI PSRAM.
+- **Operating Temperature:** –40 °C to +85 °C (automotive cabin rated).
+- **Logic Supply:** 3.3V regulated by low-noise LDO LDL1117S33R and filtered by ferrite bead `FB1`.
+- **Absolute Rule:** ESP32-S3 I/O pins are **not 5V tolerant** (`Vmax = 3.6 V`). All peripheral interface stages are natively level-shifted or clamped to 3.3V.
 
-### 2.2 Table Complète de Mappage des Broches
+### 2.2 Complete Pinout Mapping Table
 
-| GPIO | Direction | Net Schéma | Périphérique / Fonction | Caractéristiques Électriques & Remarques |
+| GPIO | Direction | Schematic Net | Peripheral / Function | Electrical Characteristics & Notes |
 | :--- | :---: | :--- | :--- | :--- |
-| **`IO1`** | Entrée Analogique | `VBAT_SENSE` | **ADC1_CH0** (Mesure tension batterie) | Pont diviseur $k \approx 1/9.33$, filtre 148 Hz, clamp rail-to-rail `D6` (BAV199). Compatible Wi-Fi actif. |
-| **`IO2`** | Sortie Numérique | `LED_STATUS` | **LED d'état rouge `LED1`** | Active à l'état HAUT (3.3V). Courant limité à 13.0 mA par `R6` (100 Ω). Compatible PWM LEDC. |
-| **`IO4`** | Entrée Numérique | `KLINE_RX` | **UART RX (K-Line)** | Liaison série depuis transceiver L9637D (broche 1) via `R1` (10 Ω). Pull-up interne active 10 kΩ dans le L9637D reliée à 3.3V. |
-| **`IO5`** | Sortie Numérique | `KLINE_TX` | **UART TX (K-Line)** | Émission série vers transceiver L9637D (broche 4) via `R2` (10 Ω). 12V récessif = 3.3V repos, dominant = 0V. |
-| **`IO15`** | Sortie Numérique | `TWAI_TX` | **TWAI TX (CAN)** | Émetteur CAN vers transceiver TJA1051T (broche 1). Niveau logique 3.3V. |
-| **`IO16`** | Entrée Numérique | `TWAI_RX` | **TWAI RX (CAN)** | Récepteur CAN depuis transceiver TJA1051T (broche 4). Niveau logique 3.3V via broche `VIO`. |
-| **`IO19`** | E/S Différentielle | `USB_D-` | **USB OTG D- (Natif)** | Ligne différentielle USB négative avec résistance série `R22` (22 Ω) et TVS ESD `U7`. Flash ROM & CDC série. |
-| **`IO20`** | E/S Différentielle | `USB_D+` | **USB OTG D+ (Natif)** | Ligne différentielle USB positive avec résistance série `R23` (22 Ω) et TVS ESD `U6`. Flash ROM & CDC série. |
-| **`IO0`** | Entrée (Strapping) | `IO0` | **Bootloader ROM** | Pull-up externe 10 kΩ (`R21`) vers 3.3V. Point de test `TP10` pour mise à la masse au reset en cas de recovery. |
-| **`EN`** | Entrée Reset | `ESP_EN` | **Reset Matériel / CHIP_PU** | Temporisation RC 10 ms (`R15` 10 kΩ + `C12` 1 µF) + Bouton tactile `SW1` (trou d'épingle) + Point de test `TP11`. |
+| **`IO1`** | Analog Input | `VBAT_SENSE` | **ADC1_CH0** (Battery Voltage Sensing) | Precision divider `k ≈ 1/9.33`, 148 Hz filter, rail-to-rail clamp `D6` (BAV199). Compatible with active Wi-Fi. |
+| **`IO2`** | Digital Output | `LED_STATUS` | **Status LED Red `LED1`** | Active HIGH (3.3V). Current limited to 13.0 mA by `R6` (100 Ω). Compatible with PWM LEDC. |
+| **`IO4`** | Digital Input | `KLINE_RX` | **UART RX (K-Line)** | Serial input from L9637D transceiver (pin 1) via `R1` (10 Ω). Active internal 10 kΩ pull-up in L9637D tied to 3.3V. |
+| **`IO5`** | Digital Output | `KLINE_TX` | **UART TX (K-Line)** | Serial output to L9637D transceiver (pin 4) via `R2` (10 Ω). 12V recessive = 3.3V idle, dominant = 0V. |
+| **`IO15`** | Digital Output | `TWAI_TX` | **TWAI TX (CAN)** | CAN transmitter output to TJA1051T (pin 1). 3.3V logic level. |
+| **`IO16`** | Digital Input | `TWAI_RX` | **TWAI RX (CAN)** | CAN receiver input from TJA1051T (pin 4). 3.3V logic level via dedicated `VIO` pin. |
+| **`IO19`** | Differential I/O | `USB_D-` | **USB OTG D- (Native)** | Negative USB differential line with series resistor `R22` (22 Ω) and TVS ESD `U7`. ROM flash & CDC serial. |
+| **`IO20`** | Differential I/O | `USB_D+` | **USB OTG D+ (Native)** | Positive USB differential line with series resistor `R23` (22 Ω) and TVS ESD `U6`. ROM flash & CDC serial. |
+| **`IO0`** | Input (Strapping) | `IO0` | **ROM Bootloader** | External 10 kΩ pull-up (`R21`) to 3.3V. Test point `TP10` for grounding at reset during emergency recovery. |
+| **`EN`** | Reset Input | `ESP_EN` | **Hardware Reset / CHIP_PU** | RC timing 10 ms (`R15` 10 kΩ + `C12` 1 µF) + Pinhole pushbutton `SW1` + Test point `TP11`. |
 
 ---
 
-## 3. Monitoring de Tension Batterie & Télémétrie Énergétique
+## 3. Battery Voltage Monitoring & Power Telemetry
 
-### 3.1 Étage de Mesure ADC (`IO1` / ADC1_CH0)
-Le rail batterie protégé `+12V_PROT` est atténué par le pont diviseur de précision $R_{12} = 100\,\text{k}\Omega$ et $R_{13} = 12\,\text{k}\Omega$, filtré par `C10` (100 nF, $f_c \approx 148\,\text{Hz}$) et protégé par la diode double silicium à ultra-faible fuite `D6` (BAV199, fuite $< 100\,\text{pA}$ à 85 °C).
+### 3.1 ADC Measurement Stage (`IO1` / ADC1_CH0)
+The protected battery rail `+12V_PROT` is attenuated by a precision divider `R12 = 100 kΩ` and `R13 = 12 kΩ`, filtered by `C10` (100 nF, `fc ≈ 148 Hz`), and clamped by ultra-low-leakage dual diode `D6` (BAV199, leakage `< 100 pA` at 85 °C).
 
 ```mermaid
 flowchart LR
-    VBAT["+12V_PROT\n(Batterie VL)"] --> R12["R12\n(100 kΩ)"]
+    VBAT["+12V_PROT\n(Vehicle Battery)"] --> R12["R12\n(100 kΩ)"]
     R12 --> SENSE(("VBAT_SENSE\nk = 12/112"))
     SENSE --> R13["R13\n(12 kΩ)"] --> GND["GND"]
-    SENSE --> C10["C10 (100 nF)\nPasse-bas 148 Hz"] --> GND
+    SENSE --> C10["C10 (100 nF)\nLow-pass 148 Hz"] --> GND
     SENSE --> D6["D6 BAV199\nClamp 0V / 3.95V"]
     SENSE ==> ADC["ESP32-S3 (IO1)\nADC1_CH0"]
 ```
 
-### 3.2 Formule de Conversion & Étalonnage
-Le ratio d'atténuation théorique est :
+### 3.2 Conversion Formula & Calibration
+The theoretical attenuation ratio is:
 $$k = \frac{R_{13}}{R_{12} + R_{13}} = \frac{12\,\text{k}\Omega}{100\,\text{k}\Omega + 12\,\text{k}\Omega} = \frac{12}{112} \approx 0.1071428$$
 
-La tension batterie réelle $V_{BAT}$ se déduit de la tension mesurée par l'ADC $V_{ADC}$ :
+The actual battery voltage $V_{BAT}$ is computed from the measured ADC voltage $V_{ADC}$:
 $$V_{BAT} = \frac{V_{ADC}}{k} = V_{ADC} \times 9.3333$$
 
-**Tableau de correspondance des tensions :**
+**Voltage Mapping Table:**
 
-| État Véhicule / Condition | Tension Batterie $V_{BAT}$ | Tension sur Broche ADC $V_{ADC}$ | Comportement Firmware Attendu |
+| Vehicle State / Condition | Battery Voltage $V_{BAT}$ | ADC Pin Voltage $V_{ADC}$ | Expected Firmware Behavior |
 | :--- | :---: | :---: | :--- |
-| **Alimentation USB seule (sur PC)** | **0.0 V (< 2.8 V)** | **< 0.300 V (≈ 0 V)** | Signature détectée : mode debug banc / déconnexion prise OBD (+12V_PROT à 0V isolé par Q1). Inhiber les alertes batterie basse. |
-| **Coupure UVLO matérielle Buck** | **<= 8.01 V** | **<= 0.858 V** | Le régulateur Buck U4 se coupe matériellement. Flash NVS protégée. |
-| **Batterie déchargée critique** | **< 11.8 V** | **< 1.264 V** | Alerte utilisateur, refuser les opérations d'écriture lourdes. |
-| **Batterie nominale au repos** | **12.4 V à 12.8 V** | **1.328 V à 1.371 V** | Fonctionnement nominal moteur coupé. Armer le timer de veille auto (10 min). |
-| **Alternateur en charge (moteur tournant)** | **13.8 V à 14.6 V** | **1.478 V à 1.564 V** | Détection automatique « Contact mis / Moteur tournant ». Maintien actif permanent. |
-| **Surtension alternateur / Régulateur HS** | **> 15.5 V** | **> 1.660 V** | Alerte surtension, notification MIL rouge. |
-| **Plafond transitoire (écrêtage TVS D1)** | **26.0 V** | **2.785 V** | Pleine échelle couverte sans saturation de l'ADC ($< 3.1\,\text{V}$). |
+| **USB Power Only (Bench Debug)** | **0.0 V (< 2.8 V)** | **< 0.300 V (≈ 0 V)** | Signature detected: bench debug mode (+12V_PROT isolated at 0V by Q1). Inhibit low battery alerts. |
+| **Hardware Buck UVLO Cutoff** | **<= 8.01 V** | **<= 0.858 V** | Buck regulator U4 shuts down in hardware. NVS Flash protected. |
+| **Critically Discharged Battery** | **< 11.8 V** | **< 1.264 V** | User alert; reject high-power flash or heavy operations. |
+| **Nominal Resting Battery** | **12.4 V to 12.8 V** | **1.328 V to 1.371 V** | Normal engine-off operation. Arm auto-sleep timer (10 min). |
+| **Alternator Charging (Engine Running)** | **13.8 V to 14.6 V** | **1.478 V to 1.564 V** | Automatic detection: "Ignition ON / Engine Running". Maintain continuous active mode. |
+| **Alternator Overvoltage / Faulty Regulator** | **> 15.5 V** | **> 1.660 V** | Overvoltage alert, trigger red MIL status. |
+| **Transient Peak (TVS D1 Clamping)** | **26.0 V** | **2.785 V** | Full transient scale covered without ADC saturation (`< 3.1 V`). |
 
-### 3.3 Recommandations d'Implémentation ADC & Bilan Énergétique
-- Utiliser l'API de calibration ESP-IDF (`esp_adc_cal` / `adc_oneshot`).
-- Atténuation ADC recommandée : `ADC_ATTEN_DB_12` (plage pleine échelle ~0 mV à 3100 mV).
-- Moyennage glissant sur 32 ou 64 échantillons pour éliminer le bruit résiduel d'allumage.
-- **Veille automatique (*Deep Sleep* / *Light Sleep*) & Plancher de Consommation :**
-  - Si $V_{BAT} \le 12.8\,\text{V}$ pendant plus de 10 minutes consécutives et absence de trame sur les bus $\rightarrow$ passage en veille basse consommation ($I_{tot} \approx 8 \text{ à } 15\,\text{mA}$).
-  - *Analyse matérielle du plancher de veille :* Les transceivers physiques `U2` (TJA1051T/3) et `U3` (L9637D), ainsi que le régulateur LDO `U5` (LDL1117) et le Buck `U4` (TPS54331), restent sous tension tant que le 12V batterie est présent. En veille profonde de l'ESP32-S3 ($I_{ESP} < 20\,\mu\text{A}$), le courant quiescent résiduel global de la carte se situe entre 8 et 15 mA.
-  - *Impact sur la batterie :* Une consommation de 10 mA représente $0.24\,\text{Ah/jour}$, soit environ $7.2\,\text{Ah/mois}$ (décharge < 15% sur batterie 60 Ah après 30 jours), ce qui est parfaitement sécuritaire pour un outil de diagnostic occasionnel ou d'atelier.
-  - *Évolution matérielle future :* Si une veille stricte $< 1\,\text{mA}$ était exigée pour un équipement télématique permanent (tracker 24h/24), prévoir un interrupteur High-Side commandé par GPIO sur le rail 5V coupant `U2` et `U3`.
-  - Réveil configuré sur front GPIO (`ext0` / `ext1`) lors de l'activité CAN/K-Line ou via seuil comparateur ULP sur montée de tension (> 13.2V au démarrage moteur).
+### 3.3 ADC Implementation Guidelines & Power Budget
+- Use the ESP-IDF calibration API (`esp_adc_cal` / `adc_oneshot`).
+- Recommended ADC attenuation: `ADC_ATTEN_DB_12` (full-scale range ~0 mV to 3100 mV).
+- Moving average filter over 32 or 64 samples to eliminate residual ignition noise.
+- **Automatic Sleep (*Deep Sleep* / *Light Sleep*) & Quiescent Floor:**
+  - If $V_{BAT} \le 12.8\,\text{V}$ for more than 10 consecutive minutes and no bus traffic $\rightarrow$ transition to low-power sleep ($I_{tot} \approx 8 \text{ to } 15\,\text{mA}$).
+  - *Hardware Sleep Floor Analysis:* Physical transceivers `U2` (TJA1051T/3) and `U3` (L9637D), alongside linear LDO `U5` (LDL1117) and Buck `U4` (TPS54331), remain powered while 12V battery is present. In ESP32-S3 deep sleep ($I_{ESP} < 20\,\mu\text{A}$), residual quiescent current sits between 8 mA and 15 mA.
+  - *Battery Impact:* A 10 mA draw represents $0.24\,\text{Ah/day}$, or ~ $7.2\,\text{Ah/month}$ (< 15% discharge on a 60 Ah battery after 30 days), perfectly safe for workshop or occasional diagnostic use.
+  - *Future Hardware Evolution:* If sub-1 mA sleep were required for permanent telematics tracking (24/7 in-vehicle plug), add a GPIO-controlled High-Side switch on the 5V rail to cut `U2` and `U3`.
+  - Wake-up source: configure GPIO edge wake-up (`ext0` / `ext1`) on CAN/K-Line activity or ULP comparator threshold on battery voltage rise (> 13.2V at engine crank).
 
 ---
 
-## 4. Pile Protocolaire Bus CAN (ISO 15765-4 & TWAI)
+## 4. CAN Bus Protocol Stack (ISO 15765-4 & TWAI)
 
-### 4.1 Spécifications Physiques & Matérielles
-- **Transceiver :** NXP TJA1051T/3/1J (broche 1 TXD $\leftarrow$ `IO15`, broche 4 RXD $\rightarrow$ `IO16`, broche 5 VIO $\leftarrow$ 3.3V).
-- **Terminaison :** Résistance `R8` (120 Ω) commutable par cavalier `JP1`.
-  - **Sur véhicule :** Cavalier `JP1` **OUVERT** (les 2 terminaisons 120 Ω existent déjà dans le faisceau).
-  - **Sur banc bi-cartes :** Cavalier `JP1` **FERMÉ** sur les deux cartes (forme les 60 Ω équivalents de la norme ISO 11898-2).
-- **Points de test & capture :** Header diagnostic `H2` (`Pin 1: TWAI_RX`, `Pin 2: TWAI_TX`, `Pin 3: GND`) pour analyseur logique.
+### 4.1 Physical & Hardware Specifications
+- **Transceiver:** NXP TJA1051T/3/1J (pin 1 TXD $\leftarrow$ `IO15`, pin 4 RXD $\rightarrow$ `IO16`, pin 5 VIO $\leftarrow$ 3.3V).
+- **Termination:** 120 Ω resistor `R8` switchable via hardware jumper `JP1`.
+  - **In-Vehicle:** Jumper `JP1` **OPEN** (120 Ω terminations already exist on the vehicle harness).
+  - **Bench Dual-Board Mirror:** Jumper `JP1` **CLOSED** on both boards (forms the 60 Ω equivalent required by ISO 11898-2).
+- **Diagnostic Capture Points:** Header `H2` (`Pin 1: TWAI_RX`, `Pin 2: TWAI_TX`, `Pin 3: GND`) for USB logic analyzer.
 
-### 4.2 Configuration du Périphérique TWAI (ESP32-S3)
-Le contrôleur TWAI (*Two-Wire Automotive Interface*) d'Espressif est 100% compatible CAN 2.0B.
+### 4.2 TWAI Controller Configuration (ESP32-S3)
+Espressif's TWAI (*Two-Wire Automotive Interface*) controller is 100% CAN 2.0B compliant.
 
-**Débits et formats normalisés ISO 15765-4 :**
-1. **ISO 15765-4 CAN 500 kbps, 11-bit ID** (Standard, 500k/11b) — Cas le plus fréquent sur VL modernes.
-2. **ISO 15765-4 CAN 500 kbps, 29-bit ID** (Étendu, 500k/29b).
+**Standard ISO 15765-4 Baud Rates and Formats:**
+1. **ISO 15765-4 CAN 500 kbps, 11-bit ID** (Standard, 500k/11b) — Dominant format on modern passenger cars.
+2. **ISO 15765-4 CAN 500 kbps, 29-bit ID** (Extended, 500k/29b).
 3. **ISO 15765-4 CAN 250 kbps, 11-bit ID** (Standard, 250k/11b).
-4. **ISO 15765-4 CAN 250 kbps, 29-bit ID** (Étendu, 250k/29b).
+4. **ISO 15765-4 CAN 250 kbps, 29-bit ID** (Extended, 250k/29b).
 
-**Identifiants d'arbitrage normalisés (11-bit) :**
-- Requête fonctionnelle (tous calculateurs) : `0x7DF`.
-- Requête physique ECM (Moteur) : `0x7E0` (Réponse : `0x7E8`).
-- Requête physique TCM (Boîte auto) : `0x7E1` (Réponse : `0x7E9`).
+**Standard Arbitration IDs (11-bit):**
+- Functional broadcast query (all ECUs): `0x7DF`.
+- Physical query ECM (Engine): `0x7E0` (Response: `0x7E8`).
+- Physical query TCM (Transmission): `0x7E1` (Response: `0x7E9`).
 
-**Identifiants d'arbitrage normalisés (29-bit) :**
-- Requête fonctionnelle : `0x18DB33F1`.
-- Requête physique ECM : `0x18DA10F1` (Réponse : `0x18DAF110`).
+**Standard Arbitration IDs (29-bit):**
+- Functional broadcast query: `0x18DB33F1`.
+- Physical query ECM: `0x18DA10F1` (Response: `0x18DAF110`).
 
-### 4.3 Couche Transport ISO-TP (ISO 15765-2)
-Le driver doit implémenter la segmentation et le réassemblage des trames ISO-TP :
-- **Single Frame (SF) :** Octet 0 = `0x00` à `0x07` (longueur 1 à 7 octets). Utilisé pour la majorité des requêtes Mode 01.
-- **First Frame (FF) :** Octets 0-1 = `0x10` + longueur totale sur 12 bits (> 7 octets).
-- **Flow Control (FC) :** Octet 0 = `0x30` (*Continue To Send*), Block Size (BS), Separation Time (STmin).
-- **Consecutive Frame (CF) :** Octet 0 = `0x20` à `0x2F` (numéro de séquence 0 à 15 modulo 16).
+### 4.3 ISO-TP Transport Layer (ISO 15765-2)
+The driver must implement frame segmentation and reassembly per ISO-TP:
+- **Single Frame (SF):** Byte 0 = `0x00` to `0x07` (length 1 to 7 bytes). Used for most Mode 01 requests.
+- **First Frame (FF):** Bytes 0-1 = `0x10` + total length across 12 bits (> 7 bytes).
+- **Flow Control (FC):** Byte 0 = `0x30` (*Continue To Send*), Block Size (BS), Separation Time (STmin).
+- **Consecutive Frame (CF):** Byte 0 = `0x20` to `0x2F` (sequence number 0 to 15 modulo 16).
 
 ---
 
-## 5. Pile Protocolaire K-Line (ISO 9141-2 / ISO 14230 KWP2000)
+## 5. K-Line Protocol Stack (ISO 9141-2 / ISO 14230 KWP2000)
 
-### 5.1 Spécifications Physiques & Matérielles
-- **Transceiver :** STMicroelectronics L9637D013TR (broche 4 TX $\leftarrow$ `IO5`, broche 1 RX $\rightarrow$ `IO4`, broche 3 VCC $\leftarrow$ 3.3V, broche 7 VS $\leftarrow$ `+12V_PROT`).
-- **Niveau logique :** Liaison *half-duplex* bidirectionnelle. Les octets émis sur TX sont immédiatement renvoyés en écho local sur RX (le firmware doit filtrer ou vérifier son propre écho pour détecter d'éventuelles collisions).
-- **Pull-up 500 Ω normalisée ISO 9141-2 (`R16` // `R18`) :**
-  - **Sur véhicule (Mode Scanner / Tester) :** Cavalier `JP2` **FERMÉ (avec shunt)**. La norme exige que le testeur fournisse le pull-up vers le 12V.
-  - **Sur banc bi-cartes (Mode Simulateur d'ECU) :** Cavalier `JP2` **OUVERT (sans shunt)** pour émuler la haute impédance passive ($R_{in} \ge 100\,\text{k}\Omega$) d'un ECU.
-- **Points de test & capture :** Header diagnostic `H1` (`Pin 1: KLINE_RX`, `Pin 2: KLINE_TX`, `Pin 3: GND`).
+### 5.1 Physical & Hardware Specifications
+- **Transceiver:** STMicroelectronics L9637D013TR (pin 4 TX $\leftarrow$ `IO5`, pin 1 RX $\rightarrow$ `IO4`, pin 3 VCC $\leftarrow$ 3.3V, pin 7 VS $\leftarrow$ `+12V_PROT`).
+- **Logic Level:** Bi-directional *half-duplex* bus. Bytes transmitted on TX are immediately looped back locally on RX (firmware must filter or verify its own local echo to detect bus collisions).
+- **ISO 9141-2 Standard 500 Ω Pull-Up (`R16` // `R18`):**
+  - **In-Vehicle (Scanner / Tester Mode):** Jumper `JP2` **CLOSED (with shunt)**. The standard mandates that the diagnostic tester supplies the 500 Ω pull-up to +12V.
+  - **Bench Dual-Board Mirror (ECU Simulator Mode):** Jumper `JP2` **OPEN (no shunt)** to emulate the passive high impedance ($R_{in} \ge 100\,\text{k}\Omega$) of an ECU.
+- **Diagnostic Capture Points:** Header `H1` (`Pin 1: KLINE_RX`, `Pin 2: KLINE_TX`, `Pin 3: GND`).
 
-### 5.2 Procédures d'Initialisation
-Le driver K-Line doit supporter les deux méthodes d'établissement de liaison :
+### 5.2 Bus Initialization Procedures
+The K-Line driver must support both standard connection establishment methods:
 
-#### A. Initialisation Lente 5-baud (ISO 9141-2 §5.1 / ISO 14230-2)
-1. Ligne au repos récessif (12V) pendant au moins $T_{idle} \ge 2600\,\text{ms}$.
-2. Émission de l'adresse cible (ex. `0x33` pour OBD-II générique, ou `0x11` pour GM/Daewoo ECM) à la vitesse stricte de **5 bauds** (1 bit = 200 ms, durée totale du mot = 2.0 s) via bit-banging sur `IO5`.
-3. Réception du mot de synchronisation `0x55` de l'ECU à 10400 bauds.
-4. Réception des deux mots-clés de protocole ($KB_1, KB_2$, ex. `0x08, 0x08` ou `0x94, 0x94`).
-5. Émission de l'inversion du second mot-clé ($\sim KB_2$) par le testeur pour verrouiller la communication.
+#### A. 5-Baud Slow Initialization (ISO 9141-2 §5.1 / ISO 14230-2)
+1. Bus idle recessive (12V) for at least $T_{idle} \ge 2600\,\text{ms}$.
+2. Transmit target address (e.g. `0x33` for generic OBD-II, or `0x11` for GM/Daewoo ECM) at strictly **5 baud** (1 bit = 200 ms, total word duration = 2.0 s) via bit-banging on `IO5`.
+3. Receive synchronization pattern `0x55` from ECU at 10,400 baud.
+4. Receive protocol key bytes ($KB_1, KB_2$, e.g. `0x08, 0x08` or `0x94, 0x94`).
+5. Transmit inverted second key byte ($\sim KB_2$) from tester to lock communication.
 
-#### B. Initialisation Rapide (Fast-Init 25 ms, ISO 14230-2)
-1. Ligne au repos récessif pendant $T_{idle} \ge 300\,\text{ms}$.
-2. Forçage de la ligne à l'état bas dominant (0V) pendant $T_{inil} = 25 \pm 1\,\text{ms}$.
-3. Remontée à l'état haut récessif (12V) pendant $T_{wup} = 25 \pm 1\,\text{ms}$.
-4. Émission immédiate à 10400 bauds du message `StartCommunicationRequest` :
+#### B. Fast Initialization (Fast-Init 25 ms, ISO 14230-2)
+1. Bus idle recessive for $T_{idle} \ge 300\,\text{ms}$.
+2. Force bus low dominant (0V) for $T_{inil} = 25 \pm 1\,\text{ms}$.
+3. Release bus high recessive (12V) for $T_{wup} = 25 \pm 1\,\text{ms}$.
+4. Immediately transmit `StartCommunicationRequest` at 10,400 baud:
    `0x81 0x10 0xF1 0x81 0x03` (Format, Target ECM 0x10, Source Tester 0xF1, Service 0x81, Checksum).
-5. Réception de la réponse positive `StartCommunicationPositiveResponse` (`0xC1 0xEA 0x8F ...`).
+5. Receive `StartCommunicationPositiveResponse` (`0xC1 0xEA 0x8F ...`).
 
-### 5.3 Extension Constructeur GM-Daewoo Kalos (KWP2000 Propriétaire)
-Pour supporter le diagnostic approfondi du véhicule cible (Daewoo Kalos T200 1.4L / Chevrolet Aveo) :
-- **Adressage multi-calculateurs sur la broche 7 unique (`K_LINE`) :**
-  - Calculateur Moteur (ECM Delphi/Daewoo MR-140 / HV-240) : Adresse physique `0x10` ou `0x11`.
-  - Calculateur Boîte Automatique (TCM Aisin 81-40LE) : Adresse physique `0x28`.
-  - Calculateur Freinage Antiblocage (ABS Teves MK20 / MK70) : Adresse physique `0x58`.
-  - Module Airbag (SDM Daewoo) : Adresse physique `0x50` ou `0x51`.
-- **Services KWP2000 spécifiques :**
-  - Service `0x21` / `0x22` (*ReadDataByLocalIdentifier*) pour lire les flux capteurs constructeurs non exposés en OBD-II générique (pressions, états d'actionneurs, signaux de climatisation).
-  - Service `0x30` (*InputOutputControlByLocalIdentifier*) pour le pilotage forcé des actionneurs (relais pompe à essence, ventilateur radiateur, coupure injecteur).
-  - Service `0x18` / `0x14` pour lecture et effacement des DTCs spécifiques constructeur (`P1xxx`, `Bxxxx`, `Cxxxx`).
+### 5.3 GM-Daewoo Kalos Proprietary KWP2000 Extension
+For comprehensive in-depth diagnostics on the target platform (Daewoo Kalos T200 1.4L / Chevrolet Aveo):
+- **Multi-Module Addressing over Single Pin 7 (`K_LINE`):**
+  - Engine ECM (Delphi/Daewoo MR-140 / HV-240): Physical address `0x10` or `0x11`.
+  - Automatic Transmission TCM (Aisin 81-40LE): Physical address `0x28`.
+  - Anti-lock Braking ABS (Teves MK20 / MK70): Physical address `0x58`.
+  - Airbag SDM (Daewoo): Physical address `0x50` or `0x51`.
+- **Specific KWP2000 Diagnostic Services:**
+  - Service `0x21` / `0x22` (*ReadDataByLocalIdentifier*) to poll OEM sensor streams not published on generic OBD-II (A/C pressure, actuator states, HVAC status).
+  - Service `0x30` (*InputOutputControlByLocalIdentifier*) for bidirectional actuator actuation (fuel pump relay, radiator cooling fan, injector cutoff).
+  - Service `0x18` / `0x14` for reading and clearing manufacturer-specific DTCs (`P1xxx`, `Bxxxx`, `Cxxxx`).
 
 ---
 
-## 6. Simulateur d'ECU Embarqué (Banc d'Essais sur Table)
+## 6. On-Board ECU Simulator (Bench Lab Testing)
 
-Pour qualifier le système sans véhicule, le firmware peut être compilé ou configuré en **mode Serveur ECU** :
+To validate the scanner without a physical car, the firmware can be compiled or configured in **ECU Server Mode**:
 
 ```c
-// Configuration de compilation
+// Build configuration
 #define MODE_ECU_SIMULATOR 1
 ```
 
 > [!CAUTION]
-> **Règle absolue d'ordonnancement de câblage sur banc (Anti-rétroalimentation) :**
-> Lors des tests sur table avec le simulateur d'ECU ou une alimentation externe :
-> 1. **Toujours relier et alimenter les broches d'alimentation (+12V et GND via `H3` ou les broches 1 (+12V) et 5 (GND) de `J1`) AVANT de relier les lignes de signaux/bus (`CANH`, `CANL`, `K_LINE`).**
-> 2. *Interdiction formelle du câblage partiel sans masse ou sans 12V :* Si la ligne `K_LINE` est raccordée à une source active 12V alors que le `+12V` ou la masse `GND` de la carte n'est pas connectée, un courant parasite transite par les résistances de pull-up (`R16` // `R18`) et les diodes de clamp internes du transceiver `U3` (L9637D), ce qui rétro-alimente le rail `+12V_PROT` et le système de manière anormale, risquant d'endommager `U3` ou de fausser la surveillance de tension `VBAT_SENSE`.
+> **Strict Bench Wiring Order Rule (Anti-Backfeeding):**
+> When testing on the bench with the ECU simulator or an external power supply:
+> 1. **Always connect GND and power the 12V supply (via `H3` or pins 1 (+12V) and 5 (GND) of `J1`) BEFORE connecting bus signal lines (`CANH`, `CANL`, `K_LINE`).**
+> 2. *Strictly prohibit partial wiring without ground or 12V:* If `K_LINE` is connected to an active 12V source while board `GND` or `+12V` is unpowered, current will backfeed through pull-up resistors (`R16` // `R18`) and internal clamp diodes of `U3` (L9637D), abnormally backfeeding `+12V_PROT`, risking transceiver damage and distorting `VBAT_SENSE`.
 
-### 6.1 Services Émulés par le Simulateur
-1. **Émulation TWAI CAN :**
-   - Tâche périodique émettant des trames cycliques moteur (ex. trames constructeur 10 ms / 50 ms).
-   - Tâche répondeuse ISO-TP recevant sur `0x7DF` / `0x7E0` et répondant sur `0x7E8` :
-     - **Mode 01 :** Traitement des PIDs PID 00 (Bitmap supporté), PID 04 (Charge moteur), PID 05 (T° liquide), PID 0C (Régime RPM), PID 0D (Vitesse), PID 0F (T° admission).
-     - **Mode 02 :** Renvoi d'un Freeze Frame simulé lors de l'apparition d'un défaut.
-     - **Mode 03 :** Renvoi des DTCs actifs configurés (ex. `P0300` - Ratés d'allumage aléatoires, `P0420` - Rendement catalyseur).
-     - **Mode 04 :** Acquittement d'effacement et réinitialisation des variables de défaut.
-2. **Émulation K-Line :**
-   - Écoute des séquences 5-baud et Fast-Init.
-   - Envoi des mots-clés et acquittement de session KWP2000.
-3. **Console Interactive CLI (Série USB-C CDC / Web BLE) :**
-   - `set rpm <valeur>` : modifie dynamiquement le régime moteur (ex. `set rpm 3500`).
-   - `set speed <valeur>` : modifie la vitesse véhicule (ex. `set speed 90`).
-   - `set coolant <temp>` : modifie la température d'eau (ex. `set coolant 98`).
-   - `fault inject <code_dtc>` : déclenche l'allumage du témoin MIL et stocke le DTC (ex. `fault inject P0300`).
-   - `fault clear` : purge les défauts simulés.
+### 6.1 Services Emulated by the Simulator
+1. **TWAI CAN Emulation:**
+   - Periodic FreeRTOS task broadcasting cyclic engine frames (e.g. 10 ms / 50 ms broadcast).
+   - ISO-TP responder task listening on `0x7DF` / `0x7E0` and replying on `0x7E8`:
+     - **Mode 01:** Handles PID 00 (Supported PIDs bitmap), PID 04 (Calculated engine load), PID 05 (Coolant temp), PID 0C (Engine RPM), PID 0D (Vehicle speed), PID 0F (Intake air temp).
+     - **Mode 02:** Returns simulated Freeze Frame data on active DTC.
+     - **Mode 03:** Returns active stored DTCs (e.g. `P0300` - Random/Multiple cylinder misfire, `P0420` - Catalyst efficiency below threshold).
+     - **Mode 04:** Clears DTCs and resets trouble status variables.
+2. **K-Line Emulation:**
+   - Listens for 5-baud and Fast-Init wake-up patterns.
+   - Responds with sync bytes and accepts KWP2000 diagnostic sessions.
+3. **Interactive CLI Console (USB-C CDC Serial / Web BLE):**
+   - `set rpm <value>`: Dynamically modulates engine RPM (e.g. `set rpm 3500`).
+   - `set speed <value>`: Modulates vehicle speed (e.g. `set speed 90`).
+   - `set coolant <temp>`: Modulates coolant temperature (e.g. `set coolant 98`).
+   - `fault inject <dtc_code>`: Illuminates MIL lamp and stores fault code (e.g. `fault inject P0300`).
+   - `fault clear`: Purges active simulated faults.
 
 ---
 
-## 7. Interfaces Utilisateur, Connectivité & Feedback Visuel
+## 7. User Interfaces, Connectivity & Visual Feedback
 
-### 7.1 Machine d'État de la LED Témoin `LED1` (`IO2`)
-La LED rouge `LED1` procure un diagnostic visuel instantané sans écran ni smartphone :
+### 7.1 Status LED `LED1` State Machine (`IO2`)
+The red LED `LED1` provides immediate visual diagnostics without requiring a connected smartphone:
 
-| Séquence Lumineuse | Fréquence / Rapport Cyclique | Signification / État Système |
+| Lighting Pattern | Frequency / Duty Cycle | Meaning / System State |
 | :--- | :--- | :--- |
-| **Éteinte** | 0% | Système éteint ou en veille profonde (*Deep Sleep*). |
-| **Pulsation lente (Breathing)** | 0.5 Hz (PWM progressif) | En attente de connexion (Scanner prêt, aucun bus actif). |
-| **Clignotement lent régulier** | 1 Hz (500 ms ON / 500 ms OFF) | Recherche de protocole / Négociation de vitesse en cours. |
-| **Allumée fixe** | 100% | Liaison véhicule établie et communication active. |
-| **Flashs rapides brefs** | 10 Hz (salves de 50 ms) | Transfert de trames en cours (lecture PID / streaming). |
-| **Clignotement SOS (3 courts, 3 longs, 3 courts)** | Séquence morse | Erreur critique : surtension détectée (> 16V) ou bus bloqué (*Bus-Off*). |
+| **Off** | 0% | System unpowered or in Deep Sleep. |
+| **Slow Breathing** | 0.5 Hz (Smooth PWM ramp) | Ready and awaiting connection (Scanner initialized, bus idle). |
+| **Slow Regular Blink** | 1 Hz (500 ms ON / 500 ms OFF) | Protocol scanning / Baud rate negotiation in progress. |
+| **Solid On** | 100% | Vehicle bus connection established and active. |
+| **Rapid Bursts** | 10 Hz (50 ms bursts) | Frame transmission in progress (streaming PIDs). |
+| **SOS Pattern (3 short, 3 long, 3 short)** | Morse sequence | Critical fault: overvoltage detected (> 16V) or bus locked (*Bus-Off*). |
 
-### 7.2 Connectivité Sans Fil
-- **Bluetooth Low Energy (BLE 5.0) :**
-  - Service GATT primaire avec caractéristiques :
-    - `CHAR_VEHICLE_DATA` (Notification) : flux binaire compact des PIDs temps réel (RPM, vitesse, tensions, températures).
-    - `CHAR_COMMAND_IN` (Write Without Response) : envoi de requêtes OBD-II brutes depuis l'application mobile.
-    - `CHAR_BATTERY_VOLTAGE` (Read / Notify) : tension batterie précise en millivolts.
-- **Wi-Fi (802.11 b/g/n) :**
-  - Mode SoftAP (SSID : `OBD2-Scanner-XXXX`, IP : `192.168.4.1`) ou Station.
-  - Serveur WebSocket embarqué pour affichage d'un tableau de bord HTML5 réactif dans n'importe quel navigateur sans installer d'application native.
+### 7.2 Wireless Connectivity
+- **Bluetooth Low Energy (BLE 5.0):**
+  - Primary GATT service providing:
+    - `CHAR_VEHICLE_DATA` (Notify): Compact binary packet stream of real-time PIDs (RPM, speed, voltages, temperatures).
+    - `CHAR_COMMAND_IN` (Write Without Response): Raw OBD-II query submission from companion mobile app.
+    - `CHAR_BATTERY_VOLTAGE` (Read / Notify): Calibrated battery voltage in millivolts.
+- **Wi-Fi (802.11 b/g/n):**
+  - SoftAP Mode (SSID: `OBD2-Scanner-XXXX`, IP: `192.168.4.1`) or Station mode.
+  - Embedded WebSocket server serving a responsive HTML5 dashboard to any browser without native app installation.
 
 ---
 
-## 8. Stack Logicielle Recommandée & Organisation du Futur Dépôt
+## 8. Recommended Software Stack & Repository Architecture
 
-### 8.1 Cadre de Développement
-- **Framework recommandé :** **ESP-IDF v5.2+** (C/C++ natif) avec FreeRTOS préemptif pour une maîtrise rigoureuse des timings temps réel, des interruptions et des consommations d'énergie.
-- **Outil de compilation :** `idf.py` sous environnement standard CMake / Ninja.
+### 8.1 Development Framework
+- **Recommended Framework:** **ESP-IDF v5.2+** (Native C/C++) with preemptive FreeRTOS for microsecond timing accuracy, hardware interrupts, and low-power management.
+- **Build System:** `idf.py` with standard CMake / Ninja toolchain.
 
-### 8.2 Tâches FreeRTOS Découplées Recommandées
+### 8.2 Decoupled FreeRTOS Tasks Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                          ESP-IDF / FreeRTOS                            │
 ├────────────────────────────────────────────────────────────────────────┤
-│  • Task 'twai_rx_tx'      [Prio 10] : Gestion réactive trames CAN/TWAI │
-│  • Task 'kline_engine'    [Prio 10] : Timings stricts UART / 5-baud    │
-│  • Task 'power_telemetry' [Prio  3] : Échantillonnage ADC1 & Veille    │
-│  • Task 'comm_host'       [Prio  5] : Pile BLE GATT / Web / USB CDC    │
-│  • Task 'ui_led'          [Prio  2] : Machine d'état LED1 PWM         │
-│  • Task 'ecu_sim'         [Prio  4] : Moteur simulateur (si actif)     │
+│  • Task 'twai_rx_tx'      [Prio 10] : Reactive CAN/TWAI packet handling│
+│  • Task 'kline_engine'    [Prio 10] : Strict UART / 5-baud timings     │
+│  • Task 'power_telemetry' [Prio  3] : ADC1 sampling & sleep governance │
+│  • Task 'comm_host'       [Prio  5] : BLE GATT / Web / USB CDC stack   │
+│  • Task 'ui_led'          [Prio  2] : LED1 PWM state machine           │
+│  • Task 'ecu_sim'         [Prio  4] : Simulator engine (when active)   │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 8.3 Arborescence Recommandée pour le Futur Dépôt Firmware
+### 8.3 Recommended Repository Tree for Dedicated Firmware Repo
 
 ```text
 obd2-esp32-firmware/
 ├── CMakeLists.txt
 ├── sdkconfig.defaults
-├── README.md               # Présentation du firmware (dérivé de software.md)
+├── README.md               # Firmware overview (derived from software.md)
 ├── docs/
-│   └── software.md         # Copie du présent cahier des charges
+│   └── software.md         # Master software handover specifications
 ├── components/
 │   ├── bsp/                # Board Support Package (GPIOs, pinout, LED, ADC)
-│   ├── twai_driver/        # Driver TWAI bas niveau & filtre matériel
-│   ├── isotp/              # Pile transport ISO-TP (ISO 15765-2)
-│   ├── kline_driver/       # Driver UART K-Line & bit-banging 5-baud
-│   ├── obd2_stack/         # Services OBD-II SAE J1979 (Modes 01-09)
-│   ├── kwp2000/            # Pile constructeur GM-Daewoo KWP2000
-│   ├── power_mgmt/         # Surveillance VBAT_SENSE, calibration & sleep
-│   ├── comm_ble/           # Serveur BLE GATT & profils télémétrie
-│   ├── comm_wifi/          # Serveur Web & WebSocket
-│   └── ecu_simulator/      # Moteur d'émulation ECU & CLI banc de test
+│   ├── twai_driver/        # Low-level TWAI driver & hardware filters
+│   ├── isotp/              # ISO-TP transport stack (ISO 15765-2)
+│   ├── kline_driver/       # UART K-Line driver & 5-baud bit-banging
+│   ├── obd2_stack/         # SAE J1979 OBD-II services (Modes 01-09)
+│   ├── kwp2000/            # GM-Daewoo KWP2000 OEM protocol stack
+│   ├── power_mgmt/         # VBAT_SENSE monitoring, calibration & sleep
+│   ├── comm_ble/           # BLE GATT server & telemetry profiles
+│   ├── comm_wifi/          # Web & WebSocket telemetry server
+│   └── ecu_simulator/      # ECU emulation engine & bench CLI
 └── main/
     ├── CMakeLists.txt
-    ├── app_main.c          # Initialisation, arbitrage rôle & dispatch tâches
-    └── cli_commands.c      # Console interactive USB-C
+    ├── app_main.c          # Boot, role arbitration & task dispatcher
+    └── cli_commands.c      # Interactive USB-C CLI console
 ```
 
 ---
 
-## 9. Checklist d'Initialisation du Dépôt Dédié
+## 9. Dedicated Repository Initialization Checklist
 
-- [ ] Initialiser le dépôt Git dédié (`obd2-esp32-firmware`).
-- [ ] Cloner ce document [`documents/software.md`](software.md) comme socle contractuel d'architecture logicielle.
-- [ ] Configurer `sdkconfig.defaults` : active TWAI, active USB CDC sur `IO19`/`IO20`, active Bluetooth BLE 5.0, fréquence CPU 240 MHz, Flash 16 Mo, PSRAM 2 Mo.
-- [ ] Valider le premier binaire "Hello World" : clignotement de `LED1` (`IO2`) et mesure brute de `VBAT_SENSE` (`IO1`).
-- [ ] Connecter sur banc bi-cartes miroir (Cas 3) et valider la première trame d'écho TWAI CAN 500 kbps entre les deux cartes.
+- [ ] Initialize dedicated Git repository (`obd2-esp32-firmware`).
+- [ ] Clone this document [`documents/software.md`](software.md) as the contractual software architecture foundation.
+- [ ] Configure `sdkconfig.defaults`: enable TWAI, enable USB CDC on `IO19`/`IO20`, enable Bluetooth BLE 5.0, 240 MHz CPU frequency, 16 MB Flash, 2 MB PSRAM.
+- [ ] Validate first "Hello World" build: `LED1` blinky (`IO2`) and raw `VBAT_SENSE` reading (`IO1`).
+- [ ] Connect on dual-board mirror bench (Case 3) and validate first 500 kbps TWAI CAN echo frame between both boards.

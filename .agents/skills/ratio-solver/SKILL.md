@@ -1,66 +1,66 @@
 ---
 name: ratio-solver
-description: Moteur d'optimisation mathématique et de calcul de couples de résistances pour ponts diviseurs, références de régulateurs (Buck/Boost/LDO), atténuateurs ADC et étages d'ampli-op.
+description: Mathematical optimization engine calculating resistor pairs for voltage dividers, regulator feedback networks (Buck/Boost/LDO), ADC attenuators, and op-amp gain stages.
 ---
 
-# Skill : ratio-solver
+# Skill: ratio-solver
 
-Moteur algorithmique universel et agnostique (Règle 0) conçu pour résoudre le problème d'optimisation de couples de résistances $(R_1, R_2)$ selon les séries normalisées (E12, E24, E96, E192) ou à partir d'un catalogue restreint de composants disponibles (ex. *Basic Parts* JLCPCB).
+Universal and agnostic algorithmic engine (Rule 1) designed to solve the optimization problem for resistor pairs `(R1, R2)` across standardized E-series (E12, E24, E96, E192) loaded from [`references/e_series.json`](references/e_series.json) or from a constrained stock catalog of available components (e.g., JLCPCB *Basic Parts*).
 
 ---
 
-## 1. Principes & Équations Modélisées
+## 1. Principles & Modeled Equations
 
-### A. Mode Régulateur (`regulator`)
-Utilisé pour déterminer le pont de feedback de convertisseurs Buck (ex. TPS54331), Boost ou régulateurs linéaires LDO :
+### A. Regulator Feedback Mode (`regulator`)
+Used to determine the feedback divider network for buck converters (e.g., TPS54331), boost converters, or linear LDO regulators:
 $$V_{out} = V_{ref} \times \left(1 + \frac{R_1}{R_2}\right)$$
-* $R_1$ : Résistance supérieure (connectée entre la sortie $V_{out}$ et la broche de feedback $FB$).
-* $R_2$ : Résistance inférieure (connectée entre la broche $FB$ et la masse $GND$).
-* Ratio théorique : $\frac{R_1}{R_2} = \frac{V_{out} - V_{ref}}{V_{ref}}$.
-* Courant de repos du pont : $I_{div} = \frac{V_{out}}{R_1 + R_2}$.
+* `R1`: High-side resistor (connected between output Vout and feedback pin FB).
+* `R2`: Low-side resistor (connected between feedback pin FB and ground GND).
+* Theoretical ratio: $\frac{R_1}{R_2} = \frac{V_{out} - V_{ref}}{V_{ref}}$.
+* Divider quiescent current: $I_{div} = \frac{V_{out}}{R_1 + R_2}$.
 
-### B. Mode Diviseur / Atténuateur ADC (`divider`)
-Utilisé pour adapter une tension élevée (ex. rail 12V automobile) vers la dynamique d'entrée d'un convertisseur analogique-numérique (ex. ADC1 ESP32, $V_{adc} \le 1.3\,\text{V}$ à $3.1\,\text{V}$) :
+### B. Divider / ADC Attenuator Mode (`divider`)
+Used to scale a high input voltage (e.g., automotive 12V battery rail) down into the input dynamic range of an analog-to-digital converter (e.g., ESP32 ADC1, Vadc <= 1.3 V to 3.1 V):
 $$V_{out} = V_{in} \times \frac{R_2}{R_1 + R_2}$$
-* $R_1$ : Résistance supérieure (entrée $V_{in}$ vers nœud de mesure).
-* $R_2$ : Résistance inférieure (nœud de mesure vers $GND$).
-* Impédance équivalente de Thévenin : $R_{th} = \frac{R_1 \times R_2}{R_1 + R_2}$ *(critique pour le temps de charge de l'échantillonneur-bloqueur de l'ADC)*.
+* `R1`: High-side resistor (input Vin to measurement node).
+* `R2`: Low-side resistor (measurement node to GND).
+* Equivalent Thévenin resistance: $R_{th} = \frac{R_1 \times R_2}{R_1 + R_2}$ *(critical for ADC sample-and-hold capacitor charging time)*.
 
 ---
 
-## 2. Guide d'Utilisation CLI
+## 2. CLI Usage Guide
 
-Le solveur s'exécute toujours via `uv run` :
+The solver is always executed via `uv run`:
 
-### Exemple 1 : Pont de Feedback Buck 5.0V ($V_{ref} = 0.8\,\text{V}$) sous E96
+### Example 1: 5.0V Buck Feedback Network (Vref = 0.8 V) using E96
 ```powershell
 uv run python .agents/skills/ratio-solver/scripts/ratio_solver.py regulator --target-vout 5.0 --vref 0.8 --series E96
 ```
 
-### Exemple 2 : Pont sous série E24 (Tolérance 5% ou 1% standard)
+### Example 2: Feedback Network under E24 Series (Standard 5% or 1% Tolerance)
 ```powershell
 uv run python .agents/skills/ratio-solver/scripts/ratio_solver.py regulator --target-vout 5.0 --vref 0.8 --series E24 --max-error 0.5
 ```
 
-### Exemple 3 : Atténuateur ADC (12V -> 1.285V pour batterie)
+### Example 3: ADC Attenuator (12V -> 1.285V for Automotive Battery Sizing)
 ```powershell
 uv run python .agents/skills/ratio-solver/scripts/ratio_solver.py divider --vin 12.0 --target-vout 1.2857 --series E96 --max-rth 20000
 ```
 
-### Exemple 4 : Utilisation avec un catalogue restreint (ex. Basic Parts JLCPCB)
+### Example 4: Optimization with a Constrained Catalog (e.g., JLCPCB Basic Parts)
 ```powershell
 uv run python .agents/skills/ratio-solver/scripts/ratio_solver.py regulator --target-vout 5.0 --vref 0.8 --pool-file available_resistors.json --json
 ```
 
 ---
 
-## 3. Paramètres de Filtrage & Contraintes
+## 3. Filtering Parameters & Constraints
 
-| Paramètre | Description | Défaut |
+| Parameter | Description | Default |
 | :--- | :--- | :--- |
-| `--max-error` | Erreur relative maximale admissible en % sur la tension cible | `0.5%` |
-| `--min-current` | Courant minimal traversant le pont (évite les trop fortes impédances sensibles au bruit) | `50 µA` |
-| `--max-current` | Courant maximal traversant le pont (limite la consommation de repos à vide) | `2 mA` |
-| `--max-rth` | Résistance de Thévenin maximale en Ohms (mode `divider` pour respect d'impédance source ADC) | Illimité |
-| `--top-n` | Nombre maximal de combinaisons candidates retournées | `5` |
-| `--json` | Sortie structurée au format JSON pour consommation programmatique par un autre skill | Désactivé |
+| `--max-error` | Maximum allowable relative error in % on the target voltage | `0.5%` |
+| `--min-current` | Minimum current through the divider (avoids high impedances susceptible to noise pick-up) | `50 µA` |
+| `--max-current` | Maximum current through the divider (limits no-load quiescent consumption) | `2 mA` |
+| `--max-rth` | Maximum Thévenin equivalent resistance in Ohms (`divider` mode to comply with ADC source impedance) | Unlimited |
+| `--top-n` | Maximum number of ranked candidate pairs returned | `5` |
+| `--json` | Structured JSON output for programmatic consumption by another skill | Disabled |

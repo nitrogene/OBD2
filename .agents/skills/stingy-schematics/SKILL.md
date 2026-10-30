@@ -1,75 +1,75 @@
 ---
 name: stingy-schematics
-description: Moteur d'optimisation SMT et gardien sémantique de schéma. Analyse la BOM et documents/schema/semantics.json pour proposer de remplacer des composants Extended par des Basic Parts JLCPCB (économie de 3,00 $ par composant) sans compromis de qualité ni de sécurité, avec génération automatique de rapports de revue.
+description: SMT optimization engine and schematic semantic guardian. Analyzes the BOM and documents/schema/semantics.json to propose substituting Extended parts with JLCPCB Basic Parts (3.00 USD setup savings per component) without compromising quality or safety, with automated review report generation.
 ---
 
-# Skill : stingy-schematics
+# Skill: stingy-schematics
 
-Moteur algorithmique et économique d'optimisation de nomenclature PCBA pour l'assemblage chez **JLCPCB**.
-
----
-
-## 1. Pourquoi ce Skill ?
-
-Chez JLCPCB, les composants CMS sont classés en deux catégories :
-* **Basic Parts :** Chargés en permanence sur les dévidoirs des machines Pick & Place. **Frais d'outillage = 0,00 $**.
-* **Extended Parts :** Nécessitent un chargement manuel de bobine. **Frais de chargement = 3,00 $ par référence unique**.
-
-Sur une petite série de 5 cartes prototypes, remplacer 5 à 10 composants Extended par des Basic Parts fait économiser **15,00 $ à 30,00 $ nets** sur la facture d'assemblage, sans rien changer au fonctionnement du circuit.
+Algorithmic and cost-optimization engine for PCBA bill of materials targeting assembly at **JLCPCB**.
 
 ---
 
-## 2. Principes & Règles d'Or de Non-Régression
+## 1. Motivation & Purpose
 
-`stingy-schematics` s'interdit formellement de dégrader la qualité des signaux ou les marges de sécurité du matériel :
+At JLCPCB, SMD components are categorized into two tiers:
+* **Basic Parts:** Permanently loaded onto Pick & Place machine feeder reels. **Tooling / setup fee = 0.00 USD**.
+* **Extended Parts:** Require manual reel loading and feeder configuration. **Loading fee = 3.00 USD per unique line item**.
 
-1. **Intention de Schéma (`documents/schema/semantics.json`) :**
-   Le moteur ne travaille jamais à l'aveugle. Il lit impérativement le contrat sémantique pour connaître le rôle de chaque pièce et sa politique de substitution (`locked`, `direct_1to1`, `ratio_pair_recalc`, `topology_expansion_ok`).
-2. **Garde-fous Physiques Inviolables :**
-   * **Condensateurs :** $V_{rated\_new} \ge V_{rated\_old}$. Diélectrique $\ge$ ($C0G/NP0 > X7R > X5R$). Exclusion absolue des diélectriques instables Y5V/Z5U.
-   * **Résistances :** Tolérance $Tol_{new} \le Tol_{old}$ (une résistance 1% reste à $\le 1\%$). Puissance $P_{new} \ge P_{old}$.
-   * **Diodes :** $V_R \ge V_{R\_old}$, $I_F \ge I_{F\_old}$. Conservation stricte de la technologie de jonction (une diode Schottky reste une Schottky).
-   * **Nœuds Sacrés :** Verrouillage strict des lignes normalisées (ex. 5.1 kΩ 1% sur USB-C CC1/CC2, pull-up 1206 1k 250mW sur K-Line).
+On a small prototype batch of 5 boards, replacing 5 to 10 Extended parts with Basic Parts saves **15.00 USD to 30.00 USD net** on the total assembly quote, without any change in circuit operation or reliability.
 
 ---
 
-## 3. Architecture & Outils Embarqués
+## 2. Non-Regression Principles & Golden Rules
 
-Le skill comprend deux outils agnostiques conformes à la Règle 1 (agents.md) :
+`stingy-schematics` strictly forbids degrading signal integrity or hardware safety margins:
+
+1. **Design Intent Contract (`documents/schema/semantics.json`):**
+   The engine never operates blindly. It enforces the semantic contract defining each component's functional role and permitted substitution policy (`locked`, `direct_1to1`, `ratio_pair_recalc`, `topology_expansion_ok`).
+2. **Inviolable Physical Guardrails:**
+   * **Capacitors:** `V_rated,new >= V_rated,old`. Dielectric rating `>=` (`C0G/NP0 > X7R > X5R`). Absolute exclusion of unstable Y5V/Z5U dielectrics.
+   * **Resistors:** Tolerance `Tol_new <= Tol_old` (a 1% resistor stays `<= 1%`). Power rating `P_new >= P_old`.
+   * **Diodes:** `VR >= VR,old`, `IF >= IF,old`. Strict retention of junction technology (a Schottky diode must remain a Schottky diode).
+   * **Protected Critical Nodes:** Strict lock on standardized lines (e.g., 5.1 kΩ 1% on USB-C CC1/CC2, 1206 1k 250mW pull-up on K-Line).
+
+---
+
+## 3. Architecture & Integrated Tools
+
+The skill provides two agnostic tools in compliance with Rule 1 (agents.md):
 
 ```
 .agents/skills/stingy-schematics/
 ├── SKILL.md
 └── scripts/
-    ├── jlcpcb_api.py       # Client HTTP d'interrogation en temps réel du catalogue JLCPCB SMT
-    ├── sync_semantics.py   # Gardien d'intégrité entre documents/schema/bom.json et documents/schema/semantics.json
-    └── stingy.py           # Moteur principal d'optimisation et générateur de reviewXXX.md
+    ├── jlcpcb_api.py       # Live HTTP client querying the JLCPCB SMT catalog
+    ├── sync_semantics.py   # Integrity guardian between documents/schema/bom.json and documents/schema/semantics.json
+    └── stingy.py           # Core optimization engine and reviewXXX.md generator
 ```
 
-### A. Gardien Sémantique (`sync_semantics.py`)
-Contrôle l'alignement parfait entre la nomenclature et le contrat d'intention :
+### A. Semantic Guardian (`sync_semantics.py`)
+Verifies full alignment between the bill of materials and the intent contract:
 ```powershell
-# Contrôle de cohérence (DRC sémantique, chemins par défaut)
+# Consistency check (semantic DRC, default paths)
 uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py check
 
-# Génération assistée d'ébauches pour les nouveaux composants
+# Assisted scaffolding for newly added components
 uv run python .agents/skills/stingy-schematics/scripts/sync_semantics.py scaffold
 ```
 
-### B. Moteur d'Optimisation SMT (`stingy.py`)
-Scanne les composants Extended éligibles, interroge en direct JLCPCB, résout les recalculs de ratios via `ratio-solver` et génère un rapport de revue formel dans `review/` :
+### B. SMT Optimization Engine (`stingy.py`)
+Scans eligible Extended components, queries live JLCPCB stock, solves ratio recalculations via `ratio-solver`, and generates a formal review report in `review/`:
 ```powershell
 uv run python .agents/skills/stingy-schematics/scripts/stingy.py
 ```
 
 ---
 
-## 4. Intégration dans le Workflow de Conception
+## 4. Integration into Design Workflow
 
-1. **Exécution de l'optimiseur :** `stingy.py` génère le prochain fichier `review/reviewXXX.md`.
-2. **Validation formelle :** Le rapport est validé par le skill `review` :
+1. **Run Optimizer:** `stingy.py` generates the next sequential `review/reviewXXX.md` file.
+2. **Formal Validation:** The report is validated using the `review` skill:
    ```powershell
    uv run python .agents/skills/review/scripts/review_tool.py validate review/reviewXXX.md
    ```
-3. **Arbitrage avec l'ingénieur :** Revue interactive des propositions chiffrées.
-4. **Dépouillement vers TODO :** Les modifications retenues sont injectées dans `todo.md` puis le fichier `reviewXXX.md` est supprimé.
+3. **Arbitrage with Engineer:** Interactive review of quantified substitution proposals.
+4. **Triage to TODO:** Approved modifications are triaged into `todo.md`, followed by deletion of the processed `reviewXXX.md` file.

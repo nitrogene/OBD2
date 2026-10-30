@@ -1,171 +1,171 @@
 ---
 name: review
 description: >-
-  Moteur d'audit, de validation et de dépouillement des revues techniques matérielles pour projets
-  électroniques embarqués et automobiles. Fournit une méthodologie rigoureuse d'audit de schéma/PCB
-  (conformité constructeur, CEM, thermique, niveaux logiques, intégrité de bus), valide la structure
-  des rapports face aux guidelines, et automatise le dépouillement des observations vers todo.md.
+  Audit, validation, and processing engine for hardware technical reviews in embedded and automotive
+  electronics projects. Provides a rigorous schematic and PCB audit methodology (manufacturer compliance,
+  EMC, thermal, logic levels, bus integrity), validates report structure against guidelines, and
+  automates review triage into todo.md.
 compatibility: Python 3.8+, uv
 metadata:
   author: OBD2-Scanner-Dev
   version: "1.0.0"
 ---
 
-# Skill : Review (Audit Technique & Dépouillement de Revues Matérielles)
+# Skill: Review (Hardware Technical Audit & Review Processing)
 
-Ce skill fournit un **cadre méthodologique et algorithmique complet** pour la conduite, la validation formelle et le dépouillement interactif des revues de conception électronique (schéma, nomenclature BOM, layout PCB, routage et conformité automobile).
+This skill provides a **comprehensive methodological and algorithmic framework** for conducting, formally validating, and interactively processing electronic design reviews (schematics, BOM, PCB layout, routing, and automotive compliance).
 
-Conformément à la règle `## 1.` d'[`agents.md`](../../../agents.md), ce skill est **totalement agnostique** :
-* Aucun composant, net ou valeur n'est codé en dur dans les scripts Python.
-* Il manipule des abstractions (règles de conception, vérifications de seuils logiques, boucles de commutation, critères thermiques).
-* Toutes les données d'entrée proviennent des fichiers du projet (`documents/schema/bom.json`, `documents/pcb/constraints.json`, `review/*.md`), des arguments CLI ou des configurations JSON.
+In accordance with Rule 1 of [`agents.md`](../../../agents.md), this skill is **completely agnostic**:
+* No components, nets, or values are hardcoded into Python scripts.
+* It operates on abstractions (design rules, logic threshold validations, switching loops, thermal criteria).
+* All input data originates from project files (`documents/schema/bom.json`, `documents/pcb/constraints.json`, `review/*.md`), CLI arguments, or JSON configurations.
 
 ---
 
-## 0. Posture de l'Auditeur : Tabula Rasa & Preuve Matérielle Exclusive
+## 0. Auditor Posture: Tabula Rasa & Exclusive Physical Evidence
 
 > [!IMPORTANT]
-> **Règle d'Or de l'Audit : Oubli de Mémoire & Impartialité Totale**
-> Pendant toute la durée de la revue technique, l'agent reviewer **doit impérativement faire abstraction totale de toute mémoire antérieure ou connaissance préalable du projet**. Il doit adopter la posture stricte et impartiale d'un auditeur externe découvrant le circuit pour la toute première fois.
+> **Golden Rule of the Audit: Memory Erasure & Absolute Impartiality**
+> Throughout the technical review, the reviewer agent **must disregard all prior conversational memory or preconceived project knowledge**. It must adopt the strict, impartial posture of an independent third-party auditor discovering the board for the very first time.
 
-1. **Aucun recours aux souvenirs ou présomptions :**
-   L'agent ne doit jamais présumer qu'un choix est « normal », « déjà validé » ou « évident » sous prétexte qu'il en aurait été discuté dans des échanges antérieurs. Toute décision non formalisée dans les fichiers versionnés est réputée inexistante.
-2. **Analyse basée exclusivement sur les fichiers physiques du projet (*Evidence-Based*) :**
-   Chaque observation doit être solidement étayée par des éléments directement observables et vérifiables dans le dépôt :
-   * **Exports graphiques haute résolution :** Inspection visuelle méticuleuse des schémas électriques ([`documents/schema/*.png`](../../../documents/schema/)), du circuit imprimé ([`documents/pcb/pcb.png`](../../../documents/pcb/pcb.png)) et des rendus mécaniques 3D.
-   * **Documents contractuels et nomenclature :** [`documents/schema/bom.json`](../../../documents/schema/bom.json), [`hardware.md`](../../../documents/hardware.md), [`documents/pcb/constraints.json`](../../../documents/pcb/constraints.json) et état d'avancement réel dans [`todo.md`](../../../todo.md).
-   * **Datasheets constructeurs officielles :** Fichiers PDF originaux archivés dans [`documents/datasheets/references/`](../../../documents/datasheets/references/) et synthèse d'audit dans [`datasheets.md`](../../../documents/datasheets/datasheets.md).
-3. **Confrontation critique obligatoire :**
-   Une documentation interne ou une consigne préalable dans `todo.md` ne doit jamais être prise pour argent comptant. L'auditeur a le devoir impératif de confronter chaque recommandation à la réalité de la datasheet constructeur (ex. vérifier la structure interne réelle d'une broche de transceiver avant de préconiser un changement de rail d'alimentation). Si les documents du projet contiennent une incohérence ou une fausse piste technique, l'auditeur doit la dénoncer et la réfuter avec calculs et extraits de datasheet à l'appui.
+1. **No reliance on memories or assumptions:**
+   The agent must never presume a design choice is "normal," "already approved," or "obvious" because it was discussed in earlier chat sessions. Any technical decision not formalized in versioned repository files is considered non-existent.
+2. **Analysis based exclusively on physical repository artifacts (*Evidence-Based*):**
+   Every finding must be grounded in directly observable and verifiable evidence within the repository:
+   * **High-resolution graphical exports:** Meticulous visual inspection of schematic diagrams ([`documents/schema/*.png`](../../../documents/schema/)), printed circuit board exports ([`documents/pcb/pcb.png`](../../../documents/pcb/pcb.png)), and 3D mechanical renders.
+   * **Contractual design documents and BOM:** [`documents/schema/bom.json`](../../../documents/schema/bom.json), [`hardware.md`](../../../documents/hardware.md), [`documents/pcb/constraints.json`](../../../documents/pcb/constraints.json), and actual progress state in [`todo.md`](../../../todo.md).
+   * **Official manufacturer datasheets:** Original PDF datasheets archived in [`documents/datasheets/references/`](../../../documents/datasheets/references/) and audit synthesis in [`datasheets.md`](../../../documents/datasheets/datasheets.md).
+3. **Mandatory critical confrontation:**
+   Internal documentation or prior task items in `todo.md` must never be taken at face value. The auditor has an imperative duty to confront every recommendation with manufacturer datasheet reality (e.g., verifying the actual internal pin structure of a transceiver before recommending a supply rail change). If project documents contain inconsistencies or technical fallacies, the auditor must refute them supported by calculations and datasheet excerpts.
 
 ---
 
-## 1. Arborescence du Skill
+## 1. Skill Directory Tree
 
 ```
 .agents/skills/review/
-├── SKILL.md                          # Documentation et guide méthodologique (ce fichier)
+├── SKILL.md                          # Methodological documentation and guide (this file)
 ├── scripts/
-│   ├── review_tool.py                # Moteur CLI agnostique : génération, validation et dépouillement
-│   └── schematic_auditor.py          # Auditeur algorithmique automatique contre règles de conception
+│   ├── review_tool.py                # Agnostic CLI engine: generation, validation, and triage
+│   └── schematic_auditor.py          # Automated algorithmic auditor against design rules
 └── templates/
-    └── audit_rules.json              # Référentiel de règles d'audit (niveaux logiques, CEM, thermique)
+    └── audit_rules.json              # Audit rules repository (logic levels, EMC, thermals)
 ```
 
 > [!NOTE]
-> **Source Unique de Vérité (SSOT) :** Le modèle type de revue n'est pas dupliqué. Il est extrait dynamiquement par `review_tool.py generate` directement depuis la Section 5 de [`review/guidelines.md`](../../../review/guidelines.md).
+> **Single Source of Truth (SSOT):** The standardized review template is not duplicated. It is dynamically extracted by `review_tool.py generate` directly from Section 5 of [`review/guidelines.md`](../../../review/guidelines.md).
 
 ---
 
-## 2. Grille d'Audit Méthodique en 6 Axes
+## 2. Methodical 6-Axis Audit Matrix
 
-Lors de toute revue de schéma électronique ou d'architecture, l'agent reviewer doit examiner systématiquement ces 6 axes critiques :
+During any schematic or architectural review, the reviewer agent must systematically investigate these 6 critical axes:
 
-### Axe 1 : Alimentation & Survie Électrique
-* **Plafond absolu de tension ($V_{IN\text{, abs}}$) :** Comparer la tension de serrage crête de la diode TVS ($V_{CL}$) avec le seuil destructeur absolu du régulateur aval (ex. Buck 30V max face à transitoires 12V alternateur).
-* **Protection de grille des MOSFETs ($V_{GS}$) :** S'assurer que toute grille connectée à un potentiel d'entrée variable dispose d'un diviseur ou d'un clamp Zener pour ne jamais dépasser sa limite absolue ($\pm 20\,\text{V}$).
-* **Anti-inversion & Fusible réarmable (PPTC) :** Vérifier l'orientation de la diode de substrat (body diode) du P-MOSFET et le déclassement thermique du fusible à 60°C–70°C en habitacle ($I_H$ réduit de ~30%).
+### Axis 1: Power Distribution & Electrical Survival
+* **Absolute Maximum Input Voltage (`VIN,abs`):** Compare the peak clamping voltage of the TVS diode (`VCL`) against the absolute maximum rating of downstream regulators (e.g., 30V max buck converter rating facing automotive 12V alternator transients).
+* **MOSFET Gate Protection (`VGS`):** Ensure every gate connected to a variable input potential features a resistive divider or Zener clamp to never exceed absolute ratings (`±20 V`).
+* **Reverse Polarity Protection & Resettable Fuse (PPTC):** Verify P-MOSFET body diode orientation and thermal derating of the fuse at 60°C–70°C in-cabin ambient (`IH` derated by ~30%).
 
-### Axe 2 : Régulation & Boucles d'Asservissement
-* **Régulateur à découpage (Buck) :**
-  - Vérifier la présence d'un condensateur de démarrage progressif (*Slow-Start* sur broche SS) pour limiter l'inrush current et l'overshoot au branchement.
-  - Vérifier le réseau de compensation petit-signal (marge de phase $\Phi_m > 60^\circ$ et marge de gain $> 10\,\text{dB}$).
-* **Régulateur Linéaire LDO :**
-  - Respect strict de la capacité de sortie minimale ($C_{OUT} \ge 4.7\,\mu\text{F}$) directement au contact de la broche $V_{OUT}$.
-  - **Interdiction formelle** de placer une perle de ferrite directement en sortie sans condensateur amont (risque d'oscillation LC haute fréquence).
+### Axis 2: Regulation & Closed-Loop Stability
+* **Switch-Mode Buck Converter:**
+  - Verify the presence of a soft-start capacitor (*Slow-Start* on SS pin) to suppress inrush current and turn-on overshoot.
+  - Verify the small-signal compensation network (phase margin `Φm > 60°` and gain margin `> 10 dB`).
+* **Linear LDO Regulator:**
+  - Strict compliance with minimum output capacitance (`COUT >= 4.7 µF`) placed immediately adjacent to the `VOUT` pin.
+  - **Strict prohibition** of placing a ferrite bead directly on the LDO output without an upstream decoupling capacitor (high-frequency LC oscillation risk).
 
-### Axe 3 : Transceivers de Bus & Adaptation Logique
-* **Polarisations & Modes :**
-  - Vérifier que les broches de contrôle de mode (ex. broche `S` Silent Mode sur transceiver CAN) sont tirées au potentiel actif (masse).
-  - Vérifier que la masse de référence de chaque IC est bien raccordée à GND (absence de court-circuit VCC-GND).
-* **Niveaux logiques et tolérance 5V :**
-  - **Alerte absolue :** Les microcontrôleurs 3.3V (ex. ESP32-S3) ne tolèrent pas 5V ($V_{IO\text{, max}} = 3.60\,\text{V}$).
-  - Vérifier si les sorties des transceivers possèdent une pull-up interne vers leur rail d'alimentation avant d'envisager une alimentation en 5V.
-  - Utiliser une broche $V_{IO}$ dédiée (ex. TJA1051T/3) ou un translateur de niveau adapté.
+### Axis 3: Bus Transceivers & Logic Level Translation
+* **Biasing & Operating Modes:**
+  - Verify mode control pins (e.g., pin `S` Silent Mode on CAN transceivers) are tied to the active potential (ground).
+  - Verify each IC's ground reference is solidly connected to GND (prevent VCC-GND shorts).
+* **Logic Thresholds & 5V Tolerance:**
+  - **Critical Alert:** 3.3V microcontrollers (e.g., ESP32-S3) are not 5V tolerant (`VIO,max = 3.60 V`).
+  - Check whether transceiver RX outputs feature internal pull-ups to their supply rail before considering a 5V supply.
+  - Use a dedicated `VIO` logic supply pin (e.g., TJA1051T/3) or appropriate level translator.
 
-### Axe 4 : Microcontrôleur & Strapping de Démarrage
-* **Immunité du Reset ($EN$) :** Réseau RC externe (10 kΩ / 1 µF, $\tau \ge 10\,\text{ms}$) collé à la broche pour éviter les resets intempestifs sous émission RF.
-* **Broches de Strapping (Boot) :** Pull-up externe solide (10 kΩ) sur les broches critiques (ex. GPIO0) pour immuniser le démarrage contre les bruits captés par les pastilles de test.
-* **Assignation des broches (Pinout) :**
-  - Éviter d'assigner des signaux de bus de puissance ou de communication sur les broches de console système (UART0) sous peine de cracher des trames ASCII au boot.
-  - Vérifier la compatibilité des canaux analogiques ADC avec l'activation de la radio Wi-Fi.
+### Axis 4: Microcontroller & Strapping Pins
+* **Reset Pin Immunity (`EN`):** External RC network (10 kΩ / 1 µF, `τ >= 10 ms`) routed close to the pin to prevent spurious resets during RF transmission bursts.
+* **Strapping (Boot) Pins:** Strong external pull-up (10 kΩ) on critical lines (e.g., GPIO0) to immunize boot selection against noise picked up by test points.
+* **Pinout Assignment:**
+  - Avoid assigning power bus or communication signals to system console pins (UART0), which spit bootloader ASCII log frames during startup.
+  - Verify ADC analog channel compatibility with active Wi-Fi operation.
 
-### Axe 5 : CEM, Découplage & Protections Frontières
-* **Frontière connecteur :** Diodes TVS, pontages et filtres ESD positionnés immédiatement aux broches d'entrée des connecteurs externes.
-* **Découplage local :** Chaque broche d'alimentation d'IC doit posséder son condensateur céramique haute fréquence (100 nF) raccordé au plus court (< 2 mm).
-* **Filtres en Pi :** Cellules $C - \text{Ferrite} - C$ bien amorties pour isoler les domaines numériques bruyants des domaines analogiques/RF.
+### Axis 5: EMC, Decoupling & Boundary Protection
+* **Connector Boundary:** TVS diodes, ESD suppression arrays, and filtering placed immediately at external connector entry pins.
+* **Local Decoupling:** Every IC power pin must have its dedicated high-frequency ceramic capacitor (100 nF) routed with minimum trace length (< 2 mm).
+* **Pi Filters:** Damped `C - Ferrite - C` networks isolating noisy digital domains from sensitive analog/RF domains.
 
-### Axe 6 : Thermique, Boîtiers & Nomenclature (DFM)
-* **Dissipation sous charge :** Calcul de $P_D = \Delta V \times I$ sur les régulateurs linéaires et diodes de redressement USB face aux consommations crêtes.
-* **Bascule Basic Parts :** Remplacement systématique des composants passifs ou discrets *Extended* par des *Basic Parts* du catalogue d'assemblage CMS (JLCPCB) pour minimiser les coûts.
+### Axis 6: Thermals, Packages & Bill of Materials (DFM)
+* **Dissipation under Load:** Compute `PD = ΔV × I` across linear regulators and USB protection diodes under peak load.
+* **Basic Parts Optimization:** Systematically swap *Extended* passives or discretes for JLCPCB *Basic Parts* to minimize assembly setup surcharges.
 
 ---
 
-## 3. Utilisation de l'Outil CLI (`scripts/review_tool.py`)
+## 3. CLI Tool Usage (`scripts/review_tool.py`)
 
 > [!IMPORTANT]
-> Tous les scripts doivent être exécutés via `uv run` conformément aux règles du projet.
+> All scripts must be executed via `uv run` in accordance with project rules.
 
-### A. Générer un squelette de revue vierge normalisé
-Extrait le modèle directement de la Section 5 de [`review/guidelines.md`](../../../review/guidelines.md) et génère le prochain fichier disponible (ex. `review/review001.md`, `review/review002.md`) :
+### A. Generate a Standardized Blank Review Skeleton
+Extracts the template directly from Section 5 of [`review/guidelines.md`](../../../review/guidelines.md) and creates the next available review file (e.g., `review/review001.md`, `review/review002.md`):
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py generate
 ```
-Pour spécifier un chemin précis ou pointer vers un autre fichier de guidelines :
+To specify a custom path or point to an alternative guidelines file:
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py generate -o review/review_audit.md --guidelines review/guidelines.md
 ```
 
-### B. Valider la conformité d'un rapport de revue
-Vérifie la présence de toutes les métadonnées obligatoires, du résumé exécutif et du formatage rigoureux de chaque observation (champs Composants, Constat, Justification, Solution) :
+### B. Validate Review Report Compliance
+Verifies mandatory metadata fields, executive summary presence, and strict formatting for each observation (Components, Observation, Rationale, Recommendation fields):
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py validate review/review.md
 ```
-Pour intégration automatisée par un agent (sortie JSON) :
+For automated agent integration (JSON output):
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py validate review/review.md --json
 ```
 
-### C. Dépouiller une revue vers `todo.md` (Triage & Arbitrage)
-Affiche le bloc d'actions formaté en cases à cocher hiérarchisées (`🔴 Bloquant`, `🟠 Important`, `🟢 Mineur`) et détecte d'éventuelles collisions avec le `todo.md` existant :
+### C. Triage a Review into `todo.md` (Triage & Arbitrage)
+Displays the formatted action items categorized by severity (`🔴 Blocking`, `🟠 Important`, `🟢 Minor`) and detects collisions with existing entries in `todo.md`:
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md
 ```
 
-Après validation et accord explicite de l'utilisateur, insérer les tâches directement sous la section ciblée :
+Following explicit user approval, inject tasks directly under the targeted section:
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md --section "### 1.1 Correctifs critiques" --apply
 ```
 
-Pour supprimer le fichier de revue traité une fois l'intégration terminée (conformément à la règle 5) :
+To delete the processed review file once triage is complete (in compliance with Rule 5):
 ```bash
 uv run .agents/skills/review/scripts/review_tool.py triage review/review.md --todo-file todo.md --apply --delete-review
 ```
 
 ---
 
-## 4. Auditeur Automatique de Règles (`scripts/schematic_auditor.py`)
+## 4. Automated Rule Auditor (`scripts/schematic_auditor.py`)
 
-Permet d'exécuter un premier niveau de vérification statique agnostique sur une nomenclature Markdown ou une netlist :
+Executes static agnostic verification on a Markdown bill of materials or netlist:
 ```bash
 uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom documents/schema/bom.json
 ```
-Sortie JSON pour traitement programmatique :
+JSON output for programmatic processing:
 ```bash
 uv run .agents/skills/review/scripts/schematic_auditor.py --rules .agents/skills/review/templates/audit_rules.json --bom documents/schema/bom.json --json
 ```
 
 ---
 
-## 5. Cycle de Vie d'une Revue (Règle 4 `agents.md`)
+## 5. Review Lifecycle (Rule 4 `agents.md`)
 
 ```mermaid
 flowchart TD
-    A["1. Détection ou Demande de Revue"] --> B["2. Audit Critique Méthodique\n(PNG, Datasheets, BOM, Schemas)"]
-    B --> C["3. Rédaction du Rapport\n(review/reviewXXX.md)"]
-    C --> D["4. Validation du Format\n(uv run review_tool.py validate)"]
-    D --> E["5. Présentation & Arbitrage\nInteractif avec l'Utilisateur"]
-    E -->|Arbitrage validé| F["6. Dépouillement vers todo.md\n(uv run review_tool.py triage --apply)"]
-    G["7. Nettoyage du sas\n(Suppression du reviewXXX.md traité)"]
+    A["1. Review Request or Trigger"] --> B["2. Methodical Critical Audit\n(PNG, Datasheets, BOM, Schematics)"]
+    B --> C["3. Report Drafting\n(review/reviewXXX.md)"]
+    C --> D["4. Format Validation\n(uv run review_tool.py validate)"]
+    D --> E["5. Presentation & Interactive\nArbitrage with User"]
+    E -->|Approved triage| F["6. Triage into todo.md\n(uv run review_tool.py triage --apply)"]
+    G["7. Buffer Cleanup\n(Delete processed reviewXXX.md)"]
     F --> G
 ```

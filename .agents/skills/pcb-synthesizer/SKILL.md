@@ -1,96 +1,96 @@
 ---
 name: pcb-synthesizer
-description: "Moteur de synthèse PCB en boucle fermée (Co-design Placement -> Routage -> Métrologie CEM -> Couture de masse). Orchestre la chaîne complète EasyEDA Pro, FreeRouting et PCB Stitcher avec rétroaction adaptative et certification DRC = 0."
+description: "Closed-loop PCB synthesis engine (Co-design Placement -> Routing -> EMC Metrology -> Ground Stitching). Orchestrates the complete toolchain: EasyEDA Pro, FreeRouting, and PCB Stitcher with adaptive feedback and DRC = 0 certification."
 ---
 
-# Skill : PCB Synthesizer (Synthèse en Boucle Fermée Placement-Routage-CEM)
+# Skill: PCB Synthesizer (Closed-Loop Placement-Routing-EMC Synthesis)
 
-## 1. Vue d'Ensemble & Vision
+## 1. Overview & Vision
 
-Le skill `pcb-synthesizer` est l'orchestrateur de haut niveau unifiant la conception de circuits imprimés sous **EasyEDA Pro** en une chaîne fermée entièrement transactionnelle et automatisée :
+The `pcb-synthesizer` skill is a top-level orchestrator unifying printed circuit board design under **EasyEDA Pro** into a fully transactional, closed-loop automated pipeline:
 
 ```
              ┌─────────────────────────────────────────────────────────────┐
              │                     PCB SYNTHESIZER                         │
-             │           (Orchestrateur en Boucle Fermée)                  │
+             │                 (Closed-Loop Orchestrator)                  │
              └──────────────────────────────┬──────────────────────────────┘
                                             │
                                             ▼ (1)
              ┌─────────────────────────────────────────────────────────────┐
              │                         PCB-PLACER                          │
-             │  Placement Stochastique & Recuit Simulé Physique CEM v2     │
-             │  (0 Collision, Keepouts RF, Ancres, Énergie H 1/r³, E 1/r²) │
+             │  Stochastic Placement & Physical EMC Simulated Annealing v2 │
+             │  (0 Collisions, RF Keepouts, Anchors, H 1/r³ & E 1/r² Energy)│
              └──────────────────────────────┬──────────────────────────────┘
                                             │
                                             ▼ (2)
              ┌─────────────────────────────────────────────────────────────┐
              │                       APPLY PLACEMENT                       │
-             │  Injection par Lot EasyEDA Pro avec Snapshot Rollback       │
+             │  EasyEDA Pro Batch Injection with Rollback Snapshot         │
              └──────────────────────────────┬──────────────────────────────┘
                                             │
                                             ▼ (3)
              ┌─────────────────────────────────────────────────────────────┐
              │                         FREEROUTING                         │
-             │  Export DSN -> Patching des NetClasses -> FreeRouting CLI   │
-             │  -> Import SES dans EasyEDA Pro                             │
+             │  DSN Export -> NetClasses Patching -> FreeRouting CLI       │
+             │  -> SES Import into EasyEDA Pro                             │
              └──────────────────────────────┬──────────────────────────────┘
                                             │
                                             ▼ (4)
              ┌─────────────────────────────────────────────────────────────┐
              │                         DSN METRICS                         │
-             │  Analyseur Métrologique Réel Post-Routage                   │
-             │  - Aire réelle de boucle polygonale (Shoelace)              │
-             │  - Inductance fermée sur plan GND (Grover/Rosa/Paul)        │
-             │  - Skew des paires différentielles                          │
+             │  Real Post-Routing Metrology Analyzer                       │
+             │  - Actual polygonal loop area (Shoelace)                    │
+             │  - Closed-loop inductance over GND plane (Grover/Rosa/Paul) │
+             │  - Differential pair skew                                   │
              └──────────────────────────────┬──────────────────────────────┘
                                             │
-                       [Conforme ?] ────────┼──────── [Non Conforme]
+                       [Compliant?] ────────┼──────── [Non-Compliant]
                             │               │                │
-                           OUI              │               NON (Cycle < 3)
+                           YES              │             NO (Cycle < 3)
                             │               │                │
-                            ▼               │                ▼ (Rétroaction)
+                            ▼               │                ▼ (Feedback)
              ┌──────────────────────────────┴─┐   ┌───────────────────────────┐
-             │          PCB-STITCHER          │   │ Resserrement Adaptatif    │
-             │  Vias d'échappement GND        │   │ des Contraintes Locales   │
-             │  + Pontage d'îlots A* 3D       │   │ et Re-bouclage vers (1)   │
-             │  + Reconstruction des Plans    │   └───────────────────────────┘
+             │          PCB-STITCHER          │   │ Adaptive Tightening       │
+             │  GND escape fanout vias        │   │ of Local Constraints      │
+             │  + 3D A* island bridging       │   │ and Feedback Loop to (1)  │
+             │  + Polygon pour rebuilding     │   └───────────────────────────┘
              └──────────────┬─────────────────┘
                             │
                             ▼ (5)
              ┌─────────────────────────────────────────────────────────────┐
-             │                     CERTIFICATION DRC = 0                   │
-             │            Rapport de Synthèse Physique Final               │
+             │                    DRC = 0 CERTIFICATION                    │
+             │               Final Physical Synthesis Report               │
              └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Conformité aux Règles du Projet (AGENTS.md)
+## 2. Project Rules Compliance (AGENTS.md)
 
-- **Règle 1 (Modularité & Moteurs Agnostiques) :**
-  - **Zéro composant en dur :** Aucun composant, net ou coordonnée n'est figé dans le code. Toutes les règles sont injectées via `--manifest` (`manifest.json`) et `--config` (`constraints.json`).
-  - **Exécution stricte via `uv` :** Toute commande Python doit être lancée via `uv run python ...`.
-- **Règle 2 (Sécurité & Contrôle du Pont EasyEDA) :**
-  - Sauvegardes atomiques, vérification de connectivité HTTP sur le port 49620 et rollback en cas d'erreur.
-- **Règle 5 (Clôture & Post-Validation) :**
-  - Contrôle DRC = 0 et ERC = 0 bloquant avant certification.
+- **Rule 1 (Modularity & Agnostic Engines):**
+  - **Zero hardcoded components:** No components, nets, or coordinates are hardcoded. All rules are injected via `--manifest` (`manifest.json`) and `--config` (`constraints.json`).
+  - **Strict execution via `uv`:** Every Python command must be launched via `uv run python ...`.
+- **Rule 2 (Safety & EasyEDA Bridge Control):**
+  - Atomic backups, HTTP connectivity checks on port 49620, and rollback on failure.
+- **Rule 5 (Closure & Post-Validation):**
+  - Blocking DRC = 0 and ERC = 0 checks before certification.
 
 ---
 
-## 3. Composants du Skill
+## 3. Skill Components
 
-| Fichier | Rôle | Description |
+| File | Role | Description |
 | :--- | :--- | :--- |
-| `SKILL.md` | Spécification | Documentation d'architecture et manuel d'utilisation CLI. |
-| `dsn_metrics.py` | Métrologie post-routage | Parseur Specctra DSN/SES extrayant les tracés réels des pistes, calculant l'aire de boucle réelle et l'inductance de boucle fermée. |
-| `synthesizer_pipeline.py` | Orchestrateur maître | Moteur de coordination exécutant la boucle fermée avec rétroaction itérative (max 3 cycles) et certification finale. |
-| `tests/test_dsn_metrics.py` | Banc de tests | Tests unitaires automatisés pour l'analyse métrologique des fichiers DSN/SES. |
+| `SKILL.md` | Specification | Architectural documentation and CLI user guide. |
+| `dsn_metrics.py` | Post-routing metrology | Specctra DSN/SES parser extracting actual routed traces, computing true loop area and closed-loop inductance. |
+| `synthesizer_pipeline.py` | Master orchestrator | Coordination engine driving the closed loop with iterative feedback (up to 3 cycles) and final certification. |
+| `tests/test_dsn_metrics.py` | Test suite | Automated unit tests for metrology analysis of DSN/SES files. |
 
 ---
 
-## 4. Utilisation en Ligne de Commande
+## 4. Command-Line Usage
 
-### A. Synthèse Complète en Boucle Fermée (Recommandé)
+### A. Full Closed-Loop Synthesis (Recommended)
 ```bash
 uv run python .agents/skills/pcb-synthesizer/synthesizer_pipeline.py \
   --manifest documents/pcb/manifest.json \
@@ -100,7 +100,7 @@ uv run python .agents/skills/pcb-synthesizer/synthesizer_pipeline.py \
   --apply
 ```
 
-### B. Métrologie Post-Routage Seule (`dsn_metrics.py`)
+### B. Post-Routing Metrology Only (`dsn_metrics.py`)
 ```bash
 uv run python .agents/skills/pcb-synthesizer/dsn_metrics.py \
   --dsn .agents/skills/freerouting/.cache/board.dsn \
@@ -108,10 +108,17 @@ uv run python .agents/skills/pcb-synthesizer/dsn_metrics.py \
   --board documents/pcb/constraints.json
 ```
 
-### C. Mode Simulation (Dry-Run sans altération EasyEDA)
+### C. Simulation Mode (Dry-Run without EasyEDA changes)
 ```bash
 uv run python .agents/skills/pcb-synthesizer/synthesizer_pipeline.py \
   --manifest documents/pcb/manifest.json \
   --board documents/pcb/constraints.json \
   --dry-run
 ```
+
+---
+
+## 5. Generated Artifacts & Reports
+
+Upon completion of synthesis, the pipeline produces and records the metrology and certification summary:
+* [`documents/pcb/synthesis_report.json`](../../../documents/pcb/synthesis_report.json): Closed-loop execution report detailing DRC status, completed optimization cycles, critical loop areas computed via Shoelace formula, and differential skew.

@@ -1,123 +1,133 @@
 ---
 name: pcb-placer
 description: >-
-  Moteur d'auto-placement agnostique par contraintes géométriques, CEM et thermiques pour EasyEDA Pro.
-  Prend en entrée obligatoire un fichier formel de configuration (--config floorplan.json),
-  estime et suggère les dimensions minimales du PCB selon les normes IPC-7351,
-  vérifie les contraintes (ancres mécaniques, découplage, boucles critiques, keepouts),
-  audite les distances et injecte le placement en une passe via le pont local EasyEDA.
-compatibility: Python 3.8+, Node.js 18+, uv, EasyEDA Pro desktop avec run-api-gateway
+  Agnostic auto-placement engine driven by geometric, EMC, and thermal constraints for EasyEDA Pro.
+  Requires a formal configuration file (--config floorplan.json), estimates and suggests minimal PCB
+  dimensions per IPC-7351 standards, verifies constraints (mechanical anchors, decoupling, critical loops, keepouts),
+  audits clearances, and executes single-pass placement injection via the local EasyEDA bridge.
+compatibility: Python 3.8+, Node.js 18+, uv, EasyEDA Pro desktop with run-api-gateway
 metadata:
   author: OBD2-Scanner-Dev
   version: "2.1.0"
 ---
 
-# Skill : PCB Placer (Moteur d'Auto-Placement & Dimensionnement Agnostique)
+# Skill: PCB Placer (Agnostic Auto-Placement & Board Sizing Engine)
 
-Ce skill fournit un **moteur algorithmique pur** de calcul géométrique, d'estimation dimensionnelle, de contrôle de contraintes CEM/thermiques et d'injection en une passe pour l'agencement de circuits imprimés sous **EasyEDA Pro**.
+This skill provides a **pure algorithmic engine** for geometric calculation, dimensional estimation, EMC/thermal constraint validation, and single-pass injection for printed circuit board layout in **EasyEDA Pro**.
 
-Conformément à la règle `## 1.` d'[`agents.md`](../../../agents.md), ce skill est **totalement agnostique** : il ne contient aucune référence en dur à des composants, empreintes ou coordonnées physiques spécifiques. Toutes les données doivent lui être transmises via un fichier de configuration formel (`--config <fichier.json>`) ou une nomenclature (`--bom <bom.json>`).
+In compliance with Rule 1 of [`agents.md`](../../../agents.md), this skill is **completely agnostic**: it contains no hardcoded references to specific components, footprints, or physical coordinates. All data must be passed via a formal configuration file (`--config <file.json>`) or bill of materials (`--bom <bom.json>`).
 
-Il s'appuie sur le skill [easyeda-api](../easyeda-api/SKILL.md) et son pont local (port 49620).
+It relies on the [easyeda-api](../easyeda-api/SKILL.md) skill and its local bridge (port 49620).
 
 ---
 
-## 1. Architecture des Modules
+## 1. Module Architecture
 
 ```
 .agents/skills/pcb-placer/
-├── SKILL.md                 # Documentation et guide d'utilisation
-├── easyeda_client.py        # Client Python de communication avec EasyEDA Pro
-├── validate.py              # Contrôleur d'intégrité et de cohérence des données d'entrée
-├── score.py                 # Évaluateur objectif multicritère (HPWL, collisions, CEM, thermie)
-├── simulated_annealing.py   # Moteur de recuit simulé multi-départs & légalisation géométrique
-├── apply_placement.py       # Actionneur d'injection par lot & certification DRC
-├── label_placer.py          # Moteur de placement & normalisation de la sérigraphie (IPC-7351)
-├── render_svg.py            # Générateur de visualisations vectorielles SVG
-├── size_estimator.py        # Moteur d'estimation et suggestion dimensionnelle (IPC-7351)
-├── auto_place.py            # Moteur d'auto-placement et d'injection en une passe
-└── audit_placement.py       # Auditeur géométrique des distances critiques CEM et du contour
+├── SKILL.md                 # Documentation and user guide
+├── auto_place.py            # Auto-placement engine and single-pass injector
+├── apply_placement.py       # Batch injection actuator & DRC certification
+├── audit_placement.py       # Geometric auditor for critical EMC distances and board outline
+├── easyeda_client.py        # Python client communicating with EasyEDA Pro
+├── emc_physics.py           # EMC physics modeling (magnetic field 1/r³ and electric field 1/r²)
+├── export_geometry.py       # Geometry and component bounding-box exporter
+├── label_placer.py          # Silkscreen label placement & normalization engine (IPC-7351)
+├── placement_constraints.py # Geometric and technological constraint loader and verifier
+├── placement_resolver.py    # Spatial resolver and functional block partitioner
+├── render_svg.py            # SVG vector visualization generator
+├── score.py                 # Multi-criteria objective evaluator (HPWL, collisions, EMC, thermal)
+├── simulated_annealing.py   # Multi-start simulated annealing & geometric legalizer engine
+├── size_estimator.py        # Dimensional estimation & suggestion engine (IPC-7351)
+├── validate.py              # Input data integrity and consistency controller
+└── tests/                   # Automated unit test suite
+    ├── __init__.py          # Test package declaration
+    ├── test_annealing.py    # Simulated annealing convergence tests
+    ├── test_geometry.py     # Tests of geometric operations, projections, and rotations
+    ├── test_legalizer.py    # Tests of legalization engine and non-overlapping repulsion
+    ├── test_loop_physics.py # Tests of physical modeling for EMC switching loops
+    └── test_score_physics.py# Tests of score functions and physical penalties
 ```
 
 ---
 
-## 2. Utilisation Rapide (via `uv run`)
+## 2. Quick Usage (via `uv run`)
 
 > [!IMPORTANT]
-> Conformément aux règles du projet, tous les scripts Python doivent être exécutés via `uv run`, et l'argument `--config` (ou `--bom`) est **obligatoire**.
+> In accordance with project rules, all Python scripts must be executed via `uv run`, and the `--config` (or `--bom`) argument is **mandatory**.
 
-### A. Estimer et Suggérer les Dimensions Idéales du PCB (`size_estimator.py`)
-Avant de figer un contour ou pour évaluer la faisabilité de routage d'une carte :
+### A. Estimate and Suggest Ideal PCB Dimensions (`size_estimator.py`)
+Before freezing a board outline or to assess routing feasibility:
 ```bash
-# Estimation depuis le floorplan et comparaison avec le contour actuel
+# Sizing estimation from floorplan and comparison with current outline
 uv run .agents/skills/pcb-placer/size_estimator.py --config floorplan.json
 
-# Estimation en spécifiant un empilement 4 couches
+# Estimation specifying a 4-layer stackup
 uv run .agents/skills/pcb-placer/size_estimator.py --config floorplan.json --layers 4
 
-# Estimation directe depuis la nomenclature BOM
+# Direct estimation from the BOM bill of materials
 uv run .agents/skills/pcb-placer/size_estimator.py --bom documents/schema/bom.json --layers 2
 
 # Via auto_place.py
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --suggest-size
 ```
 
-#### Modèle Mathématique de Dimensionnement
-Le calcul s'appuie sur les surfaces de sécurité d'implantation (*Courtyards* normalisés **IPC-7351B**) :
-$$S_{\text{PCB}} = \frac{\sum S_{\text{composants}} + S_{\text{Keepouts}}}{\eta_{\text{routage}}}$$
+#### Sizing Mathematical Model
+The calculation relies on standardized component placement courtyards (**IPC-7351B**):
+$$S_{\text{PCB}} = \frac{\sum S_{\text{components}} + S_{\text{Keepouts}}}{\eta_{\text{routing}}}$$
 
-- **Taux d'efficacité surfacique ($\eta_{\text{routage}}$) :**
-  - **2 couches :** $\eta \approx 30\,\%\text{ à }35\,\%$ (*Packing factor* 2.8× à 3.3×) pour préserver un plan de masse GND continu.
-  - **4 couches :** $\eta \approx 50\,\%\text{ à }60\,\%$ (*Packing factor* 1.7× à 2.0×) grâce aux plans internes d'alimentation/masse.
-- **Résultats fournis :**
-  1. *Gabarit Minimal :* Routage très compact et dense.
-  2. *Gabarit Recommandé (Nominal) :* Équilibre optimal entre CEM, continuité de masse et fabrication JLCPCB standard.
-  3. *Gabarit Confortable :* Disposition aérée avec découplage thermique maximal.
+- **Surface Efficiency Ratio ($\eta_{\text{routing}}$):**
+  - **2 layers:** `30% to 35%` (Packing factor 2.8x to 3.3x) to preserve a continuous GND plane.
+  - **4 layers:** `50% to 60%` (Packing factor 1.7x to 2.0x) enabled by dedicated internal power/ground planes.
+- **Reported Sizing Profiles:**
+  1. *Minimal Envelope:* Ultra-dense and compact routing.
+  2. *Recommended Envelope (Nominal):* Optimal balance among EMC, ground continuity, and standard JLCPCB manufacturing.
+  3. *Relaxed Envelope:* Spacious layout with maximized thermal relief.
 
 ---
 
-### B. Vérifier la Connexion avec EasyEDA Pro (`easyeda_client.py`)
+### B. Verify Connection with EasyEDA Pro (`easyeda_client.py`)
 ```bash
 uv run .agents/skills/pcb-placer/easyeda_client.py
 ```
-Affiche le statut de connexion au pont, le projet actif, le nom de la carte PCB, le nombre de composants, de nets, de primitives de pistes et le contour mécanique (Layer 11).
+Displays bridge connection status, active project, PCB document name, component count, net count, track primitives count, and mechanical outline (Layer 11).
 
 ---
 
-### C. Auditer le Placement Physique & les Règles CEM (`audit_placement.py`)
+### C. Audit Physical Placement & EMC Rules (`audit_placement.py`)
 ```bash
 uv run .agents/skills/pcb-placer/audit_placement.py --config floorplan.json
 ```
-Vérifie rigoureusement 24 règles de conception physique :
-* **Contour mécanique :** Présence et conformité dimensionnelle du gabarit sur le Layer 11 (`BOARD_OUTLINE`).
-* **Marge de bord :** Respect de l'*Edge Clearance* (>= 1.0 mm) pour tous les composants non-ancres.
-* **Ancres fixes :** Position exacte des connecteurs (`J1`, `J2`) et du SoC (`U1`).
-* **Proximité CEM :** Découplage HF (< 2.0 mm), filtres Reset (< 2.0 mm), protections ESD/TVS (< 5.0 mm).
-* **Zones interdites :** Absence totale de composants dans le Keepout RF d'antenne méandre 2.4 GHz.
+Rigorously checks 24 physical design rules:
+* **Mechanical Outline:** Presence and dimensional conformance of outline on Layer 11 (`BOARD_OUTLINE`).
+* **Edge Clearance:** Adherence to edge clearance (>= 1.0 mm) for all non-anchor components.
+* **Fixed Anchors:** Exact coordinates for connectors (`J1`, `J2`) and the SoC (`U1`).
+* **EMC Proximity:** HF decoupling (< 2.0 mm), reset filters (< 2.0 mm), ESD/TVS protections (< 5.0 mm).
+* **Keepout Zones:** Complete absence of components within the 2.4 GHz meandered RF antenna keepout.
 
 ---
 
-### D. Appliquer l'Auto-Placement en une Passe (`auto_place.py`)
+### D. Execute Single-Pass Auto-Placement (`auto_place.py`)
 ```bash
-# 1. Simulation sans injection (dry-run d'affichage des coordonnées et de la grille)
+# 1. Simulation without injection (dry-run displaying coordinates and grid)
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json
 
-# 2. Injection réelle dans EasyEDA Pro + création automatique du contour si absent + DRC + sauvegarde
+# 2. Live injection into EasyEDA Pro + auto-create board outline if missing + DRC + save
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --apply
 
-# 3. Injection complète suivie de l'audit de certification immédiat
+# 3. Full injection immediately followed by certification audit
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --apply --audit
 
-# 4. Synchronisation automatique depuis le schéma (importChanges) avant injection et audit
+# 4. Automatic sync from schematic (importChanges) prior to injection and audit
 uv run .agents/skills/pcb-placer/auto_place.py --config floorplan.json --sync --apply --audit
 ```
 
 ---
 
-### E. Résoudre le Placement Global par Recuit Simulé (`simulated_annealing.py`)
-Génère une solution optimisée sans collision via un recuit simulé multi-départs intégrant la densité uniforme 2D, l'opérateur de colonisation et la légalisation géométrique déterministe certifiée IPC :
+### E. Solve Global Placement via Simulated Annealing (`simulated_annealing.py`)
+Generates a collision-free optimized solution using multi-start simulated annealing incorporating uniform 2D density, colonization operators, and deterministic IPC-compliant geometric legalization:
 ```bash
-# Lancement standard (4 départs, marge d'aération 0.20 mm, export candidate JSON et SVG)
+# Standard run (4 starts, 0.20 mm spacing margin, candidate JSON and SVG export)
 uv run .agents/skills/pcb-placer/simulated_annealing.py \
   --manifest documents/pcb/manifest.json \
   --board documents/pcb/constraints.json \
@@ -127,29 +137,43 @@ uv run .agents/skills/pcb-placer/simulated_annealing.py \
   --out placement_candidate.json \
   --svg documents/pcb/placement.svg
 ```
-> **Règle projet :** À chaque modification ou recalcul de placement avec le skill `pcb-placer`, le fichier [`documents/pcb/placement.svg`](../../../documents/pcb/placement.svg) doit être systématiquement mis à jour.
+> **Project Rule:** Whenever placement is modified or recalculated using `pcb-placer`, the [`documents/pcb/placement.svg`](../../../documents/pcb/placement.svg) file must be updated systematically.
 
 ---
 
-### F. Injecter le Placement & Certifier le DRC (`apply_placement.py`)
-Applique en une seule transaction par lot les coordonnées d'un fichier de placement dans EasyEDA Pro et lance la certification DRC :
+### F. Inject Placement & Certify DRC (`apply_placement.py`)
+Applies placement coordinates from a placement file in a single batch transaction into EasyEDA Pro and initiates DRC certification:
 ```bash
-# Simulation sans altération du PCB
+# Simulation without modifying the PCB
 uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json --dry-run
 
-# Injection par lot, contrôle DRC natif et sauvegarde automatique
+# Batch injection, native DRC check, and automatic save
 uv run .agents/skills/pcb-placer/apply_placement.py --placement placement_candidate.json
 ```
 
 ---
 
-### G. Optimiser & Normaliser la Sérigraphie (`label_placer.py`)
-Positionne et oriente automatiquement toutes les étiquettes de désignateurs sur la couche de sérigraphie (Top Silk) selon les normes IPC-7351 §3.4.7 et IPC-A-610 :
+### G. Optimize & Normalize Silkscreen (`label_placer.py`)
+Automatically positions and aligns all designator labels on the top silkscreen layer (Top Silk) conforming to IPC-7351 §3.4.7 and IPC-A-610:
 ```bash
-# Simulation sans altération du PCB (audit de collision et d'orientation)
+# Simulation without modifying the PCB (collision and orientation audit)
 uv run .agents/skills/pcb-placer/label_placer.py --dry-run
 
-# Injection réelle, normalisation orthogonale (0°/90°), dégagement du cuivre (>= 0.25 mm) et sauvegarde
+# Live injection, orthogonal normalization (0°/90°), copper clearance (>= 0.25 mm), and save
 uv run .agents/skills/pcb-placer/label_placer.py
 ```
 
+---
+
+## 3. Automated Test Suite
+
+The skill includes a comprehensive suite of unit tests covering EMC physics, geometric legalization, and simulated annealing:
+```bash
+uv run pytest .agents/skills/pcb-placer/tests/
+```
+Test modules:
+* `tests/test_geometry.py`: Tests of geometric operations, projections, and rotations.
+* `tests/test_legalizer.py`: Tests of legalization engine and non-overlapping repulsion.
+* `tests/test_loop_physics.py`: Tests of physical modeling for EMC switching loops.
+* `tests/test_score_physics.py`: Tests of score functions and physical penalties.
+* `tests/test_annealing.py`: Simulated annealing convergence tests.

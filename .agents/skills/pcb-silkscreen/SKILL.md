@@ -1,16 +1,16 @@
 ---
 name: pcb-silkscreen
-description: "Moteur déclaratif et agnostique de génération et d'injection de sérigraphie additionnelle (marquage fonctionnel, repérage des broches, consignes de cavaliers, cartouche) pour EasyEDA Pro."
+description: "Declarative and agnostic generation and injection engine for auxiliary silkscreen markings (functional labeling, pin markings, jumper instructions, title block) for EasyEDA Pro."
 ---
 
-# Skill : PCB Silkscreen pour EasyEDA Pro
+# Skill: PCB Silkscreen for EasyEDA Pro
 
-## 1. Vue d'Ensemble & Architecture
+## 1. Overview & Architecture
 
-Le skill `pcb-silkscreen` est un moteur algorithmique d'automatisation de la sérigraphie fonctionnelle et documentaire pour EasyEDA Pro.
-Il complète le placement des désignateurs natifs (`R1`, `C1`, `U1`...) en positionnant de manière paramétrique et répétable les textes explicatifs sur les couches **Top Silkscreen** (`TopSilkLayer`, couche 3) et **Bottom Silkscreen** (`BottomSilkLayer`, couche 4).
+The `pcb-silkscreen` skill is an algorithmic engine for automated functional and documentation silkscreen generation in EasyEDA Pro.
+It complements native component designator placement (`R1`, `C1`, `U1`, etc.) by parametrically and repeatably placing descriptive markings on the **Top Silkscreen** (`TopSilkLayer`, layer 3) and **Bottom Silkscreen** (`BottomSilkLayer`, layer 4) layers.
 
-### Entrées et Flux de Données :
+### Inputs and Data Flow:
 ```text
 [documents/pcb/silkscreen.json] ──┐
 [documents/pcb/silkscreen.schema.json] ──┼──► apply_silkscreen.py ──► EasyEDA Pro API (http://localhost:49620)
@@ -21,27 +21,43 @@ Il complète le placement des désignateurs natifs (`R1`, `C1`, `U1`...) en posi
 
 ---
 
-## 2. Conformité aux Règles du Projet (AGENTS.md)
+## 2. Project Rules Compliance (AGENTS.md)
 
-- **Règle 1 (Agnosticisme Pur & Zéro Composant en Dur) :**
-  - Le code Python sous `.agents/skills/pcb-silkscreen/` ne contient aucun désignateur (`J1`, `H1`), coordonnée XY, ni libellé en dur.
-  - L'intégralité du contenu et des cibles provient obligatoirement du fichier déclaratif `--config documents/pcb/silkscreen.json`.
-  - Exécution exclusive via `uv run` (`uv run python .agents/skills/pcb-silkscreen/apply_silkscreen.py`).
-- **Règle 2 (Sécurité & Idempotence) :**
-  - **Idempotence garantie :** Le moteur purge au préalable toutes les primitives créées lors des exécutions antérieures via son registre d'état (`.cache/silkscreen_state.json`), évitant tout texte fantôme ou superposition lors des modifications de `silkscreen.json`.
-  - **Non-destructif :** Les désignateurs natifs de composants ne sont jamais altérés.
-- **Règle 6 (Typographie) :**
-  - Aucun formatage LaTeX dans les libellés de composants ou les textes de sérigraphie.
+- **Rule 1 (Pure Agnosticism & Zero Hardcoded Components):**
+  - Python code under `.agents/skills/pcb-silkscreen/` contains no hardcoded designators (`J1`, `H1`), XY coordinates, or labels.
+  - All content and targets originate strictly from the declarative configuration file `--config documents/pcb/silkscreen.json`.
+  - Exclusive execution via `uv run` (`uv run python .agents/skills/pcb-silkscreen/apply_silkscreen.py`).
+- **Rule 2 (Safety & Idempotence):**
+  - **Guaranteed Idempotence:** The engine first purges all primitives created in previous runs using its tracking registry (`.cache/silkscreen_state.json`), preventing ghost text or overlapping artifacts when modifying `silkscreen.json`.
+  - **Non-destructive:** Native component designators are never modified.
+- **Rule 6 (Typography):**
+  - No LaTeX formatting in component labels or silkscreen text.
 
 ---
 
-## 3. Types d'Annotations Supportés
+## 3. Supported Annotation Types
 
-1. **`pin_labels` (Repérage de broches) :**
-   - Ancrage automatique en regard de chaque pastille (`Pad`) du composant cible (`J1`, `H1`, etc.).
-   - Prise en compte de l'orientation et de la rotation du composant.
-2. **`component_legends` (Légendes de composants) :**
-   - Centrage automatique relatif au courtyard du composant (`above`, `below`, `left`, `right`).
-   - Idéal pour les consignes de cavaliers (`JP1`, `JP2`) ou statuts de LEDs (`LED1`).
-3. **`title_blocks` (Cartouches et blocs documentaires) :**
-   - Ancrage relatif aux coins du PCB (`bottom_right`, `top_left`, etc.) calculé dynamiquement depuis le contour de carte (`BoardOutline`).
+1. **`pin_labels` (Pin Markings):**
+   - Automatically anchored adjacent to each target component pad (`Pad`) (`J1`, `H1`, etc.).
+   - Accounts for component orientation and rotation.
+2. **`component_legends` (Component Legends):**
+   - Centered automatically relative to the component courtyard (`above`, `below`, `left`, `right`).
+   - Ideal for jumper instructions (`JP1`, `JP2`) or LED status labels (`LED1`).
+3. **`title_blocks` (Title Blocks and Documentation Frames):**
+   - Anchored relative to board corners (`bottom_right`, `top_left`, etc.) dynamically computed from the board outline (`BoardOutline`).
+
+---
+
+## 4. Skill Components & Test Suite
+
+| File | Role | Description |
+| :--- | :--- | :--- |
+| `scripts/apply_silkscreen.py` | Injection actuator | CLI entry point to purge and inject silkscreen annotations into EasyEDA Pro. |
+| `scripts/silkscreen_resolver.py` | Geometric resolver | Calculates bounding boxes, orientations, mirroring, and text placement coordinates. |
+| `scripts/silkscreen_feedback_loop.py` | Closed loop & Audit | Checks for clearance against pads and vias, optimizing placement coordinates. |
+| `tests/test_silkscreen.py` | Unit test suite | Validates projection algorithms and silkscreen collision detection. |
+
+```bash
+# Run the unit test suite
+uv run pytest .agents/skills/pcb-silkscreen/tests/test_silkscreen.py
+```

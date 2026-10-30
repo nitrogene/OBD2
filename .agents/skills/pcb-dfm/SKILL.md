@@ -1,116 +1,118 @@
 ---
 name: pcb-dfm
-description: "Moteur d'audit automatisé de fabricabilité DFM (Design for Manufacturing) et d'assemblage SMT pour EasyEDA Pro et JLCPCB. Vérifie les ponts de vernis épargne, les distances via-to-pad (solder wicking), la sérigraphie, les dégagements de cuivre, les perçages, l'espacement CMS et la cohérence BOM/CPL."
+description: "Automated DFM (Design for Manufacturing) and SMT assembly audit engine for EasyEDA Pro and JLCPCB. Checks solder mask bridges, via-to-pad clearances (solder wicking), silkscreen clearances, copper clearances, drill holes, SMD component spacing, and BOM/CPL consistency."
 ---
 
-# Skill : PCB & SMT DFM Auditor pour EasyEDA Pro & JLCPCB
+# Skill: PCB & SMT DFM Auditor for EasyEDA Pro & JLCPCB
 
-## 1. Vue d'Ensemble & Architecture
+## 1. Overview & Architecture
 
-Le skill `pcb-dfm` est un moteur d'ingénierie et d'assurance qualité industrielle conçu pour automatiser les contrôles de fabricabilité (**DFM**) et d'assemblage automatisé (**SMT**) selon les capacités d'usine standard de **JLCPCB** (PCB 4 couches JLC2313, 1.6 mm, cuivre 1 oz).
+The `pcb-dfm` skill is an industrial-grade engineering and quality assurance engine designed to automate Design for Manufacturing (**DFM**) and automated Surface Mount Technology (**SMT**) assembly checks against standard factory capabilities for **JLCPCB** (4-layer JLC2313 stackup, 1.6 mm thickness, 1 oz copper).
 
-Dans une chaîne de conception assistée par IA, le DRC natif d'EasyEDA Pro valide uniquement les contraintes électriques de connectivité (absence de court-circuit, isolation entre filets distincts). Cependant, il ne détecte pas les défauts physiques d'usine qui provoquent des rejets de fabrication ou des défauts d'assemblage critique :
-- **Ponts de vernis épargne trop fins (*Solder Mask Bridge* < 0.10 mm) :** Décollement du vernis créant un *gang mask* et favorisant les ponts de soudure entre broches à pas fin (ex: USB-C, ESP32-S3, circuits intégrés).
-- **Vias collés ou sur pastilles CMS (*Via to Pad* < 0.15 mm) :** Aspiration de la pâte à braser par capillarité dans le via lors de la refusion (*solder wicking*), créant des soudures sèches ou le redressement des composants (*tombstoning*).
-- **Chevauchement sérigraphie / vernis (*Silkscreen to Pad / Hole*) :** Rognage automatique du texte par le fabricant (*auto-clipping*) ou encre isolante déposée sur le cuivre.
-- **Dégagements inter-composants CMS :** Espace insuffisant pour les buses de placement automatique Pick & Place.
-- **Cohérence BOM / CPL :** Incohérences entre nomenclature et implantation physique.
+In an AI-assisted design workflow, EasyEDA Pro's native DRC verifies only electrical connectivity constraints (absence of short circuits, net isolation). However, it does not detect physical manufacturing flaws that lead to fab rejections or critical assembly failures:
+- **Solder Mask Bridges too narrow (Solder Mask Bridge < 0.10 mm):** Mask peeling creating a gang mask, promoting solder bridging between fine-pitch pins (e.g., USB-C, ESP32-S3, integrated circuits).
+- **Vias tangent to or on SMD pads (Via to Pad < 0.15 mm):** Solder paste capillary wicking into the via during reflow, causing dry joints or component tombstoning.
+- **Silkscreen / Solder Mask Overlap (Silkscreen to Pad / Hole):** Automatic clipping of text by the fab house or non-conductive ink deposited on copper pads.
+- **SMD Component Clearances:** Insufficient clearance for automated Pick & Place nozzles.
+- **BOM / CPL Consistency:** Discrepancies between bill of materials and physical centroid coordinates.
 
-### Chaîne d'Exécution du Pipeline DFM :
+### DFM Pipeline Execution Flow:
 ```
-[EasyEDA Pro PCB Actif]
+[Active EasyEDA Pro PCB]
        │
-       ▼ (1) drc_bridge.py : Extraction instantanée des primitives (mils -> mm)
-[Primitives Géométriques Normalisées]
+       ▼ (1) drc_bridge.py: Instant primitive extraction (mils -> mm)
+[Normalized Geometric Primitives]
        │
-       ├─► (2) pcb_dfm_auditor.py : Ponts vernis, vias-to-pad, sérigraphie, bord de carte, perçages
+       ├─► (2) pcb_dfm_auditor.py: Solder mask bridges, via-to-pad clearances, silkscreen, board edge, hole sizes
        │
-       └─► (3) smt_dfm_auditor.py : Espacement composants, marges convoyeur, repères optiques, BOM
+       └─► (3) smt_dfm_auditor.py: Component spacing, conveyor margins, optical fiducials, BOM consistency
                │
                ▼ (4) report_generator.py
-[Rapport Markdown (documents/pcb/dfm_report.md) & JSON (documents/pcb/dfm_report.json)]
+[Markdown Report (documents/pcb/dfm_report.md) & JSON (documents/pcb/dfm_report.json)]
 ```
 
 ---
 
-## 2. Conformité aux Règles du Projet (AGENTS.md)
+## 2. Project Rules Compliance (AGENTS.md)
 
-- **Règle 1 (Modularité & Moteur Agnostique) :**
-  - **Zéro composant en dur :** Aucune référence à un composant (`U4`, `R13`, `C8`), coordonnée physique ou net n'est codé dans les scripts Python.
-  - **Injection par configuration :** Tous les seuils proviennent du fichier de règles déclaratif (`config/rules_jlcpcb.json`) et de la BOM injectée (`--bom`).
-  - **Exécution stricte via `uv` :** Tout script Python du skill est exécuté impérativement via `uv run` (l'appel direct à `python` est proscrit).
-- **Règle 2 (Sécurité & Contrôle du Pont EasyEDA) :**
-  - Le pont local écoute sur le port 49620 en lecture géométrique pure.
-- **Règle 6 (Typographie & Formules) :**
-  - Zéro balisage LaTeX pour les composants ou valeurs (pas de `$10\,\text{k}\Omega$`, texte brut Markdown exclusivement : `10 kΩ`, `0.10 mm`, `3.3V`).
+- **Rule 1 (Modularity & Agnostic Engine):**
+  - **Zero hardcoded components:** No component references (`U4`, `R13`, `C8`), physical coordinates, or nets are hardcoded in Python scripts.
+  - **Configuration-driven injection:** All thresholds originate from the declarative rules file (`config/rules_jlcpcb.json`) and the injected BOM (`--bom`).
+  - **Strict execution via `uv`:** Every Python script in this skill must be executed via `uv run` (direct `python` calls are prohibited).
+- **Rule 2 (Safety & EasyEDA Bridge Control):**
+  - The local bridge listens on port 49620 in read-only geometric query mode.
+- **Rule 6 (Typography & Formulas):**
+  - Zero LaTeX formatting for components or values (no `$10\,\text{k}\Omega$`; exclusively plain Markdown/code: `10 kΩ`, `0.10 mm`, `3.3V`).
 
 ---
 
-## 3. Composants du Skill
+## 3. Skill Components
 
-| Script | Rôle | Description |
+| Script | Role | Description |
 | :--- | :--- | :--- |
-| `config/rules_jlcpcb.json` | Spécification d'usine | Déclare les seuils dimensionnels JLCPCB standard (JLC2313, 4 couches, vernis vert). |
-| `scripts/drc_bridge.py` | Connecteur EasyEDA | Extrait les primitives physiques (pads, vias, pistes, sérigraphie, contour) et convertit les mils en mm. |
-| `scripts/pcb_dfm_auditor.py` | Moteur PCB DFM | Analyse géométrique du PCB nu (soldermask bridge, via-to-pad wicking, silkscreen clearances, perçages). |
-| `scripts/smt_dfm_auditor.py` | Moteur SMT DFM | Analyse d'assemblage (espacement boîtiers CMS, marges convoyeur, fiducials, BOM vs CPL). |
-| `scripts/report_generator.py` | Générateur de synthèse | Produit le bilan exécutif structuré en Markdown et JSON avec verdicts (🔴 Danger, 🟠 Warning, 🟢 Info). |
-| `scripts/dfm_pipeline.py` | CLI & Orchestrateur | Point d'entrée principal pour automatisation CI/CD et boucle fermée dans `pcb-synthesizer`. |
-| `scripts/export_fabrication.py` | Exportateur Production | Exporte automatiquement l'archive Gerber (ZIP), les centroïdes Pick & Place (CPL CSV) et la nomenclature (BOM CSV). |
+| `config/rules_jlcpcb.json` | Factory specification | Declares standard JLCPCB dimensional thresholds (JLC2313, 4-layer, green solder mask). |
+| `scripts/__init__.py` | Python package | Package declaration for the DFM audit module. |
+| `scripts/drc_bridge.py` | EasyEDA connector | Extracts physical primitives (pads, vias, tracks, silkscreen, board outline) and converts mils to mm. |
+| `scripts/pcb_dfm_auditor.py` | PCB DFM engine | Geometric analysis of the bare PCB (solder mask bridge, via-to-pad wicking, silkscreen clearances, drill holes). |
+| `scripts/smt_dfm_auditor.py` | SMT DFM engine | Assembly analysis (SMD package spacing, conveyor edge clearances, fiducials, BOM vs CPL). |
+| `scripts/report_generator.py` | Summary generator | Produces structured executive summaries in Markdown and JSON with status verdicts (🔴 Danger, 🟠 Warning, 🟢 Info). |
+| `scripts/dfm_pipeline.py` | CLI & Orchestrator | Primary entry point for CI/CD automation and closed-loop execution in `pcb-synthesizer`. |
+| `scripts/export_fabrication.py` | Production exporter | Automatically exports Gerber archives (ZIP), Pick & Place centroids (CPL CSV), and bill of materials (BOM CSV). |
+| `scripts/export_pcb_images.py` | Graphic exporter | Captures and exports 2D Top/Bottom, 3D, and PCB renders via the EasyEDA Pro API. |
 
 ---
 
-## 4. Guide d'Utilisation CLI
+## 4. CLI Usage Guide
 
-Toutes les commandes doivent être exécutées via `uv run` depuis la racine du dépôt :
+All commands must be executed via `uv run` from the workspace root:
 
-### Exécution Standard Complète (PCB + SMT + Rapports) :
+### Full Standard Run (PCB + SMT + Reports):
 ```bash
 uv run python .agents/skills/pcb-dfm/scripts/dfm_pipeline.py
 ```
 
-### Audit PCB DFM Seul :
+### PCB DFM Audit Only:
 ```bash
 uv run python .agents/skills/pcb-dfm/scripts/dfm_pipeline.py --pcb-only
 ```
 
-### Audit SMT Seul avec Spécification de la BOM :
+### SMT Audit Only with Explicit BOM Specification:
 ```bash
 uv run python .agents/skills/pcb-dfm/scripts/dfm_pipeline.py --smt-only --bom documents/schema/bom.json
 ```
 
-### Mode Strict (Échec si Avertissements WARNING) :
+### Strict Mode (Fails on WARNINGs):
 ```bash
 uv run python .agents/skills/pcb-dfm/scripts/dfm_pipeline.py --strict
 ```
 
-### Exportation Complète du Dossier de Fabrication (Gerber + CPL + BOM) :
+### Complete Fabrication Package Export (Gerber + CPL + BOM):
 ```bash
 uv run python .agents/skills/pcb-dfm/scripts/export_fabrication.py --output-dir documents/production --prefix OBD2
 ```
 
-### Arguments de Ligne de Commande :
-- `--config <chemin>` : Fichier JSON des règles d'usinage (défaut : `.agents/skills/pcb-dfm/config/rules_jlcpcb.json`).
-- `--bom <chemin>` : Fichier de nomenclature (défaut : `documents/schema/bom.json`).
-- `--output-json <chemin>` : Destination du rapport JSON (défaut : `documents/pcb/dfm_report.json`).
-- `--output-md <chemin>` : Destination du rapport Markdown (défaut : `documents/pcb/dfm_report.md`).
-- `--port <int>` : Port HTTP du pont local EasyEDA (défaut : `49620`).
-- `--pcb-only` : Ignore l'audit SMT.
-- `--smt-only` : Ignore l'audit PCB.
-- `--strict` : Retourne un code d'erreur 1 si des avertissements non bloquants subsistent.
+### Command-Line Arguments:
+- `--config <path>`: JSON manufacturing rules file (default: `.agents/skills/pcb-dfm/config/rules_jlcpcb.json`).
+- `--bom <path>`: Bill of materials file (default: `documents/schema/bom.json`).
+- `--output-json <path>`: Destination path for JSON report (default: `documents/pcb/dfm_report.json`).
+- `--output-md <path>`: Destination path for Markdown report (default: `documents/pcb/dfm_report.md`).
+- `--port <int>`: HTTP port for local EasyEDA bridge (default: `49620`).
+- `--pcb-only`: Skips SMT assembly audit.
+- `--smt-only`: Skips bare PCB audit.
+- `--strict`: Returns exit code 1 if non-blocking warnings remain.
 
 ---
 
-## 5. Synthèse des Règles Contrôlées
+## 5. Summary of Audited Rules
 
-| Règle DFM / SMT | Seuil JLCPCB Standard | Seuil Danger | Impact Technique |
+| DFM / SMT Rule | Standard JLCPCB Threshold | Danger Threshold | Technical Impact |
 | :--- | :---: | :---: | :--- |
-| **Pont de vernis épargne** | $\ge 0.10\,\text{mm}$ | $< 0.08\,\text{mm}$ | Décollement de vernis, pont de brasure à pas fin (*gang mask*). |
-| **Proximité Via-to-Pad** | $\ge 0.15\,\text{mm}$ | $< 0.05\,\text{mm}$ | Siphonnage d'étain dans le perçage (*wicking*), soudure sèche. |
-| **Sérigraphie sur pastille** | $\ge 0.15\,\text{mm}$ | Chevauchement | Encre isolante sur cuivre, rognage automatique (*clipping*). |
-| **Épaisseur trait sérigraphie**| $\ge 0.15\,\text{mm}$ | $< 0.12\,\text{mm}$ | Texte illisible, bavure à l'impression. |
-| **Cuivre au bord de carte** | $\ge 0.30\,\text{mm}$ | $< 0.20\,\text{mm}$ | Sectionnement de piste / via lors du dépyranage ou fraisage. |
-| **Bague de cuivre (Annular Ring)**| $\ge 0.13\,\text{mm}$ | $< 0.10\,\text{mm}$ | Rupture électrique en cas de désalignement de perçage. |
-| **Espacement boîtiers CMS** | $\ge 0.50\,\text{mm}$ | $< 0.25\,\text{mm}$ | Collision buse Pick & Place, interférence de refusion. |
-| **Bord de convoyeur SMT** | $\ge 3.0\,\text{mm}$ | $< 1.5\,\text{mm}$ | Nécessite des bandes de rive d'outillage (*tooling rails*). |
-| **Repères fiduciaires** | 3 optiques | 0 | Calage optique automatique de la machine d'insertion. |
+| **Solder Mask Bridge** | `>= 0.10 mm` | `< 0.08 mm` | Mask peeling, solder bridging on fine-pitch packages (*gang mask*). |
+| **Via-to-Pad Clearance** | `>= 0.15 mm` | `< 0.05 mm` | Solder paste wicking into drill hole, dry joints, tombstoning. |
+| **Silkscreen on Pad** | `>= 0.15 mm` | Overlap | Non-conductive ink on copper, automatic clipping by fab house. |
+| **Silkscreen Stroke Width** | `>= 0.15 mm` | `< 0.12 mm` | Unreadable text, ink bleeding during screen printing. |
+| **Copper to Board Edge** | `>= 0.30 mm` | `< 0.20 mm` | Trace/via shearing during V-scoring or CNC routing. |
+| **Annular Ring** | `>= 0.13 mm` | `< 0.10 mm` | Electrical breakout in case of drill misalignment. |
+| **SMD Component Spacing** | `>= 0.50 mm` | `< 0.25 mm` | Pick & Place nozzle collision, reflow thermal shadowing. |
+| **SMT Conveyor Edge Margin** | `>= 3.0 mm` | `< 1.5 mm` | Requires panel tooling rails for conveyor clamping. |
+| **Fiducial Markers** | 3 optical fiducials | 0 | Automated optical alignment for SMT placement equipment. |

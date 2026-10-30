@@ -1,93 +1,96 @@
 ---
 name: pcb-enclosure
-description: Moteur paramétrique agnostique de génération de boîtier mécanique 3D (STEP & STL) pour fabrication additive FDM, résine SLA et SLS Nylon JLCPCB.
+description: Agnostic parametric 3D mechanical enclosure generation engine (STEP & STL) for FDM 3D printing, SLA resin, and JLCPCB SLS Nylon.
 ---
 
-# Skill : pcb-enclosure
+# Skill: pcb-enclosure
 
-Moteur de modélisation mécanique 3D paramétrique, agnostique et automatisé pour boîtiers électroniques.
-Il s'appuie sur le noyau géométrique industriel **OpenCASCADE (OCCT)** via la bibliothèque Python `build123d`, garantissant une exécution 100% headless en ligne de commande et l'export direct de fichiers solides **STEP standards (ISO 10303 AP214)** et de maillages **STL haute résolution** directement commandables chez JLCPCB 3D Printing.
-
----
-
-## 1. Principes d'Ingénierie & Conformité AGENTS.md
-
-- **Règle 1 (Zéro composant en dur) :** Le moteur ne contient aucun composant, dimension ou cote figée. Toutes les grandeurs proviennent exclusivement des fichiers formels injectés :
-  - [`documents/pcb/constraints.json`](../../../documents/pcb/constraints.json) : contour du PCB ($W, H$), perçages de fixation (`mounting_holes`).
-  - [`documents/pcb/enclosure.json`](../../../documents/pcb/enclosure.json) : épaisseurs de paroi, jeux d'ajustement, bossages, découpes d'interface et serre-câble.
-- **Règle 1 (Exécution exclusive via `uv`) :** Tous les scripts s'exécutent via `uv run --with build123d python ...`.
-- **Règle 6 (Typographie stricte) :** Aucun balisage LaTeX pour les dimensions ou tolérances physiques.
+Parametric, agnostic, and automated 3D mechanical modeling engine for electronic enclosures.
+It is built upon the industrial **OpenCASCADE (OCCT)** geometric kernel via the Python library `build123d`, ensuring 100% headless command-line execution and direct export of standard solid **STEP files (ISO 10303 AP214)** and **high-resolution STL meshes** ready for ordering via JLCPCB 3D Printing.
 
 ---
 
-## 2. Architecture Géométrique Générée
+## 1. Engineering Principles & AGENTS.md Compliance
 
-Le moteur génère automatiquement trois pièces mécaniques complémentaires :
+- **Rule 1 (Zero hardcoded components):** The engine contains no hardcoded components, dimensions, or coordinates. All values originate exclusively from formal configuration files:
+  - [`documents/pcb/constraints.json`](../../../documents/pcb/constraints.json): PCB outline (`W`, `H`), mounting holes (`mounting_holes`).
+  - [`documents/pcb/enclosure.json`](../../../documents/pcb/enclosure.json): Wall thicknesses, mechanical clearances, standoffs, interface cutouts, and cable clamp dimensions.
+- **Rule 1 (Exclusive execution via `uv`):** All scripts are executed using `uv run --with build123d python ...`.
+- **Rule 6 (Strict typography):** No LaTeX markup for physical dimensions or tolerances.
+
+---
+
+## 2. Generated Geometric Architecture
+
+The engine automatically generates three complementary mechanical parts:
 
 ```
              ┌──────────────────────────────────────────────┐
-             │               COQUILLE HAUTE                 │  (Top Shell)
-             │   - Perçages pour vis M2 (têtes fraisées)    │
-             │   - Évidements pour bouton Flash & LED       │
-             │   - Rainure d'emboîtement (joint à lèvre)    │
+             │                  TOP SHELL                   │  (Top Shell)
+             │   - Counterbored holes for M2 screws         │
+             │   - Cutouts for Flash button & LED light pipe│
+             │   - Interlocking perimeter groove (lip joint)│
              └──────────────┬───────────────────────────────┘
-                            │ Plan de joint
+                            │ Parting Line
              ┌──────────────┴───────────────────────────────┐
-             │                  CARTE PCB                   │  (Positionnée sur bossages)
+             │                  PCB BOARD                   │  (Positioned on standoffs)
              └──────────────┬───────────────────────────────┘
                             │
              ┌──────────────┴───────────────────────────────┐
-             │               COQUILLE BASSE                 │  (Bottom Shell)
-             │   - 4 colonnettes avec puits inserts M2      │
-             │   - Berceau pour câble faisceau OBD-II       │
-             │   - Lèvre d'emboîtement périphérique         │
-             │   - Bride serre-câble 2 vis (enclosure_clamp)│
+             │                BOTTOM SHELL                  │  (Bottom Shell)
+             │   - 4 standoffs with heat-set M2 insert wells│
+             │   - Cradle for OBD-II wire harness           │
+             │   - Interlocking perimeter mating lip        │
+             │   - 2-screw cable clamp (enclosure_clamp)    │
              └──────────────────────────────────────────────┘
 ```
 
-### 1. Coquille basse (`enclosure_bottom`)
-- Fond d'épaisseur nominale $T$ avec congés extérieurs $R$.
-- 4 colonnettes de surélévation alignées sur les perçages de fixation du PCB avec puits pré-calibrés pour inserts thermofusibles en laiton M2.
-- Évidement inférieur pour passage de câble et dégagement des soudures traversantes en face arrière.
-- Berceau de serrage pour le câble OBD-II avec 2 puits filetés pour la bride.
-- Lèvre d'emboîtement périphérique assurant un alignement sans jeu et une étanchéité aux poussières.
+### 1. Bottom Shell (`enclosure_bottom`)
+- Base plate with nominal thickness `T` and exterior fillets `R`.
+- 4 mounting standoffs aligned with PCB mounting holes, with pre-calibrated pockets for M2 brass heat-set threaded inserts.
+- Recessed lower cavity for cable routing and bottom-side through-hole pin clearance.
+- Clamping cradle for the OBD-II harness cable with 2 threaded pockets for the clamp.
+- Perimeter mating lip providing play-free alignment and dust sealing.
 
-### 2. Coquille haute (`enclosure_top`)
-- Toit d'épaisseur nominale $T$ avec rainure d'emboîtement complémentaire.
-- 4 puits de vis traversants pour vis M2 avec lamage pour noyer les têtes de vis sous la surface.
-- Demi-ouverture supérieure pour le connecteur USB-C sur le plan de joint.
-- Perçage d'accès au bouton-poussoir Flash/Boot (permettant l'actionnement par stylet ou poussoir souple).
-- Conduit de lumière pour la LED de statut.
+### 2. Top Shell (`enclosure_top`)
+- Top cover with nominal thickness `T` and complementary interlocking lip groove.
+- 4 through-hole screw counterbores for M2 screws, recessing screw heads flush below the surface.
+- Upper half-opening for the USB-C connector along the parting line.
+- Actuation hole for the Flash/Boot push-button (accessible via stylus or flexible pusher).
+- Light pipe tunnel for the status LED.
 
-### 3. Bride serre-câble (`enclosure_clamp`)
-- Bride rigide à 2 vis M2 venant comprimer la gaine extérieure du câble OBD-II dans son berceau.
-- Décharge mécanique totale : aucune contrainte de traction ou de torsion n'est transmise aux pastilles du connecteur J1 du PCB.
+### 3. Cable Clamp (`enclosure_clamp`)
+- Rigid 2-screw M2 clamp securing the outer jacket of the OBD-II cable firmly into its cradle.
+- Complete mechanical strain relief: zero tensile or torsional stress is transmitted to connector J1 solder joints on the PCB.
 
 ---
 
-## 3. Utilisation en Ligne de Commande (CLI)
+## 3. Command-Line Usage (CLI)
 
 ```bash
-# Génération complète des pièces STEP et STL pour le projet OBD-II
+# Full generation of STEP and STL models for the OBD-II project
 uv run --with build123d python .agents/skills/pcb-enclosure/scripts/enclosure_generator.py \
     --constraints documents/pcb/constraints.json \
     --enclosure documents/pcb/enclosure.json \
     --output-dir documents/enclosure
 
-# Exécution des tests unitaires géométriques
+# Run geometric unit tests
 uv run --with build123d python .agents/skills/pcb-enclosure/tests/test_enclosure.py
+
+# Convert and optimize a STEP solid to WebGL STL (for GitHub)
+uv run --with build123d python scripts/convert_step_to_stl.py --input documents/pcb/scanner.step --output documents/pcb/scanner.stl
 ```
 
 ---
 
-## 4. Fichiers Produits dans `documents/enclosure/`
+## 4. Generated Artifacts in `documents/enclosure/`
 
-| Fichier | Format | Description | Destination |
+| File | Format | Description | Destination |
 | :--- | :--- | :--- | :--- |
-| `enclosure_bottom.step` | STEP AP214 | Coquille inférieure solide | Archive CAO / JLCPCB 3D |
-| `enclosure_bottom.stl` | STL (binaire) | Maillage fin coquille inférieure | Trancheur 3D / JLCPCB 3D |
-| `enclosure_top.step` | STEP AP214 | Coquille supérieure solide | Archive CAO / JLCPCB 3D |
-| `enclosure_top.stl` | STL (binaire) | Maillage fin coquille supérieure | Trancheur 3D / JLCPCB 3D |
-| `enclosure_clamp.step` | STEP AP214 | Bride de serrage câble solide | Archive CAO / JLCPCB 3D |
-| `enclosure_clamp.stl` | STL (binaire) | Maillage fin bride de serrage | Trancheur 3D / JLCPCB 3D |
-| `enclosure_assembly.step` | STEP AP214 | Assemblage complet fermé | Contrôle CAO et tolérances |
+| `enclosure_bottom.step` | STEP AP214 | Bottom shell solid model | CAD Archive / JLCPCB 3D |
+| `enclosure_bottom.stl` | STL (binary) | High-res bottom shell mesh | 3D Slicer / JLCPCB 3D |
+| `enclosure_top.step` | STEP AP214 | Top shell solid model | CAD Archive / JLCPCB 3D |
+| `enclosure_top.stl` | STL (binary) | High-res top shell mesh | 3D Slicer / JLCPCB 3D |
+| `enclosure_clamp.step` | STEP AP214 | Cable clamp solid model | CAD Archive / JLCPCB 3D |
+| `enclosure_clamp.stl` | STL (binary) | High-res cable clamp mesh | 3D Slicer / JLCPCB 3D |
+| `enclosure_assembly.step` | STEP AP214 | Complete mated enclosure assembly | CAD verification and fit check |

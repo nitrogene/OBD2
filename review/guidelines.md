@@ -1,179 +1,179 @@
-# Guide du Reviewer — Scanner OBD-II ESP32
+# Reviewer Guidelines — ESP32 OBD-II Scanner
 
-Bienvenue ! Ce document définit les consignes, exigences techniques et standards de rédaction destinés à tout **reviewer** (modèle d'IA ou ingénieur humain) intervenant sur le projet **Scanner OBD-II ESP32**.
+Welcome! This document outlines instructions, technical requirements, and reporting standards for any **reviewer** (AI agent or human engineer) auditing the **ESP32 OBD-II Scanner** project.
 
-L'objectif d'une revue est d'apporter un regard critique et rigoureux sur le schéma électrique, le layout PCB, le routage, la conformité automobile/CEM, la nomenclature (BOM) ou le firmware, afin de garantir un matériel fiable, sécurisé et fabricable au meilleur coût.
+The goal of a technical review is to provide rigorous critical scrutiny on the electrical schematic, PCB layout, routing, automotive EMC compliance, bill of materials (BOM), or firmware architecture, ensuring reliable, safe, and cost-effective hardware.
 
 ---
 
-## 1. Format & Convention de Nommage
+## 1. Format & Naming Conventions
 
-### Nom du fichier
-Déposez votre revue dans le dossier `review/` sous la forme :
-`review/reviewXXX.md` *(ex. `review001.md`, `review_schema_01.md`, `review_pcb_02.md`)*.
+### File Naming
+Submit your review inside the `review/` directory using the following format:
+`review/reviewXXX.md` *(e.g. `review001.md`, `review_schematic_01.md`, `review_pcb_02.md`)*.
 
 > [!NOTE]
-> **Cycle de vie :** Une fois votre fichier de revue déposé, l'équipe projet (l'utilisateur et l'agent de développement) analysera vos remarques, arbitrera chaque point, intégrera les actions retenues dans `todo.md`, puis **supprimera** votre fichier `reviewXXX.md` pour signifier qu'il a été intégralement traité et laisser le sas propre pour les revues suivantes.
+> **Lifecycle:** Once your review is placed in `review/`, the project team (user and AI coding assistant) will evaluate your observations, arbitrate each item, integrate accepted action points into `todo.md`, and then **delete** your `reviewXXX.md` file. Deletion signifies full resolution and keeps the intake clean for subsequent reviews.
 
-### En-tête obligatoire (Métadonnées)
-Toute revue **doit impérativement débuter** par ce bloc de métadonnées pour assurer la traçabilité :
+### Mandatory Metadata Header
+Every review **must begin** with this metadata block to guarantee full audit traceability:
 
 ```markdown
-# Revue Technique : [Titre court et explicite]
+# Technical Review: [Short and descriptive title]
 
-- **Nom du Reviewer / Agent :** [Ex. Claude 3.7 Sonnet, GPT-4o, Expert Hardware, etc.]
-- **Date :** [AAAA-MM-JJ ou JJ/MM/AAAA]
-- **Périmètre audité :** [Schéma électrique P1 / PCB Layout / Routage / BOM / Architecture / Firmware]
-- **Version / Référence examinée :** [Commit Git hash ou version des documents/images audités]
-- **Verdict global :** [🟢 Approuvé / 🟠 Approuvé avec réserves / 🔴 Rejeté (corrections critiques nécessaires)]
+- **Reviewer / Agent Name:** [E.g. Claude 3.7 Sonnet, GPT-4o, Hardware Expert, etc.]
+- **Date:** [YYYY-MM-DD]
+- **Audited Scope:** [Schematic P1 / PCB Layout / Routing / BOM / Architecture / Firmware]
+- **Examined Reference / Version:** [Git commit hash or document version]
+- **Overall Verdict:** [🟢 Approved / 🟠 Approved with Reservations / 🔴 Rejected (Critical fixes required)]
 ```
 
 ---
 
-## 2. Contexte Matériel & Pièges à Éviter (À Lire Avant d'Auditer)
+## 2. Hardware Context & Pitfalls to Avoid (Read Before Auditing)
 
-Pour éviter les fausses alertes et les remarques hors sujet, vous **devez impérativement** intégrer les contraintes fondamentales du projet :
+To prevent false alarms and off-topic observations, you **must integrate** the following fundamental project constraints:
 
-0. **Posture de l'auditeur : Oubli de mémoire & Preuve matérielle exclusive (*Evidence-Based*)**
-   - Si vous êtes un modèle d'IA ayant un historique conversationnel sur ce dépôt ou un ingénieur familier de l'historique, vous **devez faire abstraction totale de tout souvenir ou échange passé**. Adoptez la posture d'un auditeur externe impartial découvrant le circuit.
-   - Toute remarque doit être **strictement étayée par les fichiers versionnés du projet** (exports graphiques PNG des schémas, nomenclature [`bom.json`](../documents/schema/bom.json), datasheets officielles archivées dans [`documents/datasheets/references/`](../documents/datasheets/references/) et référentiel [`datasheets.md`](../documents/datasheets/datasheets.md)).
-   - **Esprit critique obligatoire :** Ne jamais prendre pour argent comptant les affirmations textuelles des documents. Confrontez systématiquement chaque consigne ou affirmation aux datasheets constructeurs.
+0. **Auditor Mindset: Tabula Rasa & Evidence-Based Scrutiny**
+   - If you are an AI model with conversational memory on this repository or an engineer familiar with its history, you **must completely disregard past discussions**. Adopt the stance of an impartial third-party auditor discovering the board fresh.
+   - Every observation must be **strictly grounded in versioned repository files** (schematic PNG renders, bill of materials [`bom.json`](../documents/schema/bom.json), official datasheets archived under [`documents/datasheets/references/`](../documents/datasheets/references/), and the technical reference [`datasheets.md`](../documents/datasheets/datasheets.md)).
+   - **Mandatory Critical Thinking:** Never take text claims in documentation at face value. Systematically cross-check every guideline and statement against manufacturer datasheets.
 
-1. **Périmètre véhicule : 12V VL exclusivement**
-   - Le scanner est conçu pour les véhicules légers de tourisme (batterie 12.6V, alternateur 14.4V, transitoires modérés).
-   - **Ne pas sur-spécifier** pour des réseaux 24V poids-lourds (le choix du régulateur Buck U4 (30V) protégé par TVS `D1` (16V) et P-MOSFET `Q1` est validé et dimensionné pour ce périmètre).
+1. **Target Vehicle Environment: 12V Passenger Cars Exclusively**
+   - The scanner is engineered exclusively for 12V passenger cars (12.6V nominal battery, 14.4V alternator charging, moderate transients).
+   - **Do not over-specify** for 24V heavy commercial vehicles or trucks (the Buck regulator U4 rated for 30V, protected by TVS `D1` rated at 16V with 26.0V clamp and P-MOSFET `Q1`, is specifically validated for 12V vehicles).
 
-2. **MCU Cible : ESP32-S3 (≠ ESP32 classique)**
-   - Le microcontrôleur est un **ESP32-S3-WROOM-1**.
-   - *Attention au brochage :* Les canaux ADC compatibles avec le Wi-Fi actif sont situés sur **ADC1 (GPIO1 à GPIO10)**, contrairement à l'ESP32 classique.
-   - *USB :* L'ESP32-S3 intègre un contrôleur USB OTG natif sur les broches GPIO19 (D-) et GPIO20 (D+).
+2. **Target MCU: ESP32-S3 (≠ Classic ESP32)**
+   - The microcontroller is an **ESP32-S3-WROOM-1**.
+   - *Pinout Notice:* ADC channels compatible with active Wi-Fi are located on **ADC1 (GPIO1 to GPIO10)**, unlike the classic ESP32.
+   - *USB:* The ESP32-S3 features native on-chip USB OTG on GPIO19 (D-) and GPIO20 (D+).
 
-3. **Contraintes de fabrication & Coûts JLCPCB**
-   - PCB standard **4 couches** (empilement standard JLC2313 : Couche 1 Top signaux/composants, Couche 2 Inner 1 plan de masse GND continu, Couche 3 Inner 2 rails 3.3V/5V/GND, Couche 4 Bottom signaux/GND avec vias de couture).
-   - **Priorité absolue aux *Basic Parts* JLCPCB :** Toute modification de composant passif ou actif doit privilégier les pièces de base du catalogue LCSC/JLCPCB pour éviter les frais d'outillage additionnels (*Extended part changeover fee*).
+3. **Manufacturing Constraints & JLCPCB Cost Optimization**
+   - Standard **4-layer PCB** (JLC2313 stackup: Layer 1 Top signals/components, Layer 2 Inner 1 continuous GND ground plane, Layer 3 Inner 2 3.3V/5V/GND power rails, Layer 4 Bottom signals/GND with stitching vias).
+   - **Absolute Priority for JLCPCB *Basic Parts*:** Any modification of passive or active components should favor Basic Parts from the LCSC/JLCPCB catalog to eliminate additional reel changeover fees (*Extended Part fee*).
 
-4. **Consulter l'état d'avancement réel**
-   - Avant de lever une alerte, parcourez brièvement [`todo.md`](../todo.md), [`hardware.md`](../documents/hardware.md) et [`bom.json`](../documents/schema/bom.json).
-   - De nombreuses remarques antérieures sont déjà traitées ou arbitrées (ex. cavalier JP1 sur terminaison CAN, diode de clamp D6, condensateur C13 sur broche COMP, etc.).
+4. **Consult Current Progress State**
+   - Before raising an alert, quickly check [`todo.md`](../todo.md), [`hardware.md`](../documents/hardware.md), and [`bom.json`](../documents/schema/bom.json).
+   - Many historical review remarks are already implemented or arbitrated (e.g. jumper JP1 on CAN termination, clamp diode D6, compensation capacitor C13 on COMP pin, etc.).
 
-5. **Transceiver K-Line U3 : Alimentation VCC 3.3V vs 5V & Intégrité du MCU**
-   - *Ne pas exiger de passer VCC en 5V :* Une confusion récurrente consiste à croire que le transceiver K-Line U3 exige VCC >= 4.5V ou que sa sortie RX est à collecteur ouvert pur nécessitant une pull-up externe.
-   - *Spécifications de la datasheet ST (Doc ID 1765 Rev 8, Table 5 & Note 1) :*
-     - La plage de tension de service logique VCC s'étend de **3.0 V à 7.0 V** (Table 5 ; le seuil de 4.5 V min correspond à l'alimentation batterie VS, et non à VCC). La note 1 de la Table 5 précise : *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Un fonctionnement sous VCC = 3.3V est donc 100% conforme aux spécifications constructeur et garanti par conception.
-     - La broche 1 (`RX`) intègre une **résistance de pull-up active RRX ≈ 10 kΩ reliée en interne à VCC** (VRXH = VCC - 0.1V). Elle n'est PAS un collecteur ouvert.
-   - *Sécurité vitale du microcontrôleur :* Les broches d'E/S de l'ESP32-S3 ne sont **pas tolérantes 5V** (tension maximale absolue VDDIO + 0.3V = 3.6V). Si VCC était raccordé au rail +5V, la broche RX injecterait ~4.9V directement dans le GPIO4, entraînant le claquage destructif de l'ESP32.
-   - *Directive pour l'audit :* Le raccordement de la broche 3 (VCC) au rail régulé `3.3V` est **strictement conforme et indispensable à la survie du microcontrôleur**. Ne pas soulever d'anomalie sur ce point.
+5. **K-Line Transceiver U3: 3.3V vs 5V VCC Supply & MCU Integrity**
+   - *Do not demand switching VCC to 5V:* A frequent confusion assumes that the K-Line transceiver U3 requires VCC >= 4.5V or that its RX pin is a pure open collector requiring an external pull-up.
+   - *ST Datasheet Specifications (Doc ID 1765 Rev 8, Table 5 & Note 1):*
+     - The recommended operating supply range for VCC is **3.0 V to 7.0 V** (Table 5; the 4.5 V minimum threshold applies exclusively to battery supply VS, not VCC). Note 1 of Table 5 explicitly states: *« Specs are tested at 5 V only. Compliance on Vcc full range is guaranteed by design »*. Operation under VCC = 3.3V is therefore 100% compliant and guaranteed by design.
+     - Pin 1 (`RX`) incorporates an **active internal pull-up resistor RRX ≈ 10 kΩ tied to VCC** (VRXH = VCC - 0.1V). It is NOT an open collector.
+   - *Microcontroller Overvoltage Protection:* ESP32-S3 I/O pins are **not 5V tolerant** (absolute maximum voltage VDDIO + 0.3V = 3.6V). If VCC were tied to +5V, RX would inject ~4.9V directly into GPIO4, destroying the ESP32.
+   - *Audit Directive:* Connecting pin 3 (VCC) to the regulated `3.3V` rail is **fully compliant and essential to MCU survival**. Do not report an anomaly on this design choice.
 
 ---
 
-## 3. Classification Obligatoire par Ordre de Criticité
+## 3. Mandatory Criticality Classification
 
-Vos remarques doivent être rigoureusement hiérarchisées en 3 niveaux :
+Observations must be strictly categorized into 3 severity levels:
 
-### 🔴 1. Bloquant / Critique (*High / Critical*)
-*Ce qui empêche le circuit de fonctionner ou risque de le détruire.*
-- Risque de destruction de composant, surtension, surintensité, inversion de polarité non protégée.
-- Dépassement des valeurs limites absolues (*Absolute Maximum Ratings* : VDS, VGS, VIN, dissipation thermique TJ).
-- Court-circuit franc, violation bloquante ERC/DRC, broche vitale laissée en l'air (Reset, Boot, Alimentation).
-- Impossibilité physique d'établir la communication (lignes CAN inversées, niveaux K-Line non conformes ISO 9141).
+### 🔴 1. Blocking / Critical (*High / Critical*)
+*Issues that prevent circuit operation or present component destruction risks.*
+* Component destruction risk, overvoltage, overcurrent, unprotected reverse polarity.
+* Absolute Maximum Ratings exceeded (VDS, VGS, VIN, junction temperature TJ).
+* Hard short circuits, blocking ERC/DRC violations, floating critical pins (Reset, Boot, Power rails).
+* Inability to establish communication (swapped CAN differential lines, invalid ISO 9141 voltage levels).
 
 ### 🟠 2. Important (*Medium*)
-*Ce qui altère la robustesse, la CEM ou la fiabilité en environnement automobile.*
-- Découplage insuffisant ou condensateurs placés trop loin (> 2 mm des broches d'alimentation).
-- Mauvaise gestion des boucles critiques de commutation (Buck : boucle SW - L1 - D2 - Cout trop large générant du rayonnement EMI).
-- Immunité aux parasites insuffisante (broche EN sans filtre RC, transitoires ESD non dérivées au connecteur OBD).
-- Marge de régulation limite (dropout LDO, compensation de boucle avec marge de phase < 45°).
-- Diode anti-retour manquante entre alimentation USB et alimentation véhicule.
+*Issues that compromise robustness, EMC compliance, or automotive reliability.*
+* Insufficient decoupling or capacitors placed too far (> 2 mm from power pins).
+* Poor switching loop layout (Buck: SW - L1 - D2 - Cout loop too wide, generating radiated EMI).
+* Insufficient noise immunity (EN pin lacking RC filter, ESD transients not bypassed at OBD connector).
+* Marginal regulation headroom (LDO dropout, feedback loop phase margin < 45°).
+* Missing reverse-blocking diode between USB power and vehicle power.
 
-### 🟢 3. Mineur / Suggestion (*Low / Info*)
-*Ce qui optimise le coût, la fabricabilité ou l'ergonomie.*
-- Optimisation de nomenclature (BOM) : remplacement d'une pièce *Extended* par une *Basic Part* équivalente.
-- Clarté de la sérigraphie (repères de polarité, identification des cavaliers ex. `JP1: Shunt=Bench / Open=Car`).
-- Visibilité des voyants (ajustement de résistance LED) ou accessibilité des points de test (`TP1` à `TP11`).
-- Lisibilité et propreté du schéma ou de la documentation.
-
----
-
-## 4. Ce qu'on Attend d'une Remarque bien Rédigée
-
-Pour que votre retour soit directement actionnable, chaque remarque doit contenir :
-
-1. **Précision chirurgicale :**
-   - Citez les **désignateurs exacts** (`U4`, `R12`, `C10`, `TP9`).
-   - Nommez les **nets exacts** (`+12V_PROT`, `CANH`, `ESP_EN`, `VBAT_SENSE`).
-   - Indiquez le **numéro et nom de broche** (`pin 2 VIN de U4`).
-
-2. **Démonstration technique (Pourquoi ?) :**
-   - Ne vous limitez pas à un simple constat subjectif.
-   - Appuyez votre analyse sur un **calcul**, une **formule**, un **extrait de datasheet constructeur** ou une **norme** (ISO 11898-2, ISO 9141-2, ISO 7637-2).
-
-3. **Solution concrète clé en main (Comment corriger ?) :**
-   - Proposez une solution précise : valeur, tolérance, boîtier/empreinte (0603, 0805, SOT-23...), référence fabricant exacte et **code LCSC**.
-   - Précisez si votre proposition correspond à une *Basic Part* JLCPCB.
-
-4. **Nouveaux composants à ajouter (Pas de désignateur figé à l'avance) :**
-   - Si votre proposition implique d'ajouter un composant au schéma, **ne lui donnez pas de nom/désignateur arbitraire ou anticipé** (ex. `R18`, `C18`, `TP12`).
-   - Décrivez-le uniquement par sa fonction, sa valeur, son boîtier et ses contraintes (ex. *« Ajouter une pull-up de 10 kΩ 0805 sur IO0 »*).
-   - Le désignateur définitif sera attribué lors de l'intégration effective dans le schéma selon le prochain numéro libre dans la BOM.
+### 🟢 3. Minor / Suggestion (*Low / Info*)
+*Opportunities to optimize cost, manufacturability, or ergonomics.*
+* Bill of Materials (BOM) optimization: substituting an *Extended Part* with an equivalent *Basic Part*.
+* Silkscreen clarity (polarity markers, jumper configuration text such as `JP1: Shunt=Bench / Open=Car`).
+* Indicator visibility (LED ballast resistor tuning) or test point accessibility (`TP1` to `TP15`).
+* Schematic or documentation formatting and layout polish.
 
 ---
 
-## 5. Modèle Type de Revue (`reviewXXX.md`)
+## 4. Expectations for High-Quality Feedback
 
-Copiez et complétez le template ci-dessous dans votre fichier `review/reviewXXX.md` :
+For observations to be directly actionable, each remark must provide:
+
+1. **Pinpoint Precision:**
+   - Cite **exact designators** (`U4`, `R12`, `C10`, `TP9`).
+   - Name **exact nets** (`+12V_PROT`, `CANH`, `ESP_EN`, `VBAT_SENSE`).
+   - Specify **pin number and pin name** (`pin 2 VIN of U4`).
+
+2. **Technical Demonstration (Why?):**
+   - Move beyond subjective impressions.
+   - Support analysis with **calculations**, **formulas**, **datasheet excerpts**, or **standards** (ISO 11898-2, ISO 9141-2, ISO 7637-2).
+
+3. **Turnkey Actionable Solution (How to fix?):**
+   - Provide concrete parameters: value, tolerance, package/footprint (0603, 0805, SOT-23...), exact manufacturer part number, and **LCSC code**.
+   - Note whether the proposal qualifies as a JLCPCB *Basic Part*.
+
+4. **New Components to Add (No advance designators):**
+   - When suggesting new components, **do not assign speculative designators** (e.g. `R18`, `C18`, `TP12`).
+   - Describe components strictly by function, value, footprint, and constraints (e.g. *« Add a 10 kΩ 0805 pull-up on IO0 »*).
+   - The final sequential designator will be assigned at schematic integration time according to the next available number in the BOM.
+
+---
+
+## 5. Review Template (`reviewXXX.md`)
+
+Copy and complete the template below in your `review/reviewXXX.md` file:
 
 ```markdown
-# Revue Technique : [Titre court de votre audit]
+# Technical Review: [Short title of your audit]
 
-- **Nom du Reviewer / Agent :** [Votre nom / modèle d'IA]
-- **Date :** [AAAA-MM-JJ]
-- **Périmètre audité :** [Schéma P1 / PCB Layout / BOM / Routage]
-- **Version / Référence examinée :** [Commit Git ou référence du document]
-- **Verdict global :** [🟢 Approuvé / 🟠 Approuvé avec réserves / 🔴 Rejeté]
-
----
-
-## Résumé Exécutif
-[Synthèse de 3 à 5 lignes sur l'état général du design, sa conformité et les priorités identifiées.]
+- **Reviewer / Agent Name:** [Your name / AI model]
+- **Date:** [YYYY-MM-DD]
+- **Audited Scope:** [Schematic P1 / PCB Layout / BOM / Routing]
+- **Examined Reference / Version:** [Git commit hash or document version]
+- **Overall Verdict:** [🟢 Approved / 🟠 Approved with Reservations / 🔴 Rejected]
 
 ---
 
-## Synthèse des Observations
+## Executive Summary
+[3 to 5 sentence summary on overall design health, compliance, and key priorities.]
 
-| Réf | Criticité | Composants / Nets | Description synthétique |
+---
+
+## Observations Summary
+
+| Ref | Severity | Components / Nets | Summary Description |
 | :--- | :--- | :--- | :--- |
-| **B1** | 🔴 Bloquant | `...` | ... |
+| **B1** | 🔴 Blocking | `...` | ... |
 | **I1** | 🟠 Important | `...` | ... |
-| **M1** | 🟢 Mineur | `...` | ... |
+| **M1** | 🟢 Minor | `...` | ... |
 
 ---
 
-## Détail des Observations & Recommandations
+## Detailed Observations & Recommendations
 
-### 🔴 Remarques Bloquantes (Critiques)
+### 🔴 Blocking Observations (Critical)
 
-#### B1. [Titre explicite de l'anomalie]
-- **Composants / Nets concernés :** `...` (ex. `U4` pin 2, net `+12V_PROT`)
-- **Constat technique :** [Description précise du problème constaté]
-- **Justification & Risque :** [Référence datasheet, calcul ou norme expliquant le risque matériel]
-- **Solution recommandée :** [Action concrète : référence fabricant, valeur, boîtier, code LCSC]
-
----
-
-### 🟠 Remarques Importantes (Robustesse & CEM)
-
-#### I1. [Titre de la recommandation]
-- **Composants / Nets concernés :** `...`
-- **Constat technique :** [Description]
-- **Justification :** [Impact sur l'immunité CEM, robustesse véhicule, intégrité signal]
-- **Solution recommandée :** [Composant, routage ou filtre préconisé]
+#### B1. [Descriptive Title]
+- **Affected Components / Nets:** `...` (e.g. `U4` pin 2, net `+12V_PROT`)
+- **Technical Observation:** [Detailed problem description]
+- **Justification & Risk:** [Datasheet citation, calculation, or standard demonstrating hazard]
+- **Recommended Solution:** [Concrete action: part number, value, package, LCSC code]
 
 ---
 
-### 🟢 Remarques Mineures (Optimisation & DFM)
+### 🟠 Important Observations (Robustness & EMC)
 
-#### M1. [Titre de l'optimisation]
-- **Composants / Nets concernés :** `...`
-- **Constat & Proposition :** [Ex. bascule vers une Basic Part, sérigraphie, etc.]
-- **Gain attendu :** [Réduction de coût, clarté visuelle, accessibilité]
+#### I1. [Recommendation Title]
+- **Affected Components / Nets:** `...`
+- **Technical Observation:** [Description]
+- **Justification:** [Impact on EMC immunity, vehicular durability, signal integrity]
+- **Recommended Solution:** [Recommended component, layout change, or filter]
+
+---
+
+### 🟢 Minor Observations (Optimization & DFM)
+
+#### M1. [Optimization Title]
+- **Affected Components / Nets:** `...`
+- **Observation & Proposal:** [E.g. Basic Part migration, silkscreen labeling]
+- **Expected Benefit:** [Cost reduction, visual clarity, test accessibility]
 ```
