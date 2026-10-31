@@ -23,7 +23,7 @@ from score import RectBox
 class TestLegalizer(unittest.TestCase):
     """Tests du légalisateur physique déterministe."""
 
-    def _build_test_engine(self, manifest_comps, anchors, comp_geoms, mounting_holes=None):
+    def _build_test_engine(self, manifest_comps, anchors, comp_geoms, mounting_holes=None, placement_constraints=None):
         board_constraints = {
             "board": {
                 "width_mm": 50.0,
@@ -40,7 +40,7 @@ class TestLegalizer(unittest.TestCase):
                 "SOIC-8": {"width_mm": 5.0, "length_mm": 4.0, "courtyard_margin_mm": 0.5}
             },
             "components": manifest_comps,
-            "placement_constraints": []
+            "placement_constraints": placement_constraints or []
         }
         geom = BoardGeometrySnapshot(
             extracted_at="2026-01-01T00:00:00",
@@ -167,6 +167,45 @@ class TestLegalizer(unittest.TestCase):
         for (x1, y1), (x2, y2) in zip(coords_1, coords_2):
             self.assertAlmostEqual(x1, x2, places=6)
             self.assertAlmostEqual(y1, y2, places=6)
+
+    def test_hard_proximity_enforced_in_legalizer(self):
+        """Une violation de proximité dure doit être corrigée lors de la passe chirurgicale de légalisation."""
+        manifest_comps = {
+            "U1": {"package": "SOIC-8"},
+            "C1": {"package": "0603"}
+        }
+        anchors = {"U1": {"x_mm": 20.0, "y_mm": 15.0, "rot_deg": 0.0}}
+        comp_geoms = {
+            "U1": ComponentGeometry("U1", "p1", "SOIC-8", 20.0, 15.0, 0.0, 1, True),
+            "C1": ComponentGeometry("C1", "p2", "0603", 40.0, 15.0, 0.0, 1, False)
+        }
+        p_constraints = [
+            {
+                "id": "PC_C1_U1",
+                "type": "proximity",
+                "subject": {"ref": "C1", "pin": "1"},
+                "target": {"ref": "U1", "pin": "1"},
+                "max_mm": 4.0,
+                "hard": True,
+                "weight": 10
+            }
+        ]
+        engine = self._build_test_engine(
+            manifest_comps,
+            anchors,
+            comp_geoms,
+            placement_constraints=p_constraints
+        )
+
+        it_c1 = [it for it in engine.items if it.designator == "C1"][0]
+        # Initialement très éloigné (dist = 20 mm)
+        self.assertGreater(math.hypot(it_c1.x - 20.0, it_c1.y - 15.0), 15.0)
+
+        engine.legalize(max_passes=50)
+
+        # Après légalisation : C1 doit avoir été ramené sur la couronne de proximité immédiate
+        dist_c1_u1 = math.hypot(it_c1.x - 20.0, it_c1.y - 15.0)
+        self.assertLessEqual(dist_c1_u1, 5.0)
 
 
 if __name__ == "__main__":

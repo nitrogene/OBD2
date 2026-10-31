@@ -43,8 +43,12 @@ if str(SYNTHESIZER_DIR) not in sys.path:
     sys.path.insert(0, str(SYNTHESIZER_DIR))
 if str(PLACER_DIR) not in sys.path:
     sys.path.insert(0, str(PLACER_DIR))
+if str(FREEROUTING_DIR) not in sys.path:
+    sys.path.insert(0, str(FREEROUTING_DIR))
 
 from dsn_metrics import DsnMetrologyAnalyzer, PostRoutingReport, print_report
+from dsn_updater import update_dsn_from_placement
+from ses_importer import import_ses_into_easyeda
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("SynthesizerPipeline")
@@ -97,6 +101,8 @@ class PcbSynthesizer:
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.candidate_placement = self.cache_dir / "candidate_placement.json"
         self.adapted_manifest_path = self.cache_dir / "adapted_manifest.json"
+        self.baseline_dsn = self.cache_dir / "board_baseline.dsn"
+        self.geometry_cache = PLACER_DIR / ".cache" / "netlist_geometry.json"
 
     def bootstrap_raw_pcb(self, board_cfg: Dict[str, Any]) -> bool:
         """
@@ -174,6 +180,21 @@ class PcbSynthesizer:
         else:
             logger.info(f"   ✅ {len(mounting_holes)} trous de fixation mécaniques validés (net GND).")
 
+        # 6. Capture de référence DSN et géométrie CAO pour synthèse hors-ligne
+        logger.info("[Étape 0.6] Capture du DSN de référence et snapshot géométrique...")
+        try:
+            from dsn_exporter import export_dsn_from_easyeda
+            from export_geometry import extract_board_geometry
+            from dataclasses import asdict
+            export_dsn_from_easyeda(self.baseline_dsn)
+            geom_snap = extract_board_geometry(client)
+            self.geometry_cache.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.geometry_cache, "w", encoding="utf-8") as f_g:
+                json.dump(asdict(geom_snap), f_g, indent=2)
+            logger.info("   ✅ DSN de référence et snapshot géométrique prêts pour synthèse hors-ligne.")
+        except Exception as e_base:
+            logger.warning(f"   ⚠️ Avertissement capture de référence : {e_base}")
+
         client.save_pcb()
         logger.info("✅ [ÉTAPE 0] Amorce du PCB nu achevée avec succès !\n")
         return True
@@ -209,15 +230,32 @@ class PcbSynthesizer:
             logger.info("🏁 Fin de l'exécution : --bootstrap-only demandé.")
             return True
 
+        # S'assurer que le DSN de référence et la géométrie de base sont disponibles
+        if not self.baseline_dsn.exists() or not self.geometry_cache.exists():
+            logger.info("📦 Extraction préalable du DSN de référence et du modèle géométrique...")
+            from dsn_exporter import export_dsn_from_easyeda
+            from export_geometry import extract_board_geometry
+            from dataclasses import asdict
+            from easyeda_client import EasyEDAClient
+            client = EasyEDAClient()
+            if not self.baseline_dsn.exists():
+                export_dsn_from_easyeda(self.baseline_dsn)
+            if not self.geometry_cache.exists():
+                geom_snap = extract_board_geometry(client)
+                self.geometry_cache.parent.mkdir(parents=True, exist_ok=True)
+                with open(self.geometry_cache, "w", encoding="utf-8") as f_g:
+                    json.dump(asdict(geom_snap), f_g, indent=2)
+
         synthesis_success = False
+        ses_output = self.cache_dir / "board_routed.ses"
 
         for cycle in range(1, self.max_cycles + 1):
-            logger.info(f"\n>>>>>>>> CYCLE DE SYNTHÈSE {cycle} / {self.max_cycles} <<<<<<<<")
+            logger.info(f"\n>>>>>>>> CYCLE DE SYNTHÈSE {cycle} / {self.max_cycles} (HORS-LIGNE) <<<<<<<<")
 
             # -----------------------------------------------------------------
             # Étape 1 : Placement Global Stochastique & Recuit Simulé CEM v2
             # -----------------------------------------------------------------
-            logger.info(f"[Cycle {cycle} - Étape 1/5] Placement Global & Recuit Simulé CEM v2...")
+            logger.info(f"[Cycle {cycle} - Étape 1/4] Placement Global & Recuit Simulé CEM v2...")
             with open(self.adapted_manifest_path, "w", encoding="utf-8") as f:
                 json.dump(current_manifest, f, indent=2)
 
@@ -255,56 +293,32 @@ class PcbSynthesizer:
             if rc != 0:
                 logger.warning("Le placement obtenu présente des réserves ou violations bloquantes.")
 
-            if not self.dry_run and self.apply_easyeda:
-                # -------------------------------------------------------------
-                # Étape 2 : Nettoyage et Injection du placement dans EasyEDA Pro
-                # -------------------------------------------------------------
-                logger.info(f"[Cycle {cycle} - Étape 2/5] Préparation du PCB dans EasyEDA Pro...")
-                try:
-                    from easyeda_client import EasyEDAClient
-                    client = EasyEDAClient()
-                    if client.health().get("edaConnected"):
-                        logger.info("🧹 Tabula Rasa : Effacement des pistes, vias et plans de masse cuivre pour carte 100% nue...")
-                        clr_res = client.clear_unlocked_routing()
-                        logger.info(
-                            f"   Nettoyage : {clr_res.get('deletedLines', 0)} pistes, "
-                            f"{clr_res.get('deletedArcs', 0)} arcs, {clr_res.get('deletedVias', 0)} vias, "
-                            f"{clr_res.get('deletedPours', 0)} plans de masse, {clr_res.get('deletedFills', 0)} fills supprimés."
-                        )
-                except Exception as e_clean:
-                    logger.warning(f"⚠️ Avertissement lors du nettoyage préalable : {e_clean}")
-
-                logger.info(f"[Cycle {cycle} - Étape 2/5] Repositionnement des composants...")
-                apply_cmd = [
-                    "uv", "run", "python",
-                    str(PLACER_DIR / "apply_placement.py"),
-                    "--placement", str(self.candidate_placement),
-                    "--no-drc"
-                ]
-                rc, stdout, stderr = run_cmd(apply_cmd, PROJECT_ROOT)
-                if rc != 0:
-                    logger.error(f"Échec de l'application dans EasyEDA Pro :\n{stderr or stdout}")
-                    return False
-
-                # Étape 2b : Bypassed - Le fanout GND est réalisé en étape 5 après le routage des signaux
-                # pour éviter de polluer le DSN avec des micro-nets et des violations holeClearance artificielles.
+            # -----------------------------------------------------------------
+            # Étape 2 : Synthèse DSN Hors-Ligne (Zéro appel HTTP)
+            # -----------------------------------------------------------------
+            logger.info(f"[Cycle {cycle} - Étape 2/4] Injection locale des coordonnées dans le Specctra DSN...")
+            raw_dsn = self.cache_dir / "board_raw.dsn"
+            update_dsn_from_placement(
+                baseline_dsn_path=self.baseline_dsn,
+                geometry_path=self.geometry_cache,
+                placement_path=self.candidate_placement,
+                output_dsn_path=raw_dsn
+            )
 
             # -----------------------------------------------------------------
-            # Étape 3 : Routage Automatique Headless (FreeRouting)
+            # Étape 3 : Routage Automatique Headless Hors-Ligne (FreeRouting)
             # -----------------------------------------------------------------
-            logger.info(f"[Cycle {cycle} - Étape 3/5] Routage Automatique FreeRouting...")
-            ses_output = FREEROUTING_DIR / ".cache" / "board_routed.ses"
-
-            cpu_threads = 1  # Mono-thread déterministe requis pour 0 violation de dégagement
+            logger.info(f"[Cycle {cycle} - Étape 3/4] Routage Automatique FreeRouting (Hors-Ligne)...")
+            cpu_threads = 1  # Mono-thread déterministe
             fr_cmd = [
                 "uv", "run", "python",
                 str(FREEROUTING_DIR / "freerouting_pipeline.py"),
                 "--config", str(self.board_path),
+                "--dsn", str(raw_dsn),
                 "--passes", str(self.passes),
-                "--threads", str(cpu_threads)
+                "--threads", str(cpu_threads),
+                "--no-import"
             ]
-            if self.dry_run or not self.apply_easyeda:
-                fr_cmd.append("--no-import")
 
             rc, stdout, stderr = run_cmd(fr_cmd, PROJECT_ROOT)
             logger.info(stdout)
@@ -317,6 +331,11 @@ class PcbSynthesizer:
             m_viols = re.search(r'Violations\s*:\s*(\d+)', stdout)
             if m_viols:
                 violations_val = int(m_viols.group(1))
+
+            fr_ses = FREEROUTING_DIR / ".cache" / "board_routed.ses"
+            if fr_ses.exists():
+                import shutil
+                shutil.copyfile(fr_ses, ses_output)
 
             if not ses_output.exists():
                 logger.error(f"Échec critique du pipeline FreeRouting (aucun SES produit) :\n{stderr or stdout}")
@@ -331,7 +350,7 @@ class PcbSynthesizer:
             # -----------------------------------------------------------------
             # Étape 4 : Métrologie Post-Routage & Audit en Boucle Fermée
             # -----------------------------------------------------------------
-            logger.info(f"[Cycle {cycle} - Étape 4/5] Métrologie Physique Post-Routage...")
+            logger.info(f"[Cycle {cycle} - Étape 4/4] Métrologie Physique Post-Routage...")
             analyzer = DsnMetrologyAnalyzer(ses_output, current_manifest, board_cfg)
             report = analyzer.analyze(unrouted_count=unrouted_val, violation_count=violations_val)
             print_report(report)
@@ -358,15 +377,15 @@ class PcbSynthesizer:
                 if cycle < self.max_cycles:
                     logger.info("⚙️ Rétroaction adaptative : resserrement automatique des contraintes locales...")
                     failed_loop_ids = {l.constraint_id for l in report.loops if not l.ok}
-                    failed_dp_classes = {dp.net_class for dp in report.diff_pairs if not dp.ok}
-                    failed_via_nets = {v.net for v in report.critical_vias if not v.ok}
+                    failed_dp_classes = {dp.class_id for dp in report.diff_pairs if not dp.ok}
+                    failed_crit_nets = {c.net_name for c in report.critical_nets if not c.ok}
                     for c in current_manifest.get("placement_constraints", []):
                         if c.get("type") == "loop" and c.get("id") in failed_loop_ids:
                             old_a = c.get("target_max_area_mm2", 25.0)
                             c["target_max_area_mm2"] = round(old_a * 0.85, 2)
                             c["weight"] = c.get("weight", 8) + 2
                             logger.info(f"  • Boucle {c.get('id')} : réduction cible aire {old_a} -> {c['target_max_area_mm2']} mm²")
-                        elif c.get("type") == "proximity" and (report.unrouted_count > 0 or bool(failed_dp_classes) or bool(failed_via_nets)):
+                        elif c.get("type") == "proximity" and (report.unrouted_count > 0 or bool(failed_dp_classes) or bool(failed_crit_nets)):
                             old_m = c.get("max_mm", 3.0)
                             c["max_mm"] = round(old_m * 0.95, 2)
                             c["weight"] = c.get("weight", 5) + 1
@@ -374,9 +393,72 @@ class PcbSynthesizer:
                     logger.warning("Nombre maximal de cycles atteint.")
 
         # ---------------------------------------------------------------------
-        # Étape 5 : Couture de Masse & Certification DRC Finale
+        # Condition d'arrêt bloquante CEM & Intégrité
+        # ---------------------------------------------------------------------
+        if not synthesis_success:
+            logger.error(
+                f"\n❌ [ARRÊT BLOQUANT] Non-convergence de la synthèse après {self.max_cycles} cycles.\n"
+                "Les conditions métrologiques ou d'intégrité de routage ne sont pas satisfaites (is_valid == False).\n"
+                "Le PCB dans EasyEDA Pro est préservé intact sans altération partielle."
+            )
+            report_file = PROJECT_ROOT / "documents" / "pcb" / "synthesis_report.json"
+            report_data = {
+                "date": datetime.now().isoformat(),
+                "success": False,
+                "cycles": cycle_history,
+                "drc": {"errorCount": -1, "warningCount": -1, "groups": [], "items": []}
+            }
+            with open(report_file, "w", encoding="utf-8") as rf:
+                json.dump(report_data, rf, indent=2)
+            return False
+
+        # ---------------------------------------------------------------------
+        # Étape 5 : Matérialisation Unique dans EasyEDA Pro & Couture de Masse
         # ---------------------------------------------------------------------
         if not self.dry_run and self.apply_easyeda:
+            logger.info("\n================================================================================")
+            logger.info("   [MATÉRIALISATION UNIQUE] APPLICATION DU LAYOUT CONVERGÉ DANS EASYEDA PRO      ")
+            logger.info("================================================================================")
+            try:
+                from easyeda_client import EasyEDAClient
+                client = EasyEDAClient()
+                if not client.health().get("edaConnected"):
+                    logger.error("❌ EasyEDA Pro n'est pas connecté pour la matérialisation.")
+                    return False
+
+                # 1. Tabula Rasa
+                logger.info("🧹 Tabula Rasa : Effacement des pistes, vias et plans de masse cuivre pour carte 100% nue...")
+                clr_res = client.clear_unlocked_routing()
+                logger.info(
+                    f"   Nettoyage : {clr_res.get('deletedLines', 0)} pistes, "
+                    f"{clr_res.get('deletedArcs', 0)} arcs, {clr_res.get('deletedVias', 0)} vias, "
+                    f"{clr_res.get('deletedPours', 0)} plans de masse supprimés."
+                )
+
+                # 2. Injection du placement validé
+                logger.info("📍 Repositionnement des composants...")
+                apply_cmd = [
+                    "uv", "run", "python",
+                    str(PLACER_DIR / "apply_placement.py"),
+                    "--placement", str(self.candidate_placement),
+                    "--no-drc"
+                ]
+                rc, stdout, stderr = run_cmd(apply_cmd, PROJECT_ROOT)
+                if rc != 0:
+                    logger.error(f"Échec de l'application dans EasyEDA Pro :\n{stderr or stdout}")
+                    return False
+
+                # 3. Import du routage SES certifié
+                logger.info("🔌 Importation du tracé des pistes (.ses) dans EasyEDA Pro...")
+                import_ok = import_ses_into_easyeda(ses_output, save_after_import=False)
+                if not import_ok:
+                    logger.error("❌ Échec de l'importation du routage SES dans EasyEDA Pro.")
+                    return False
+                logger.info("   ✅ Tracés de signaux et paires différentielles importés avec succès.")
+            except Exception as e_mat:
+                logger.error(f"❌ Erreur critique lors de la matérialisation dans EasyEDA Pro : {e_mat}")
+                return False
+
             logger.info("\n[Finalisation - Étape 5/5] Création des Plans de Masse & Couture (PCB Stitcher)...")
             try:
                 from easyeda_client import EasyEDAClient

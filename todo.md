@@ -36,12 +36,12 @@ This section is organized **strictly in chronological execution order**, from ra
 
 ### Step 2: Placement under EMC Constraints & HF Decoupling
 - [x] **Initial Placement Validated:** 85 components placed without overlap (70 physical + 15 test point pads), immediate decoupling < 2 mm, and compact Buck switching loop ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
-- [ ] **[IMPORTANT] EMC Alignment for Simulated Annealing (`simulated_annealing.py`) & Evaluator (`score.py`):** Integrate incremental cost terms for `net_compact` (`PH_BUCK`) and `cluster_cohesion` (< 10 mm), enforce `hard_proximities` during legalization (`legalize()`), and activate 90° magnetic field angular attenuation (`magnetic_field_coupling`).
-- [ ] **[IMPORTANT] Offline Decoupling for Synthesis Loop (`Extract Once -> Loop Offline -> Materialize Once`):** Allow full chaining of placement (`simulated_annealing.py`), routing (`FreeRoutingRunner`), metrology (`dsn_metrics.py`), stitching (`pcb-stitcher`), and silkscreen in pure Python/Java without blocking intermediate HTTP calls, materializing the converged layout into EasyEDA Pro in a single final transaction.
+- [x] **[IMPORTANT] EMC Alignment for Simulated Annealing (`simulated_annealing.py`) & Evaluator (`score.py`):** Integrate incremental cost terms for `net_compact` (`PH_BUCK`) and `cluster_cohesion` (< 10 mm), enforce `hard_proximities` during legalization (`legalize()`), and activate 90° magnetic field angular attenuation (`magnetic_field_coupling`).
+- [x] **[IMPORTANT] Offline Decoupling for Synthesis Loop (`Extract Once -> Loop Offline -> Materialize Once`):** Allow full chaining of placement (`simulated_annealing.py`), routing (`FreeRoutingRunner`), metrology (`dsn_metrics.py`), stitching (`pcb-stitcher`), and silkscreen in pure Python/Java without blocking intermediate HTTP calls, materializing the converged layout into EasyEDA Pro in a single final transaction.
 
 ### Step 3: Differential Routing & Post-Routing EMC Metrology
 - [x] **Certified 4-Layer Routing:** 100% of active signals routed, USB/CAN differential pairs, 0 crossings, DRC = 0.
-- [ ] **[BLOCKING] EMC Metrological Stop Condition:** Upgrade stop criteria in `synthesizer_pipeline.py` to require `report.is_valid`, ensuring any exceeded critical loop area (`PC_BUCK_HOT_LOOP`), differential skew (`USB_D+`/`USB_D-`, `CANH`/`CANL`), or excessive signal via count triggers adaptive constraint tightening and feedback re-placement.
+- [x] **[BLOCKING] EMC Metrological Stop Condition:** Upgrade stop criteria in `synthesizer_pipeline.py` to require `report.is_valid`, ensuring any exceeded critical loop area (`PC_BUCK_HOT_LOOP`), differential skew (`USB_D+`/`USB_D-`, `CANH`/`CANL`), or excessive signal via count triggers adaptive constraint tightening and feedback re-placement.
 
 ### Step 4: Ground Plane Continuity & Shielding Stitching
 - [x] **Ground Planes & Stitching Vias:** Multi-layer continuous GND ground planes and board perimeter stitching via `pcb-stitcher` (DRC = 0).
