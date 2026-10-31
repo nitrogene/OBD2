@@ -33,6 +33,7 @@ It relies on the [easyeda-api](../easyeda-api/SKILL.md) skill and its local brid
 ├── emc_physics.py           # EMC physics modeling (magnetic field 1/r³ and electric field 1/r²)
 ├── export_geometry.py       # Geometry and component bounding-box exporter
 ├── label_placer.py          # Silkscreen label placement & normalization engine (IPC-7351)
+├── manifest_builder.py      # Dynamic manifest generator & cross-reference synthesizer
 ├── placement_constraints.py # Geometric and technological constraint loader and verifier
 ├── placement_resolver.py    # Spatial resolver and functional block partitioner
 ├── render_svg.py            # SVG vector visualization generator
@@ -46,6 +47,7 @@ It relies on the [easyeda-api](../easyeda-api/SKILL.md) skill and its local brid
     ├── test_geometry.py     # Tests of geometric operations, projections, and rotations
     ├── test_legalizer.py    # Tests of legalization engine and non-overlapping repulsion
     ├── test_loop_physics.py # Tests of physical modeling for EMC switching loops
+    ├── test_manifest_builder.py # Tests of dynamic manifest synthesis & cross-validation
     └── test_score_physics.py# Tests of score functions and physical penalties
 ```
 
@@ -165,11 +167,26 @@ uv run .agents/skills/pcb-placer/label_placer.py
 
 ---
 
+### H. Dynamic Manifest Builder & Cross-Reference Generator (`manifest_builder.py`)
+Automatically synthesizes or audits `documents/pcb/manifest.json` by cross-referencing live/cached EasyEDA Pro geometries (pads, centroids, nets) with `documents/schema/semantics.json` (functional blocks, decoupling, critical loops) and `documents/pcb/constraints.json` (anchors, keepouts):
+```bash
+# Audit and validate against schema without writing to disk
+uv run python .agents/skills/pcb-placer/manifest_builder.py --check
+
+# Materialize and synthesize manifest.json
+uv run python .agents/skills/pcb-placer/manifest_builder.py --build
+
+# Run in offline mode using cached geometry snapshot
+uv run python .agents/skills/pcb-placer/manifest_builder.py --check --offline
+```
+
+---
+
 ## 3. Automated Test Suite
 
-The skill includes a comprehensive suite of unit tests covering EMC physics, geometric legalization, and simulated annealing:
+The skill includes a comprehensive suite of unit tests covering EMC physics, geometric legalization, dynamic manifest generation, and simulated annealing:
 ```bash
-uv run pytest .agents/skills/pcb-placer/tests/
+uv run python -m unittest discover -s .agents/skills/pcb-placer/tests
 ```
 Test modules:
 * `tests/test_geometry.py`: Tests of geometric operations, projections, and rotations.
@@ -177,3 +194,4 @@ Test modules:
 * `tests/test_loop_physics.py`: Tests of physical modeling for EMC switching loops.
 * `tests/test_score_physics.py`: Tests of score functions and physical penalties.
 * `tests/test_annealing.py`: Simulated annealing convergence tests.
+* `tests/test_manifest_builder.py`: Tests of dynamic manifest synthesis, schema validation, and cross-references.

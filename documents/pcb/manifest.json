@@ -1,15 +1,18 @@
 {
   "$schema": "./manifest.schema.json",
-  "project": "OBD2-Scanner-ESP32",
+  "project": "Scanner OBD-II ESP32",
   "version": "2.0.0",
-  "date_modified": "2026-10-12",
-  "description": "Manifeste de placement PCB : bo\u00eetiers IPC-7351, contraintes CEM de placement et groupes rigides.",
+  "date_modified": "2026-10-31",
+  "description": "PCB placement manifest: IPC-7351 packages, EMC placement constraints, and rigid functional groups.",
   "schema_semantics": "../schema/semantics.json",
   "project_profile": {
     "power_nets": [
-      "GND",
       "+12V",
+      "+12V_FUSED",
+      "+12V_PROT",
       "+5V",
+      "VBUS_5V",
+      "3.3V_PRE",
       "3.3V"
     ],
     "ground_nets": [
@@ -17,9 +20,12 @@
     ]
   },
   "power_nets": [
-    "GND",
     "+12V",
+    "+12V_FUSED",
+    "+12V_PROT",
     "+5V",
+    "VBUS_5V",
+    "3.3V_PRE",
     "3.3V"
   ],
   "packages": {
@@ -51,92 +57,6 @@
       "courtyard_margin_mm": 0.4,
       "description": "Fusible r\u00e9armable PPTC 1812 (empreinte cuivre r\u00e9elle 5.12x3.50 mm)"
     },
-    "SOD-123": {
-      "width_mm": 4.6,
-      "length_mm": 1.6,
-      "height_mm": 1.2,
-      "courtyard_margin_mm": 0.35,
-      "description": "Diode CMS SOD-123 (empreinte cuivre r\u00e9elle 4.60x1.00 mm)"
-    },
-    "SOD-123FL": {
-      "width_mm": 4.7,
-      "length_mm": 1.8,
-      "height_mm": 1.0,
-      "courtyard_margin_mm": 0.35,
-      "description": "Diode TVS compacte SOD-123FL (empreinte cuivre r\u00e9elle 4.67x1.15 mm)"
-    },
-    "SOD-323": {
-      "width_mm": 2.75,
-      "length_mm": 1.25,
-      "height_mm": 0.9,
-      "courtyard_margin_mm": 0.3,
-      "description": "Diode ESD ultra-compacte SOD-323 (empreinte cuivre r\u00e9elle 2.73x1.00 mm)"
-    },
-    "SOT-23": {
-      "width_mm": 3.3,
-      "length_mm": 3.0,
-      "height_mm": 1.1,
-      "courtyard_margin_mm": 0.35,
-      "description": "Transistors et diodes doubles SOT-23-3 (empreinte cuivre r\u00e9elle 3.25x2.60 mm)"
-    },
-    "SOT-223-4": {
-      "width_mm": 8.2,
-      "length_mm": 6.5,
-      "height_mm": 1.8,
-      "courtyard_margin_mm": 0.45,
-      "description": "R\u00e9gulateur LDO SOT-223 avec onglet thermique (empreinte cuivre r\u00e9elle 8.14x5.58 mm)"
-    },
-    "SOIC-8": {
-      "width_mm": 5.2,
-      "length_mm": 7.4,
-      "height_mm": 1.75,
-      "courtyard_margin_mm": 0.4,
-      "description": "Bo\u00eetier SOIC-8 \u00e0 pas 1.27 mm (empreinte cuivre r\u00e9elle pads 4.40x7.36 mm)"
-    },
-    "SMA": {
-      "width_mm": 6.4,
-      "length_mm": 2.6,
-      "height_mm": 2.2,
-      "courtyard_margin_mm": 0.4,
-      "description": "Diode de puissance DO-214AC (empreinte cuivre r\u00e9elle 6.40x2.00 mm)"
-    },
-    "SMB": {
-      "width_mm": 6.8,
-      "length_mm": 3.6,
-      "height_mm": 2.4,
-      "courtyard_margin_mm": 0.4,
-      "description": "Diode TVS de puissance DO-214AA (empreinte cuivre r\u00e9elle 6.77x2.19 mm)"
-    },
-    "SMD_IND_7X7": {
-      "width_mm": 7.3,
-      "length_mm": 7.3,
-      "height_mm": 4.5,
-      "courtyard_margin_mm": 0.4,
-      "description": "Inductance blind\u00e9e de puissance 7.3x7.3 mm (empreinte cuivre r\u00e9elle 7.20x5.72 mm)"
-    },
-    "MODULE_ESP32_S3": {
-      "width_mm": 18.0,
-      "length_mm": 25.5,
-      "height_mm": 3.2,
-      "courtyard_margin_mm": 0.5,
-      "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1",
-      "antenna_keepout": {
-        "name": "RF_ANTENNA_KEEPOUT",
-        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne m\u00e9andre 2.4 GHz",
-        "dx_min_mm": -9.0,
-        "dx_max_mm": 9.0,
-        "dy_min_mm": 6.45,
-        "dy_max_mm": 12.75,
-        "extend_to_board_edge": true
-      }
-    },
-    "USB_C_16P": {
-      "width_mm": 9.85,
-      "length_mm": 7.5,
-      "height_mm": 3.26,
-      "courtyard_margin_mm": 0.4,
-      "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte r\u00e9elle 9.85x6.50 mm)"
-    },
     "CONN_JST_XH_5P_90": {
       "width_mm": 14.9,
       "length_mm": 11.5,
@@ -165,6 +85,85 @@
       "courtyard_margin_mm": 0.4,
       "description": "Cavalier de configuration 1x2 pas 2.54 mm (corps plastique 5.08x2.54 mm)"
     },
+    "MODULE_ESP32_S3": {
+      "width_mm": 18.0,
+      "length_mm": 25.5,
+      "height_mm": 3.2,
+      "courtyard_margin_mm": 0.5,
+      "description": "Module Wi-Fi / Bluetooth ESP32-S3-WROOM-1",
+      "antenna_keepout": {
+        "name": "RF_ANTENNA_KEEPOUT",
+        "description": "Zone d'exclusion RF multicouche sous et autour de l'antenne m\u00e9andre 2.4 GHz",
+        "dx_min_mm": -9.0,
+        "dx_max_mm": 9.0,
+        "dy_min_mm": 6.45,
+        "dy_max_mm": 12.75,
+        "extend_to_board_edge": true
+      }
+    },
+    "SMA": {
+      "width_mm": 6.4,
+      "length_mm": 2.6,
+      "height_mm": 2.2,
+      "courtyard_margin_mm": 0.4,
+      "description": "Diode de puissance DO-214AC (empreinte cuivre r\u00e9elle 6.40x2.00 mm)"
+    },
+    "SMB": {
+      "width_mm": 6.8,
+      "length_mm": 3.6,
+      "height_mm": 2.4,
+      "courtyard_margin_mm": 0.4,
+      "description": "Diode TVS de puissance DO-214AA (empreinte cuivre r\u00e9elle 6.77x2.19 mm)"
+    },
+    "SMD_IND_7X7": {
+      "width_mm": 7.3,
+      "length_mm": 7.3,
+      "height_mm": 4.5,
+      "courtyard_margin_mm": 0.4,
+      "description": "Inductance blind\u00e9e de puissance 7.3x7.3 mm (empreinte cuivre r\u00e9elle 7.20x5.72 mm)"
+    },
+    "SOD-123": {
+      "width_mm": 4.6,
+      "length_mm": 1.6,
+      "height_mm": 1.2,
+      "courtyard_margin_mm": 0.35,
+      "description": "Diode CMS SOD-123 (empreinte cuivre r\u00e9elle 4.60x1.00 mm)"
+    },
+    "SOD-123FL": {
+      "width_mm": 4.7,
+      "length_mm": 1.8,
+      "height_mm": 1.0,
+      "courtyard_margin_mm": 0.35,
+      "description": "Diode TVS compacte SOD-123FL (empreinte cuivre r\u00e9elle 4.67x1.15 mm)"
+    },
+    "SOD-323": {
+      "width_mm": 2.75,
+      "length_mm": 1.25,
+      "height_mm": 0.9,
+      "courtyard_margin_mm": 0.3,
+      "description": "Diode ESD ultra-compacte SOD-323 (empreinte cuivre r\u00e9elle 2.73x1.00 mm)"
+    },
+    "SOIC-8": {
+      "width_mm": 5.2,
+      "length_mm": 7.4,
+      "height_mm": 1.75,
+      "courtyard_margin_mm": 0.4,
+      "description": "Bo\u00eetier SOIC-8 \u00e0 pas 1.27 mm (empreinte cuivre r\u00e9elle pads 4.40x7.36 mm)"
+    },
+    "SOT-223-4": {
+      "width_mm": 8.2,
+      "length_mm": 6.5,
+      "height_mm": 1.8,
+      "courtyard_margin_mm": 0.45,
+      "description": "R\u00e9gulateur LDO SOT-223 avec onglet thermique (empreinte cuivre r\u00e9elle 8.14x5.58 mm)"
+    },
+    "SOT-23": {
+      "width_mm": 3.3,
+      "length_mm": 3.0,
+      "height_mm": 1.1,
+      "courtyard_margin_mm": 0.35,
+      "description": "Transistors et diodes doubles SOT-23-3 (empreinte cuivre r\u00e9elle 3.25x2.60 mm)"
+    },
     "TACT_SWITCH_SMD": {
       "width_mm": 7.0,
       "length_mm": 5.2,
@@ -178,9 +177,182 @@
       "height_mm": 0.05,
       "courtyard_margin_mm": 0.35,
       "description": "Pastille de test CMS pour pointes d'oscilloscope (pad cuivre 0.50x0.50 mm)"
+    },
+    "USB_C_16P": {
+      "width_mm": 9.85,
+      "length_mm": 7.5,
+      "height_mm": 3.26,
+      "courtyard_margin_mm": 0.4,
+      "description": "Embase femelle USB-C 16 broches affleurante bord de carte (empreinte r\u00e9elle 9.85x6.50 mm)"
     }
   },
+  "rigid_groups": [
+    {
+      "id": "G_OBD_PROTECTION",
+      "anchor_component": "J1",
+      "members": [
+        "J1",
+        "H3",
+        "F1",
+        "D1",
+        "Q1",
+        "Q2",
+        "R5",
+        "R7",
+        "D3",
+        "R14",
+        "R17"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_BUCK_CORE",
+      "anchor_component": "U4",
+      "members": [
+        "U4",
+        "L1",
+        "D2",
+        "C5",
+        "C7",
+        "C8",
+        "C16",
+        "C14",
+        "C17",
+        "R9",
+        "R10",
+        "R11",
+        "R19",
+        "R20",
+        "C9",
+        "C13"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_LDO_CORE",
+      "anchor_component": "U5",
+      "members": [
+        "U5",
+        "C6",
+        "FB1"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_USB_PROTECTION",
+      "anchor_component": "J2",
+      "members": [
+        "J2",
+        "D4",
+        "C18",
+        "C19",
+        "U6",
+        "U7",
+        "R3",
+        "R4",
+        "R22",
+        "R23"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_CAN_CORE",
+      "anchor_component": "U2",
+      "members": [
+        "U2",
+        "U8",
+        "R8",
+        "JP1",
+        "C3",
+        "C15"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_KLINE_CORE",
+      "anchor_component": "U3",
+      "members": [
+        "U3",
+        "D5",
+        "R1",
+        "R2",
+        "R16",
+        "R18",
+        "JP2",
+        "C4"
+      ],
+      "layout": "solve"
+    },
+    {
+      "id": "G_ESP32_CORE",
+      "anchor_component": "U1",
+      "members": [
+        "U1",
+        "C1",
+        "C2",
+        "C11",
+        "C12",
+        "R15",
+        "R21",
+        "SW1",
+        "LED1",
+        "R6"
+      ],
+      "layout": "solve"
+    }
+  ],
   "placement_constraints": [
+    {
+      "id": "PC_C1_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C1",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C11_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C11",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 4.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "R\u00e9servoir bulk 10uF ESP32 <= 4.0 mm pour appels de courant Wi-Fi"
+    },
+    {
+      "id": "PC_C12_EN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C12",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Circuit RC Reset ESP_EN <= 3.0 mm pour immunit\u00e9 aux parasites"
+    },
     {
       "id": "PC_C14_VIN",
       "type": "proximity",
@@ -197,6 +369,268 @@
       "hard": true,
       "weight": 10,
       "rationale": "D\u00e9couplage HF entr\u00e9e Buck < 3 mm de VIN"
+    },
+    {
+      "id": "PC_C15_CAN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C15",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U2",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VCC 5V CAN U2 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C16_L1",
+      "type": "proximity",
+      "subject": {
+        "ref": "C16",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "L1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Condensateur de sortie Buck C16 au contact de L1.2"
+    },
+    {
+      "id": "PC_C18_VBUS",
+      "type": "proximity",
+      "subject": {
+        "ref": "C18",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "J2",
+        "pin": "A4B9"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": false,
+      "weight": 6,
+      "rationale": "R\u00e9servoir local Bulk VBUS \u00e0 proximit\u00e9 du port USB-C J2"
+    },
+    {
+      "id": "PC_C19_VBUS",
+      "type": "proximity",
+      "subject": {
+        "ref": "C19",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "J2",
+        "pin": "A4B9"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": false,
+      "weight": 7,
+      "rationale": "D\u00e9couplage HF VBUS \u00e0 proximit\u00e9 imm\u00e9diate du port USB-C J2"
+    },
+    {
+      "id": "PC_C2_ESP",
+      "type": "proximity",
+      "subject": {
+        "ref": "C2",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 3.0 mm"
+    },
+    {
+      "id": "PC_C3_CAN",
+      "type": "proximity",
+      "subject": {
+        "ref": "C3",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U2",
+        "pin": "5"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VIO 3.3V CAN U2 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C4_KLINE",
+      "type": "proximity",
+      "subject": {
+        "ref": "C4",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U3",
+        "pin": "3"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 2.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "D\u00e9couplage VCC K-Line U3 <= 2.5 mm"
+    },
+    {
+      "id": "PC_C6_LDO",
+      "type": "proximity",
+      "subject": {
+        "ref": "C6",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U5",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 3.5,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Stabilite de boucle LDO U5 VOUT <= 3.5 mm"
+    },
+    {
+      "id": "PC_C8_L1",
+      "type": "proximity",
+      "subject": {
+        "ref": "C8",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "L1",
+        "pin": "2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Condensateur de sortie Buck C8 au contact de L1.2"
+    },
+    {
+      "id": "PC_D2_GND",
+      "type": "proximity",
+      "subject": {
+        "ref": "D2",
+        "pin": "A"
+      },
+      "target": {
+        "ref": "U4",
+        "pin": "7"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 5.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Boucle ultra-courte de retour diode Schottky D2 vers broche GND U4 <= 5 mm"
+    },
+    {
+      "id": "PC_L1_PH",
+      "type": "proximity",
+      "subject": {
+        "ref": "L1",
+        "pin": "1"
+      },
+      "target": {
+        "ref": "U4",
+        "pin": "8"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "Liaison directe n\u0153ud de hachage PH vers self L1 <= 8 mm pour limiter le rayonnement EMI"
+    },
+    {
+      "id": "PC_D5_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "D5"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS K-Line D5 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
+    },
+    {
+      "id": "PC_F1_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "F1"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 15.0,
+      "hard": true,
+      "weight": 9,
+      "rationale": "Fusible PPTC F1 fronti\u00e8re connecteur J1.1 <= 10.0 mm"
+    },
+    {
+      "id": "PC_U6_J2",
+      "type": "proximity",
+      "subject": {
+        "ref": "U6"
+      },
+      "target": {
+        "ref": "J2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS USB D+ U6 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
+    },
+    {
+      "id": "PC_U7_J2",
+      "type": "proximity",
+      "subject": {
+        "ref": "U7"
+      },
+      "target": {
+        "ref": "J2"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 8.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS USB D- U7 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
+    },
+    {
+      "id": "PC_U8_J1",
+      "type": "proximity",
+      "subject": {
+        "ref": "U8"
+      },
+      "target": {
+        "ref": "J1"
+      },
+      "metric": "pad_to_pad",
+      "max_mm": 12.0,
+      "hard": true,
+      "weight": 10,
+      "rationale": "TVS CAN U8 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
     },
     {
       "id": "PC_BUCK_HOT_LOOP",
@@ -284,432 +718,6 @@
       "hard": false,
       "weight": 2,
       "rationale": "Accessibilit\u00e9 m\u00e9canique du bouton Reset"
-    },
-    {
-      "id": "PC_C18_VBUS",
-      "type": "proximity",
-      "subject": {
-        "ref": "C18",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "J2",
-        "pin": "A4B9"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 12.0,
-      "hard": false,
-      "weight": 6,
-      "rationale": "R\u00e9servoir local Bulk VBUS \u00e0 proximit\u00e9 du port USB-C J2"
-    },
-    {
-      "id": "PC_C19_VBUS",
-      "type": "proximity",
-      "subject": {
-        "ref": "C19",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "J2",
-        "pin": "A4B9"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": false,
-      "weight": 7,
-      "rationale": "D\u00e9couplage HF VBUS \u00e0 proximit\u00e9 imm\u00e9diate du port USB-C J2"
-    },
-    {
-      "id": "PC_L1_PH",
-      "type": "proximity",
-      "subject": {
-        "ref": "L1",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U4",
-        "pin": "8"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "Liaison directe n\u0153ud de hachage PH vers self L1 <= 8 mm pour limiter le rayonnement EMI"
-    },
-    {
-      "id": "PC_D2_GND",
-      "type": "proximity",
-      "subject": {
-        "ref": "D2",
-        "pin": "A"
-      },
-      "target": {
-        "ref": "U4",
-        "pin": "7"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 5.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "Boucle ultra-courte de retour diode Schottky D2 vers broche GND U4 <= 5 mm"
-    },
-    {
-      "id": "PC_C8_L1",
-      "type": "proximity",
-      "subject": {
-        "ref": "C8",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "L1",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": true,
-      "weight": 9,
-      "rationale": "Condensateur de sortie Buck C8 au contact de L1.2"
-    },
-    {
-      "id": "PC_C16_L1",
-      "type": "proximity",
-      "subject": {
-        "ref": "C16",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "L1",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": true,
-      "weight": 9,
-      "rationale": "Condensateur de sortie Buck C16 au contact de L1.2"
-    },
-    {
-      "id": "PC_C1_ESP",
-      "type": "proximity",
-      "subject": {
-        "ref": "C1",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U1",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 2.5,
-      "hard": true,
-      "weight": 10,
-      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 2.5 mm"
-    },
-    {
-      "id": "PC_C2_ESP",
-      "type": "proximity",
-      "subject": {
-        "ref": "C2",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U1",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 3.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "D\u00e9couplage HF pin 2 VDD ESP32 <= 3.0 mm"
-    },
-    {
-      "id": "PC_C11_ESP",
-      "type": "proximity",
-      "subject": {
-        "ref": "C11",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U1",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 4.0,
-      "hard": true,
-      "weight": 9,
-      "rationale": "R\u00e9servoir bulk 10uF ESP32 <= 4.0 mm pour appels de courant Wi-Fi"
-    },
-    {
-      "id": "PC_C12_EN",
-      "type": "proximity",
-      "subject": {
-        "ref": "C12",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U1",
-        "pin": "3"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 3.0,
-      "hard": true,
-      "weight": 9,
-      "rationale": "Circuit RC Reset ESP_EN <= 3.0 mm pour immunit\u00e9 aux parasites"
-    },
-    {
-      "id": "PC_C15_CAN",
-      "type": "proximity",
-      "subject": {
-        "ref": "C15",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U2",
-        "pin": "3"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 2.5,
-      "hard": true,
-      "weight": 10,
-      "rationale": "D\u00e9couplage VCC 5V CAN U2 <= 2.5 mm"
-    },
-    {
-      "id": "PC_C3_CAN",
-      "type": "proximity",
-      "subject": {
-        "ref": "C3",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U2",
-        "pin": "5"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 2.5,
-      "hard": true,
-      "weight": 10,
-      "rationale": "D\u00e9couplage VIO 3.3V CAN U2 <= 2.5 mm"
-    },
-    {
-      "id": "PC_C4_KLINE",
-      "type": "proximity",
-      "subject": {
-        "ref": "C4",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U3",
-        "pin": "3"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 2.5,
-      "hard": true,
-      "weight": 10,
-      "rationale": "D\u00e9couplage VCC K-Line U3 <= 2.5 mm"
-    },
-    {
-      "id": "PC_C6_LDO",
-      "type": "proximity",
-      "subject": {
-        "ref": "C6",
-        "pin": "1"
-      },
-      "target": {
-        "ref": "U5",
-        "pin": "2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 3.5,
-      "hard": true,
-      "weight": 10,
-      "rationale": "Stabilite de boucle LDO U5 VOUT <= 3.5 mm"
-    },
-    {
-      "id": "PC_U8_J1",
-      "type": "proximity",
-      "subject": {
-        "ref": "U8"
-      },
-      "target": {
-        "ref": "J1"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 12.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "TVS CAN U8 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
-    },
-    {
-      "id": "PC_D5_J1",
-      "type": "proximity",
-      "subject": {
-        "ref": "D5"
-      },
-      "target": {
-        "ref": "J1"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 12.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "TVS K-Line D5 imm\u00e9diate face au connecteur diagnostic J1 <= 5.0 mm"
-    },
-    {
-      "id": "PC_F1_J1",
-      "type": "proximity",
-      "subject": {
-        "ref": "F1"
-      },
-      "target": {
-        "ref": "J1"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 15.0,
-      "hard": true,
-      "weight": 9,
-      "rationale": "Fusible PPTC F1 fronti\u00e8re connecteur J1.1 <= 10.0 mm"
-    },
-    {
-      "id": "PC_U6_J2",
-      "type": "proximity",
-      "subject": {
-        "ref": "U6"
-      },
-      "target": {
-        "ref": "J2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "TVS USB D+ U6 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
-    },
-    {
-      "id": "PC_U7_J2",
-      "type": "proximity",
-      "subject": {
-        "ref": "U7"
-      },
-      "target": {
-        "ref": "J2"
-      },
-      "metric": "pad_to_pad",
-      "max_mm": 8.0,
-      "hard": true,
-      "weight": 10,
-      "rationale": "TVS USB D- U7 imm\u00e9diate face \u00e0 J2 <= 5.0 mm"
-    }
-  ],
-  "rigid_groups": [
-    {
-      "id": "G_BUCK_CORE",
-      "anchor_component": "U4",
-      "members": [
-        "U4",
-        "L1",
-        "D2",
-        "C5",
-        "C7",
-        "C8",
-        "C16",
-        "C14",
-        "C17",
-        "R9",
-        "R10",
-        "R11",
-        "C9",
-        "C13",
-        "R19",
-        "R20"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_ESP32_CORE",
-      "anchor_component": "U1",
-      "members": [
-        "U1",
-        "C1",
-        "C2",
-        "C11",
-        "C12",
-        "R15",
-        "R21",
-        "SW1",
-        "LED1",
-        "R2"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_CAN_CORE",
-      "anchor_component": "U2",
-      "members": [
-        "U2",
-        "C15",
-        "C3",
-        "R6",
-        "R8",
-        "JP1"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_KLINE_CORE",
-      "anchor_component": "U3",
-      "members": [
-        "U3",
-        "C4",
-        "R16",
-        "R18",
-        "JP2"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_LDO_CORE",
-      "anchor_component": "U5",
-      "members": [
-        "U5",
-        "C6",
-        "FB1"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_OBD_PROTECTION",
-      "anchor_component": "J1",
-      "members": [
-        "J1",
-        "U8",
-        "D5",
-        "F1",
-        "D1",
-        "Q1",
-        "Q2",
-        "R5",
-        "R17",
-        "R14",
-        "D3",
-        "R7"
-      ],
-      "layout": "solve"
-    },
-    {
-      "id": "G_USB_PROTECTION",
-      "anchor_component": "J2",
-      "members": [
-        "J2",
-        "U6",
-        "U7",
-        "D4",
-        "R3",
-        "R4",
-        "R22",
-        "R23",
-        "C18",
-        "C19"
-      ],
-      "layout": "solve"
     }
   ],
   "components": {
@@ -720,61 +728,8 @@
         "rail": "3.3V",
         "max_distance_mm": 5.0,
         "reason": "D\u00e9couplage HF pin 2 (VDD)"
-      }
-    },
-    "C2": {
-      "package": "0603",
-      "cem_target": {
-        "component": "U1",
-        "rail": "3.3V",
-        "max_distance_mm": 5.0,
-        "reason": "D\u00e9couplage HF pin 2 (VDD)"
-      }
-    },
-    "C3": {
-      "package": "0603",
-      "cem_target": {
-        "component": "U2",
-        "rail": "3.3V",
-        "max_distance_mm": 4.0,
-        "reason": "D\u00e9couplage VIO CAN"
-      }
-    },
-    "C4": {
-      "package": "0603",
-      "cem_target": {
-        "component": "U3",
-        "rail": "3.3V",
-        "max_distance_mm": 4.0,
-        "reason": "D\u00e9couplage VCC K-Line"
-      }
-    },
-    "C5": {
-      "package": "0603",
-      "cem_target": {
-        "component": "U4",
-        "pin": "BOOT",
-        "max_distance_mm": 5.0,
-        "reason": "Bootstrap BOOT -> PH"
-      }
-    },
-    "C6": {
-      "package": "1206"
-    },
-    "C7": {
-      "package": "1206",
-      "cem_target": {
-        "component": "U4",
-        "rail": "+12V_PROT",
-        "max_distance_mm": 5.0,
-        "reason": "Condensateur entr\u00e9e VIN Buck"
-      }
-    },
-    "C8": {
-      "package": "1206"
-    },
-    "C9": {
-      "package": "0603"
+      },
+      "rigid_group": "G_ESP32_CORE"
     },
     "C10": {
       "package": "0603"
@@ -786,7 +741,8 @@
         "rail": "3.3V",
         "max_distance_mm": 5.0,
         "reason": "R\u00e9servoir Bulk Wi-Fi TX"
-      }
+      },
+      "rigid_group": "G_ESP32_CORE"
     },
     "C12": {
       "package": "0603",
@@ -795,7 +751,8 @@
         "pin": "ESP_EN",
         "max_distance_mm": 5.0,
         "reason": "Filtre RC Reset EN"
-      }
+      },
+      "rigid_group": "G_ESP32_CORE"
     },
     "C13": {
       "package": "0603",
@@ -804,7 +761,8 @@
         "pin": "COMP",
         "max_distance_mm": 7.0,
         "reason": "Filtre HF boucle compensation"
-      }
+      },
+      "rigid_group": "G_BUCK_CORE"
     },
     "C14": {
       "package": "0603",
@@ -813,7 +771,8 @@
         "rail": "+12V_PROT",
         "max_distance_mm": 5.0,
         "reason": "D\u00e9couplage HF VIN Buck"
-      }
+      },
+      "rigid_group": "G_BUCK_CORE"
     },
     "C15": {
       "package": "0603",
@@ -822,10 +781,12 @@
         "rail": "+5V",
         "max_distance_mm": 4.0,
         "reason": "D\u00e9couplage VCC CAN"
-      }
+      },
+      "rigid_group": "G_CAN_CORE"
     },
     "C16": {
-      "package": "1206"
+      "package": "1206",
+      "rigid_group": "G_BUCK_CORE"
     },
     "C17": {
       "package": "0603",
@@ -834,7 +795,8 @@
         "pin": "SS",
         "max_distance_mm": 5.0,
         "reason": "Timing Soft-Start pin SS"
-      }
+      },
+      "rigid_group": "G_BUCK_CORE"
     },
     "C18": {
       "package": "1206",
@@ -843,7 +805,8 @@
         "rail": "VBUS_5V",
         "max_distance_mm": 9.0,
         "reason": "R\u00e9servoir entr\u00e9e VBUS"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
     },
     "C19": {
       "package": "0603",
@@ -852,19 +815,86 @@
         "rail": "VBUS_5V",
         "max_distance_mm": 9.0,
         "reason": "D\u00e9couplage HF VBUS"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
+    },
+    "C2": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U1",
+        "rail": "3.3V",
+        "max_distance_mm": 5.0,
+        "reason": "D\u00e9couplage HF pin 2 (VDD)"
+      },
+      "rigid_group": "G_ESP32_CORE"
+    },
+    "C3": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U2",
+        "rail": "3.3V",
+        "max_distance_mm": 4.0,
+        "reason": "D\u00e9couplage VIO CAN"
+      },
+      "rigid_group": "G_CAN_CORE"
+    },
+    "C4": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U3",
+        "rail": "3.3V",
+        "max_distance_mm": 4.0,
+        "reason": "D\u00e9couplage VCC K-Line"
+      },
+      "rigid_group": "G_KLINE_CORE"
+    },
+    "C5": {
+      "package": "0603",
+      "cem_target": {
+        "component": "U4",
+        "pin": "BOOT",
+        "max_distance_mm": 5.0,
+        "reason": "Bootstrap BOOT -> PH"
+      },
+      "rigid_group": "G_BUCK_CORE"
+    },
+    "C6": {
+      "package": "1206",
+      "rigid_group": "G_LDO_CORE"
+    },
+    "C7": {
+      "package": "1206",
+      "cem_target": {
+        "component": "U4",
+        "rail": "+12V_PROT",
+        "max_distance_mm": 5.0,
+        "reason": "Condensateur entr\u00e9e VIN Buck"
+      },
+      "rigid_group": "G_BUCK_CORE"
+    },
+    "C8": {
+      "package": "1206",
+      "rigid_group": "G_BUCK_CORE"
+    },
+    "C9": {
+      "package": "0603",
+      "rigid_group": "G_BUCK_CORE"
     },
     "D1": {
-      "package": "SMB"
+      "package": "SMB",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "D2": {
-      "package": "SMA"
+      "package": "SMA",
+      "rigid_group": "G_BUCK_CORE"
     },
     "D3": {
-      "package": "SOT-23"
+      "package": "SOT-23",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "D4": {
-      "package": "SOD-123"
+      "package": "SOD-123",
+      "rigid_group": "G_USB_PROTECTION"
     },
     "D5": {
       "package": "SOD-123FL",
@@ -873,7 +903,8 @@
         "signal": "K_LINE",
         "max_distance_mm": 15.0,
         "reason": "TVS K-Line"
-      }
+      },
+      "rigid_group": "G_KLINE_CORE"
     },
     "D6": {
       "package": "SOT-23",
@@ -885,10 +916,12 @@
       }
     },
     "F1": {
-      "package": "1812"
+      "package": "1812",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "FB1": {
-      "package": "0603"
+      "package": "0603",
+      "rigid_group": "G_LDO_CORE"
     },
     "H1": {
       "package": "HEADER_1X3_2.54"
@@ -897,64 +930,52 @@
       "package": "HEADER_1X3_2.54"
     },
     "H3": {
-      "package": "HEADER_1X2_2.54"
+      "package": "HEADER_1X2_2.54",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "J1": {
-      "package": "CONN_JST_XH_5P_90"
+      "package": "CONN_JST_XH_5P_90",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "J2": {
-      "package": "USB_C_16P"
+      "package": "USB_C_16P",
+      "rigid_group": "G_USB_PROTECTION"
     },
     "JP1": {
-      "package": "JUMPER_1X2_2.54"
+      "package": "JUMPER_1X2_2.54",
+      "rigid_group": "G_CAN_CORE"
     },
     "JP2": {
-      "package": "JUMPER_1X2_2.54"
+      "package": "JUMPER_1X2_2.54",
+      "rigid_group": "G_KLINE_CORE"
     },
     "L1": {
-      "package": "SMD_IND_7X7"
+      "package": "SMD_IND_7X7",
+      "rigid_group": "G_BUCK_CORE"
     },
     "LED1": {
-      "package": "0603"
+      "package": "0603",
+      "rigid_group": "G_ESP32_CORE"
     },
     "Q1": {
-      "package": "SOT-23"
+      "package": "SOT-23",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "Q2": {
-      "package": "SOT-23"
+      "package": "SOT-23",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "R1": {
-      "package": "0805"
-    },
-    "R2": {
-      "package": "0805"
-    },
-    "R3": {
-      "package": "0805"
-    },
-    "R4": {
-      "package": "0805"
-    },
-    "R5": {
-      "package": "0805"
-    },
-    "R6": {
-      "package": "0805"
-    },
-    "R7": {
-      "package": "0805"
-    },
-    "R8": {
-      "package": "1206"
-    },
-    "R9": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_KLINE_CORE"
     },
     "R10": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_BUCK_CORE"
     },
     "R11": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_BUCK_CORE"
     },
     "R12": {
       "package": "0805"
@@ -963,7 +984,8 @@
       "package": "0805"
     },
     "R14": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "R15": {
       "package": "0805",
@@ -972,7 +994,8 @@
         "pin": "ESP_EN",
         "max_distance_mm": 5.0,
         "reason": "Pull-up Reset EN"
-      }
+      },
+      "rigid_group": "G_ESP32_CORE"
     },
     "R16": {
       "package": "1206",
@@ -981,19 +1004,28 @@
         "signal": "K_LINE",
         "max_distance_mm": 15.0,
         "reason": "Pull-up K-Line 1k"
-      }
+      },
+      "rigid_group": "G_KLINE_CORE"
     },
     "R17": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_OBD_PROTECTION"
     },
     "R18": {
-      "package": "1206"
+      "package": "1206",
+      "rigid_group": "G_KLINE_CORE"
     },
     "R19": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_BUCK_CORE"
+    },
+    "R2": {
+      "package": "0805",
+      "rigid_group": "G_KLINE_CORE"
     },
     "R20": {
-      "package": "0805"
+      "package": "0805",
+      "rigid_group": "G_BUCK_CORE"
     },
     "R21": {
       "package": "0805",
@@ -1002,7 +1034,8 @@
         "pin": "IO0",
         "max_distance_mm": 5.0,
         "reason": "Pull-up strapping Bootloader"
-      }
+      },
+      "rigid_group": "G_ESP32_CORE"
     },
     "R22": {
       "package": "0603",
@@ -1011,7 +1044,8 @@
         "signal": "USB_D-",
         "max_distance_mm": 6.0,
         "reason": "Amortissement s\u00e9rie D-"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
     },
     "R23": {
       "package": "0603",
@@ -1020,12 +1054,60 @@
         "signal": "USB_D+",
         "max_distance_mm": 6.0,
         "reason": "Amortissement s\u00e9rie D+"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
+    },
+    "R3": {
+      "package": "0805",
+      "rigid_group": "G_USB_PROTECTION"
+    },
+    "R4": {
+      "package": "0805",
+      "rigid_group": "G_USB_PROTECTION"
+    },
+    "R5": {
+      "package": "0805",
+      "rigid_group": "G_OBD_PROTECTION"
+    },
+    "R6": {
+      "package": "0805",
+      "rigid_group": "G_ESP32_CORE"
+    },
+    "R7": {
+      "package": "0805",
+      "rigid_group": "G_OBD_PROTECTION"
+    },
+    "R8": {
+      "package": "1206",
+      "rigid_group": "G_CAN_CORE"
+    },
+    "R9": {
+      "package": "0805",
+      "rigid_group": "G_BUCK_CORE"
     },
     "SW1": {
-      "package": "TACT_SWITCH_SMD"
+      "package": "TACT_SWITCH_SMD",
+      "rigid_group": "G_ESP32_CORE"
     },
     "TP1": {
+      "package": "TEST_PAD"
+    },
+    "TP10": {
+      "package": "TEST_PAD"
+    },
+    "TP11": {
+      "package": "TEST_PAD"
+    },
+    "TP12": {
+      "package": "TEST_PAD"
+    },
+    "TP13": {
+      "package": "TEST_PAD"
+    },
+    "TP14": {
+      "package": "TEST_PAD"
+    },
+    "TP15": {
       "package": "TEST_PAD"
     },
     "TP2": {
@@ -1052,38 +1134,25 @@
     "TP9": {
       "package": "TEST_PAD"
     },
-    "TP10": {
-      "package": "TEST_PAD"
-    },
-    "TP11": {
-      "package": "TEST_PAD"
-    },
-    "TP12": {
-      "package": "TEST_PAD"
-    },
-    "TP13": {
-      "package": "TEST_PAD"
-    },
-    "TP14": {
-      "package": "TEST_PAD"
-    },
-    "TP15": {
-      "package": "TEST_PAD"
-    },
     "U1": {
-      "package": "MODULE_ESP32_S3"
+      "package": "MODULE_ESP32_S3",
+      "rigid_group": "G_ESP32_CORE"
     },
     "U2": {
-      "package": "SOIC-8"
+      "package": "SOIC-8",
+      "rigid_group": "G_CAN_CORE"
     },
     "U3": {
-      "package": "SOIC-8"
+      "package": "SOIC-8",
+      "rigid_group": "G_KLINE_CORE"
     },
     "U4": {
-      "package": "SOIC-8"
+      "package": "SOIC-8",
+      "rigid_group": "G_BUCK_CORE"
     },
     "U5": {
-      "package": "SOT-223-4"
+      "package": "SOT-223-4",
+      "rigid_group": "G_LDO_CORE"
     },
     "U6": {
       "package": "SOD-323",
@@ -1092,7 +1161,8 @@
         "signal": "USB_D+",
         "max_distance_mm": 6.0,
         "reason": "ESD USB D+"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
     },
     "U7": {
       "package": "SOD-323",
@@ -1101,7 +1171,8 @@
         "signal": "USB_D-",
         "max_distance_mm": 6.0,
         "reason": "ESD USB D-"
-      }
+      },
+      "rigid_group": "G_USB_PROTECTION"
     },
     "U8": {
       "package": "SOT-23",
@@ -1110,7 +1181,8 @@
         "signal": "CANH",
         "max_distance_mm": 15.0,
         "reason": "TVS double CAN"
-      }
+      },
+      "rigid_group": "G_CAN_CORE"
     }
   }
 }

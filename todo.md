@@ -31,7 +31,7 @@ This section is organized **strictly in chronological execution order**, from ra
   5. Instantiate mechanical mounting holes `MH1` to `MH4` (M2 drill, `GND` net).
 
 ### Step 1: Data Modeling & Dynamic Manifest
-- [ ] **[BLOCKING] Dynamic Manifest Builder (`manifest_builder.py`):** Extract synchronized components from EasyEDA Pro (`getState_BBox()`, centroids, pads) and cross-reference with `semantics.json` (functional roles, decoupling, critical loops) and `constraints.json` (`anchors`, keepouts) to synthesize `manifest.json` automatically, eliminating manual maintenance.
+- [x] **[BLOCKING] Dynamic Manifest Builder (`manifest_builder.py`):** Extract synchronized components from EasyEDA Pro (`getState_BBox()`, centroids, pads) and cross-reference with `semantics.json` (functional roles, decoupling, critical loops) and `constraints.json` (`anchors`, keepouts) to synthesize `manifest.json` automatically, eliminating manual maintenance.
 - [ ] **[IMPORTANT] Fabricator Profile (`rules_jlcpcb.json`) vs Project Constraints (`constraints.json`) Separation:** Move factory constants (DFM rules, tolerances, JLC2313 stackup) into `.agents/skills/pcb-dfm/config/rules_jlcpcb.json`, keeping `constraints.json` dedicated to board-specific constraints (anchors, outline dimensions, net classes).
 
 ### Step 2: Placement under EMC Constraints & HF Decoupling
