@@ -77,7 +77,9 @@ class PcbSynthesizer:
         spacing: float = 0.20,
         dry_run: bool = False,
         apply_easyeda: bool = True,
-        placement_override: Optional[Path] = None
+        placement_override: Optional[Path] = None,
+        bootstrap_only: bool = False,
+        skip_bootstrap: bool = False
     ):
         self.manifest_path = manifest_path.resolve()
         self.board_path = board_path.resolve()
@@ -87,12 +89,94 @@ class PcbSynthesizer:
         self.dry_run = dry_run
         self.apply_easyeda = apply_easyeda
         self.placement_override = placement_override.resolve() if placement_override else None
+        self.bootstrap_only = bootstrap_only
+        self.skip_bootstrap = skip_bootstrap
 
         # Cache de synthèse
         self.cache_dir = SYNTHESIZER_DIR / ".cache"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.candidate_placement = self.cache_dir / "candidate_placement.json"
         self.adapted_manifest_path = self.cache_dir / "adapted_manifest.json"
+
+    def bootstrap_raw_pcb(self, board_cfg: Dict[str, Any]) -> bool:
+        """
+        Étape 0 : Amorce Idempotente du PCB Nu (Upstream & Raw PCB Idempotent Bootstrap).
+        1. Valide ERC = 0 via eda.sch_Drc.check et la conformité sémantique via sync_semantics.py.
+        2. Synchronise le schéma vers le PCB via sync_schematic_to_pcb(auto_confirm=True).
+        3. Configure l'empilement 4 couches de cuivre via eda.pcb_Layer.setTheNumberOfCopperLayers(4).
+        4. Crée ou vérifie le contour de carte idempotent sur Layer 11 depuis outline_polygon_mm.
+        5. Instancie ou valide les trous de fixation mécaniques MH1 à MH4 (M2 drill, net GND).
+        """
+        logger.info("\n================================================================================")
+        logger.info("   [ÉTAPE 0] AMORCE IDEMPOTENTE DU PCB NU (UPSTREAM & RAW PCB BOOTSTRAP)        ")
+        logger.info("================================================================================")
+
+        # 1a. Vérification de conformité sémantique (sync_semantics.py check)
+        logger.info("[Étape 0.1a] Vérification de conformité sémantique de schéma...")
+        sync_cmd = ["uv", "run", "python", str(SKILLS_DIR / "stingy-schematics" / "scripts" / "sync_semantics.py"), "check"]
+        rc_sync, stdout_sync, stderr_sync = run_cmd(sync_cmd, PROJECT_ROOT)
+        if rc_sync != 0:
+            logger.error(f"❌ Désynchronisation sémantique détectée :\n{stderr_sync or stdout_sync}")
+            return False
+        logger.info("   ✅ Sémantique et nomenclature 100% synchronisées.")
+
+        if self.dry_run or not self.apply_easyeda:
+            logger.info("ℹ️ Mode simulation (Dry-Run) ou sans EasyEDA : amorce PCB EasyEDA passée.")
+            return True
+
+        from easyeda_client import EasyEDAClient
+        client = EasyEDAClient()
+        if not client.health().get("edaConnected"):
+            logger.error("❌ EasyEDA Pro n'est pas connecté au pont local.")
+            return False
+
+        # 1b. Validation ERC = 0 via eda.sch_Drc.check
+        logger.info("[Étape 0.1b] Contrôle des règles électriques du schéma (ERC)...")
+        erc_res = client.run_erc()
+        if not erc_res.get("success"):
+            err_cnt = erc_res.get("errorCount", -1)
+            logger.error(f"❌ Violation(s) ERC détectée(s) ({err_cnt} erreur(s)) :\n{erc_res.get('errors')}")
+            return False
+        logger.info("   ✅ Contrôle ERC = 0 certifié sous EasyEDA Pro.")
+
+        # 2. Synchronisation Schéma vers PCB
+        logger.info("[Étape 0.2] Synchronisation Schéma -> PCB (importChanges)...")
+        sync_res = client.sync_schematic_to_pcb(auto_confirm=True)
+        logger.info(f"   Synchronisation PCB : {'✅ Réussie' if sync_res.get('success') else '⚠️ Avertissement'} (autoConfirmed={sync_res.get('autoConfirmed')})")
+
+        # 3. Configuration de l'empilement 4 couches
+        board_data = board_cfg.get("board", {})
+        layers_count = int(board_data.get("layers", 4))
+        logger.info(f"[Étape 0.3] Configuration de l'empilement {layers_count} couches de cuivre...")
+        ok_lay = client.set_copper_layers(layers_count)
+        if not ok_lay:
+            logger.warning(f"   ⚠️ Avertissement lors de la configuration {layers_count} couches.")
+        else:
+            logger.info(f"   ✅ Empilement {layers_count} couches configuré.")
+
+        # 4. Contour de carte idempotent sur Layer 11
+        logger.info("[Étape 0.4] Vérification et injection du contour de carte Layer 11...")
+        polygon_mm = board_data.get("outline_polygon_mm")
+        w_mm = float(board_data.get("width_mm", 81.28))
+        h_mm = float(board_data.get("height_mm", 35.56))
+        ok_outline = client.ensure_board_outline(polygon_mm=polygon_mm, width_mm=w_mm, height_mm=h_mm)
+        if not ok_outline:
+            logger.error("❌ Échec de la vérification/création du contour de carte.")
+            return False
+        logger.info("   ✅ Contour de carte Layer 11 opérationnel.")
+
+        # 5. Fixations mécaniques MH1 à MH4 (M2, net GND)
+        logger.info("[Étape 0.5] Vérification et instanciation des fixations mécaniques MH1..MH4...")
+        mounting_holes = board_data.get("mounting_holes", [])
+        ok_mh = client.ensure_mounting_holes(mounting_holes)
+        if not ok_mh:
+            logger.warning("   ⚠️ Avertissement lors de l'instanciation des trous de fixation.")
+        else:
+            logger.info(f"   ✅ {len(mounting_holes)} trous de fixation mécaniques validés (net GND).")
+
+        client.save_pcb()
+        logger.info("✅ [ÉTAPE 0] Amorce du PCB nu achevée avec succès !\n")
+        return True
 
     def execute_closed_loop(self) -> bool:
         t_start = time.time()
@@ -112,6 +196,18 @@ class PcbSynthesizer:
             current_manifest = json.load(f)
         with open(self.board_path, "r", encoding="utf-8") as f:
             board_cfg = json.load(f)
+
+        # ---------------------------------------------------------------------
+        # Étape 0 : Amorce Idempotente du PCB Nu (Upstream & Raw PCB Bootstrap)
+        # ---------------------------------------------------------------------
+        if not self.skip_bootstrap:
+            if not self.bootstrap_raw_pcb(board_cfg):
+                logger.error("❌ Échec de l'étape 0 (Raw PCB Bootstrap). Arrêt de la synthèse.")
+                return False
+
+        if self.bootstrap_only:
+            logger.info("🏁 Fin de l'exécution : --bootstrap-only demandé.")
+            return True
 
         synthesis_success = False
 
@@ -543,6 +639,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Mode simulation sans altération d'EasyEDA")
     parser.add_argument("--apply", action="store_true", help="Applique l'injection réelle dans EasyEDA Pro")
     parser.add_argument("--placement", type=Path, default=None, help="Placement initial pré-calculé (saute l'étape 1 du cycle 1)")
+    parser.add_argument("--bootstrap-only", action="store_true", help="Exécute uniquement l'étape 0 (Raw PCB Bootstrap) et s'arrête")
+    parser.add_argument("--skip-bootstrap", action="store_true", help="Saute l'étape 0 d'amorce du PCB nu")
     args = parser.parse_args()
 
     synthesizer = PcbSynthesizer(
@@ -553,7 +651,9 @@ def main():
         spacing=args.spacing,
         dry_run=args.dry_run,
         apply_easyeda=args.apply,
-        placement_override=args.placement
+        placement_override=args.placement,
+        bootstrap_only=args.bootstrap_only,
+        skip_bootstrap=args.skip_bootstrap
     )
     ok = synthesizer.execute_closed_loop()
     sys.exit(0 if ok else 1)

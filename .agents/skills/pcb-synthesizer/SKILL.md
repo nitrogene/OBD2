@@ -82,6 +82,7 @@ The `pcb-synthesizer` skill is a top-level orchestrator unifying printed circuit
 | File | Role | Description |
 | :--- | :--- | :--- |
 | `SKILL.md` | Specification | Architectural documentation and CLI user guide. |
+| [`macro_cycle.md`](macro_cycle.md) | Architecture Specification | Detailed macro-cycle architecture, micro-cycles, feedback loops, and invariants. |
 | `dsn_metrics.py` | Post-routing metrology | Specctra DSN/SES parser extracting actual routed traces, computing true loop area and closed-loop inductance. |
 | `synthesizer_pipeline.py` | Master orchestrator | Coordination engine driving the closed loop with iterative feedback (up to 3 cycles) and final certification. |
 | `tests/test_dsn_metrics.py` | Test suite | Automated unit tests for metrology analysis of DSN/SES files. |

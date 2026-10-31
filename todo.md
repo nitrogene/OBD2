@@ -23,7 +23,7 @@ It is structured into **3 core fundamental parts** aligned with the hardware eng
 This section is organized **strictly in chronological execution order**, from raw PCB initialization to the final factory manufacturing package.
 
 ### Step 0: Upstream & Raw PCB Idempotent Bootstrap
-- [ ] **[BLOCKING] Idempotent PCB Bootstrap:** Add an initialization stage at the beginning of `PcbSynthesizer.execute_closed_loop()` in `synthesizer_pipeline.py` that executes automatically via `EasyEDAClient`:
+- [x] **[BLOCKING] Idempotent PCB Bootstrap:** Add an initialization stage at the beginning of `PcbSynthesizer.execute_closed_loop()` in `synthesizer_pipeline.py` that executes automatically via `EasyEDAClient`:
   1. Validate `ERC = 0` via `eda.sch_Drc.check(true, false, true)` and semantic compliance via `sync_semantics.py check`.
   2. Synchronize schematic to PCB via `sync_schematic_to_pcb(auto_confirm=True)`.
   3. Configure 4-layer copper stackup via `eda.pcb_Layer.setTheNumberOfCopperLayers(4)`.

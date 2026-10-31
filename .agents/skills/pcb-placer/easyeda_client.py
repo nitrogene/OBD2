@@ -151,14 +151,15 @@ class EasyEDAClient:
 
     def get_board_outline(self) -> Dict[str, Any]:
         """
-        Récupère toutes les lignes et arcs de contour de carte (Layer 11 = BOARD_OUTLINE).
+        Récupère toutes les lignes, arcs et polylignes de contour de carte (Layer 11 = BOARD_OUTLINE).
         Calcule et retourne également la boîte englobante (Bounding Box) en mil et en mm.
         """
         code = """
         try {
             const lines = (await eda.pcb_PrimitiveLine.getAll(undefined, 11)) || [];
             const arcs = (await eda.pcb_PrimitiveArc.getAll?.(undefined, 11)) || [];
-            
+            const polylines = (await eda.pcb_PrimitivePolyline?.getAll?.(undefined, 11)) || [];
+
             let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
             const segments = [];
 
@@ -199,7 +200,32 @@ class EasyEDAClient:
                 });
             }
 
-            const valid = isFinite(minX) && isFinite(maxX);
+            for (const p of polylines) {
+                const poly = p.getState_Polygon ? p.getState_Polygon() : null;
+                if (poly && poly.getSource) {
+                    const src = poly.getSource();
+                    if (src && src.length >= 5 && src[0] === 'R') {
+                        const ox = Number(src[1]);
+                        const oy = Number(src[2]);
+                        const w = Number(src[3]);
+                        const h = Number(src[4]);
+                        minX = Math.min(minX, ox, ox + w);
+                        maxX = Math.max(maxX, ox, ox + w);
+                        minY = Math.min(minY, oy - h, oy);
+                        maxY = Math.max(maxY, oy - h, oy);
+                        segments.push({
+                            type: "polyline_rect",
+                            id: p.getState_PrimitiveId(),
+                            ox: ox,
+                            oy: oy,
+                            w: w,
+                            h: h
+                        });
+                    }
+                }
+            }
+
+            const valid = isFinite(minX) && isFinite(maxX) && isFinite(minY) && isFinite(maxY);
             return {
                 segmentsCount: segments.length,
                 segments: segments,
@@ -219,6 +245,55 @@ class EasyEDAClient:
         }
         """
         return self.execute_js(code) or {"segmentsCount": 0, "segments": [], "boundingBox": None}
+
+    def ensure_board_outline(
+        self,
+        polygon_mm: Optional[List[List[float]]] = None,
+        width_mm: Optional[float] = None,
+        height_mm: Optional[float] = None,
+        line_width_mil: float = 10.0
+    ) -> bool:
+        """
+        Vérifie et assure de manière 100% idempotente le contour de carte sur Layer 11 (BOARD_OUTLINE).
+        Si un contour conforme existe déjà (à +/-0.2 mm près), il est conservé sans réécriture.
+        Sinon, l'ancien contour est nettoyé et le nouveau est généré fidèlement.
+        """
+        target_w = width_mm
+        target_h = height_mm
+        if (target_w is None or target_h is None) and polygon_mm:
+            xs = [pt[0] for pt in polygon_mm]
+            ys = [pt[1] for pt in polygon_mm]
+            target_w = max(xs) - min(xs)
+            target_h = max(ys) - min(ys)
+
+        current_outline = self.get_board_outline()
+        bbox = current_outline.get("boundingBox")
+        if bbox and target_w is not None and target_h is not None:
+            cur_w = bbox.get("width_mm", 0.0)
+            cur_h = bbox.get("height_mm", 0.0)
+            if abs(cur_w - target_w) <= 0.2 and abs(cur_h - target_h) <= 0.2:
+                logger.info(f"Contour de carte Layer 11 déjà présent et conforme ({cur_w:.2f} × {cur_h:.2f} mm).")
+                return True
+
+        logger.info(f"Création/Mise à jour du contour de carte Layer 11 ({target_w} × {target_h} mm)...")
+        w_mil = target_w * 39.37007874
+        h_mil = target_h * 39.37007874
+
+        code = f"""
+        try {{
+            const oldLines = (await eda.pcb_PrimitiveLine.getAll(undefined, 11)) || [];
+            if (oldLines.length) await eda.pcb_PrimitiveLine.delete(oldLines.map(l => l.getState_PrimitiveId()));
+            const oldPolys = (await eda.pcb_PrimitivePolyline?.getAll?.(undefined, 11)) || [];
+            if (oldPolys.length) await eda.pcb_PrimitivePolyline.delete(oldPolys.map(p => p.getState_PrimitiveId()));
+
+            const poly = eda.pcb_MathPolygon.createPolygon(['R', 0, {h_mil}, {w_mil}, {h_mil}, 0, 0]);
+            const created = await eda.pcb_PrimitivePolyline.create('', 11, poly, {line_width_mil}, false);
+            return created !== undefined;
+        }} catch(e) {{
+            return false;
+        }}
+        """
+        return bool(self.execute_js(code))
 
     def create_board_outline(self, width_mil: float, height_mil: float, origin_x: float = 0.0, origin_y: float = 0.0, line_width_mil: float = 10.0) -> bool:
         """
@@ -293,7 +368,8 @@ class EasyEDAClient:
     def ensure_mounting_holes(self, holes_config: List[Dict[str, Any]]) -> bool:
         """
         Vérifie et instancie les trous de fixation mécaniques M2 (Layer 12 = MULTI)
-        conformément aux contraintes du floorplan.
+        conformément aux contraintes du floorplan de manière 100% idempotente.
+        Prend en charge x_mm / y_mm / drill_mm / pad_mm ou x_mil / y_mil / hole_diameter_mil / head_clearance_mil.
         """
         existing_pads = self.get_all_pads()
         existing_mh_numbers = {p.get("number") for p in existing_pads if p.get("number")}
@@ -301,14 +377,17 @@ class EasyEDAClient:
         for h in holes_config:
             hid = h.get("id", "MH")
             if hid not in existing_mh_numbers:
-                x_mil = h.get("x_mil", 0.0)
-                y_mil = h.get("y_mil", 0.0)
-                hole_dia = h.get("hole_diameter_mil", 86.6)
-                pad_dia = h.get("head_clearance_mil", 177.2)
-                net = h.get("net", "")
+                x_mil = h.get("x_mil", h.get("x_mm", 0.0) * 39.37007874)
+                y_mil = h.get("y_mil", h.get("y_mm", 0.0) * 39.37007874)
+                hole_dia = h.get("hole_diameter_mil", h.get("drill_mm", 2.2) * 39.37007874)
+                pad_dia = h.get("head_clearance_mil", h.get("pad_mm", 4.5) * 39.37007874)
+                net = h.get("net", "GND")
+                logger.info(f"Instanciation trou de fixation {hid} ({x_mil:.1f}, {y_mil:.1f}) mil, net={net}...")
                 ok = self.create_mounting_hole(x_mil, y_mil, hole_dia_mil=hole_dia, pad_dia_mil=pad_dia, pad_number=hid, net=net)
                 if not ok:
                     all_ok = False
+            else:
+                logger.info(f"Trou de fixation {hid} déjà présent sur le PCB.")
         return all_ok
 
     def sync_schematic_to_pcb(self, sch_uuid: Optional[str] = None, auto_confirm: bool = True) -> Dict[str, Any]:
@@ -723,6 +802,50 @@ class EasyEDAClient:
         }}
         """
         return bool(self.execute_js(code))
+
+    def set_copper_layers(self, num_layers: int = 4) -> bool:
+        """Configure le nombre de couches de cuivre dans le document PCB actif."""
+        code = f"""
+        try {{
+            return await eda.pcb_Layer.setTheNumberOfCopperLayers({num_layers});
+        }} catch(e) {{
+            return false;
+        }}
+        """
+        try:
+            return bool(self.execute_js(code))
+        except Exception:
+            return False
+
+    def run_erc(self) -> Dict[str, Any]:
+        """
+        Exécute le contrôle ERC (Electrical Rules Check / Schematic DRC) sous EasyEDA Pro.
+        Bascule temporairement sur la première feuille de schéma si un document PCB est actif,
+        exécute eda.sch_Drc.check(true, false, true), puis revient au document initial.
+        """
+        code = """
+        try {
+            const currentDoc = await eda.dmt_SelectControl.getCurrentDocumentInfo();
+            const schInfo = await eda.dmt_Schematic.getAllSchematicPagesInfo();
+            let drcErrors = [];
+            if (schInfo && schInfo.length) {
+                await eda.dmt_EditorControl.openDocument(schInfo[0].uuid);
+                await new Promise(r => setTimeout(r, 400));
+                drcErrors = (await eda.sch_Drc.check(true, false, true)) || [];
+                if (currentDoc && currentDoc.uuid) {
+                    await eda.dmt_EditorControl.openDocument(currentDoc.uuid);
+                }
+            }
+            return {
+                success: Array.isArray(drcErrors) && drcErrors.length === 0,
+                errorCount: Array.isArray(drcErrors) ? drcErrors.length : 0,
+                errors: drcErrors
+            };
+        } catch(e) {
+            return { success: false, error: e.message, errorCount: -1, errors: [] };
+        }
+        """
+        return self.execute_js(code) or {"success": False, "errorCount": -1, "errors": []}
 
     def run_drc(self) -> Dict[str, Any]:
         """Déclenche le véritable contrôle DRC sous EasyEDA Pro et retourne le bilan d'erreurs exact et détaillé."""
