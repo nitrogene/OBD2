@@ -10,6 +10,7 @@
     "version": { "type": "string" },
     "pcb_manifest": { "type": "string" },
     "schema_semantics": { "type": "string" },
+    "fabricator_profile": { "type": "string" },
     "frame": {
       "type": "object",
       "properties": {

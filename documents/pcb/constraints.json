@@ -4,6 +4,7 @@
   "version": "2.0.0",
   "pcb_manifest": "./manifest.json",
   "schema_semantics": "../schema/semantics.json",
+  "fabricator_profile": "../../.agents/skills/pcb-dfm/config/rules_jlcpcb.json",
   "frame": {
     "unit": "mm",
     "origin": "bottom_left",

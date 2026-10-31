@@ -32,7 +32,7 @@ This section is organized **strictly in chronological execution order**, from ra
 
 ### Step 1: Data Modeling & Dynamic Manifest
 - [x] **[BLOCKING] Dynamic Manifest Builder (`manifest_builder.py`):** Extract synchronized components from EasyEDA Pro (`getState_BBox()`, centroids, pads) and cross-reference with `semantics.json` (functional roles, decoupling, critical loops) and `constraints.json` (`anchors`, keepouts) to synthesize `manifest.json` automatically, eliminating manual maintenance.
-- [ ] **[IMPORTANT] Fabricator Profile (`rules_jlcpcb.json`) vs Project Constraints (`constraints.json`) Separation:** Move factory constants (DFM rules, tolerances, JLC2313 stackup) into `.agents/skills/pcb-dfm/config/rules_jlcpcb.json`, keeping `constraints.json` dedicated to board-specific constraints (anchors, outline dimensions, net classes).
+- [x] **[IMPORTANT] Fabricator Profile (`rules_jlcpcb.json`) vs Project Constraints (`constraints.json`) Separation:** Move factory constants (DFM rules, tolerances, JLC2313 stackup) into `.agents/skills/pcb-dfm/config/rules_jlcpcb.json`, keeping `constraints.json` dedicated to board-specific constraints (anchors, outline dimensions, net classes).
 
 ### Step 2: Placement under EMC Constraints & HF Decoupling
 - [x] **Initial Placement Validated:** 85 components placed without overlap (70 physical + 15 test point pads), immediate decoupling < 2 mm, and compact Buck switching loop ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
