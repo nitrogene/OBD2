@@ -184,6 +184,18 @@ class PcbDfmAuditor:
             is_thermal_pad = p["width_mm"] > 2.0 and p["height_mm"] > 2.0
 
             for v in vias:
+                # Vérifier si le via est sous tente de vernis (tented / bouché) sur la couche de la pastille
+                v_exp = v.get("solderMaskExpansion") or {}
+                is_tented = False
+                if p["layer"] == 1 and v_exp.get("topSolderMask") is not None and v_exp.get("topSolderMask") < 0:
+                    is_tented = True
+                elif p["layer"] == 2 and v_exp.get("bottomSolderMask") is not None and v_exp.get("bottomSolderMask") < 0:
+                    is_tented = True
+
+                if is_tented:
+                    # Un via sous tente intégrale (tented) est protégé du siphonnage d'étain (solder wicking)
+                    continue
+
                 dx = abs(p["x_mm"] - v["x_mm"])
                 dy = abs(p["y_mm"] - v["y_mm"])
                 dist_center = math.hypot(dx, dy)
@@ -261,8 +273,14 @@ class PcbDfmAuditor:
             est_height = s["height_mm"]
             silk_radius = math.hypot(est_width / 2.0, est_height / 2.0)
 
-            # Dégagement face aux pastilles de cuivre
+            # Dégagement face aux pastilles de cuivre sur la même face (ou traversantes)
+            s_lay = s.get("layer", 3)
+            target_cu_layer = 1 if s_lay == 3 else (2 if s_lay == 4 else None)
+
             for p in pads:
+                if target_cu_layer is not None and p["layer"] != 12 and p["layer"] != target_cu_layer:
+                    continue
+
                 dist = math.hypot(s["x_mm"] - p["x_mm"], s["y_mm"] - p["y_mm"])
                 pad_r = max(p["width_mm"], p["height_mm"]) / 2.0
                 clearance = dist - (silk_radius + pad_r)

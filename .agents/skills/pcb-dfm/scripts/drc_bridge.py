@@ -109,6 +109,16 @@ class EasyEdaBridgeClient:
                 height = typeof padGeom[2] === 'number' ? padGeom[2] : width;
             }
 
+            let finalWidth = width;
+            let finalHeight = height;
+            if (shape !== 'POLYGON') {
+                const normRot = Math.abs(Math.round((p.rotation || 0) / 90) % 2);
+                if (normRot === 1) {
+                    finalWidth = height;
+                    finalHeight = width;
+                }
+            }
+
             let holeShape = 'NONE';
             let holeDia = 0;
             if (Array.isArray(holeGeom) && holeGeom.length > 0) {
@@ -125,8 +135,8 @@ class EasyEdaBridgeClient:
                 y: p.y || 0,
                 rotation: p.rotation || 0,
                 shape: shape,
-                width: width,
-                height: height,
+                width: finalWidth,
+                height: finalHeight,
                 holeShape: holeShape,
                 holeDiameter: holeDia,
                 metallization: !!p.metallization,
@@ -232,7 +242,8 @@ class EasyEdaBridgeClient:
                 "y_mm": round(v["y"] * MIL_TO_MM, 4),
                 "diameter_mm": round(v["diameter"] * MIL_TO_MM, 4),
                 "holeDiameter_mm": round(v["holeDiameter"] * MIL_TO_MM, 4),
-                "annularRing_mm": round((v["diameter"] - v["holeDiameter"]) / 2.0 * MIL_TO_MM, 4)
+                "annularRing_mm": round((v["diameter"] - v["holeDiameter"]) / 2.0 * MIL_TO_MM, 4),
+                "solderMaskExpansion": v.get("solderMaskExpansion")
             })
 
         normalized_comps = []

@@ -50,9 +50,9 @@ This section is organized **strictly in chronological execution order**, from ra
 - [x] **Closed-Loop Silkscreen Validated:** `silkscreen_feedback_loop.py` engine and `export_pcb_images.py` fully operational (0 out-of-bounds, 0 via drill collisions, 0 pad conflicts across 25 bottom-layer primitives, automated export of `2d-top.png`, `2d-bottom.png`, `3d.png`, `pcb.png`).
 
 ### Step 6: DFM Audit & Physical Board Finish (JLCPCB)
-- [ ] **Fine-Pitch Solder Mask Dams (*Soldermask Bridge* >= 0.10 mm):** Reduce solder mask expansion from 0.05 mm to 0.025 mm (1 mil) on dense ICs (USB-C connector `J2` and ESP32-S3 `U1`) to preserve physical solder mask dams >= 0.10 mm (JLCPCB green mask standard capability) and eliminate gang-mask shorting risks.
-- [ ] **Via Protection & Offsetting (*Via to Pad / Tenting*):** Offset stitching and fanout vias that are in direct contact with SMD pads by adding dog-bone necks >= 0.15–0.20 mm, and enforce 100% via tenting on Top and Bottom layers to eliminate 50 solder wicking alerts.
-- [ ] **Silkscreen Stroke Width:** Increase text and border stroke widths to 0.18–0.20 mm (notably in [`documents/pcb/silkscreen.json`](documents/pcb/silkscreen.json) and EasyEDA) to guarantee crisp silkscreen contrast against the 0.15 mm DFM alert threshold.
+- [x] **Fine-Pitch Solder Mask Dams (*Soldermask Bridge* >= 0.10 mm):** Reduce solder mask expansion from 0.05 mm to 0.025 mm (1 mil) on dense ICs (USB-C connector `J2` and ESP32-S3 `U1`) to preserve physical solder mask dams >= 0.10 mm (JLCPCB green mask standard capability) and eliminate gang-mask shorting risks.
+- [x] **Via Protection & Offsetting (*Via to Pad / Tenting*):** Offset stitching and fanout vias that are in direct contact with SMD pads by adding dog-bone necks >= 0.15–0.20 mm, and enforce 100% via tenting on Top and Bottom layers to eliminate 50 solder wicking alerts.
+- [x] **Silkscreen Stroke Width:** Increase text and border stroke widths to 0.18–0.20 mm (notably in [`documents/pcb/silkscreen.json`](documents/pcb/silkscreen.json) and EasyEDA) to guarantee crisp silkscreen contrast against the 0.15 mm DFM alert threshold.
 
 ### Step 7: Turnkey Production Packaging & 3D Assembly
 - [ ] **[BLOCKING] Automated Manufacturing Deliverables Chaining:** Automatically chain at the end of `synthesizer_pipeline.py` (once `DRC == 0`):

@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "defaults": {
     "font_size_mm": 1.0,
-    "stroke_width_mm": 0.15,
+    "stroke_width_mm": 0.18,
     "clearance_to_pads_mm": 0.25
   },
   "top": {
@@ -60,13 +60,13 @@
       {
         "component": "H1",
         "position": "below",
-        "offset_mm": 3.8,
+        "offset_mm": 5.2,
         "text": "KLINE"
       },
       {
         "component": "H2",
         "position": "below",
-        "offset_mm": 3.8,
+        "offset_mm": 5.2,
         "text": "CAN"
       },
       {
@@ -78,7 +78,7 @@
       {
         "component": "JP1",
         "position": "right",
-        "offset_mm": 5.7,
+        "offset_mm": 6.8,
         "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER"
       },
       {
