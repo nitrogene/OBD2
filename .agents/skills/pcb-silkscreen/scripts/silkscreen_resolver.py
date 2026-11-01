@@ -173,8 +173,15 @@ class SilkscreenResolver:
                 pad_x = cx + (dx_0 * cos_r - dy_0 * sin_r)
                 pad_y = cy + (dx_0 * sin_r + dy_0 * cos_r)
 
-                # Vecteur de décalage selon le côté demandé
-                if side == "outside":
+                # Vecteur de décalage selon configuration relative ou côté demandé
+                pin_offsets = item.get("offsets_mm", {})
+                if str(pin_num) in pin_offsets:
+                    poff = pin_offsets[str(pin_num)]
+                    off_x, off_y = float(poff[0]), float(poff[1])
+                elif "relative_offset_mm" in item:
+                    rel = item["relative_offset_mm"]
+                    off_x, off_y = float(rel[0]), float(rel[1])
+                elif side == "outside":
                     # Pointeur vectoriel s'éloignant du centre de la carte
                     vx = pad_x - (self.board_w / 2.0)
                     vy = pad_y - (self.board_h / 2.0)
@@ -239,9 +246,15 @@ class SilkscreenResolver:
 
             lines = raw_text.split("\n")
             line_height = font_size * 1.3
+            rot_deg = float(item.get("rotation", 0.0))
 
-            # Décalage de base selon la position
-            if pos_side == "below":
+            # Décalage relatif 2D explicite (prioritaire si défini suite à un pull manuel)
+            if "relative_offset_mm" in item:
+                rel = item["relative_offset_mm"]
+                base_x = cx + float(rel[0])
+                base_y = cy + float(rel[1])
+                step_y = -line_height
+            elif pos_side == "below":
                 base_x = cx
                 base_y = cy - offset_mm
                 step_y = -line_height
@@ -279,7 +292,7 @@ class SilkscreenResolver:
                     font_size_mil=round(font_size * MM_TO_MIL, 1),
                     stroke_width_mm=self.default_stroke,
                     stroke_width_mil=round(self.default_stroke * MM_TO_MIL, 1),
-                    rotation=0.0,
+                    rotation=rot_deg,
                     mirror=mirror,
                     align_mode="CENTER",
                     target_ref=ref
@@ -365,14 +378,33 @@ class SilkscreenResolver:
 
         return primitives
 
-    def resolve_all(self) -> List[ResolvedTextPrimitive]:
-        """Résout l'ensemble des primitives de sérigraphie (Top & Bottom)."""
+    def resolve_all(self, strict_bounds: bool = True) -> List[ResolvedTextPrimitive]:
+        """Résout l'ensemble des primitives de sérigraphie (Top & Bottom) et certifie le confinement dans le PCB."""
         all_prims: List[ResolvedTextPrimitive] = []
         for lk in ["top", "bottom"]:
             all_prims.extend(self.resolve_pin_labels(lk))
             all_prims.extend(self.resolve_component_legends(lk))
             all_prims.extend(self.resolve_title_blocks(lk))
-        return all_prims
+
+        # Validation géométrique stricte de confinement dans les limites physiques de la carte
+        margin_mm = 0.5
+        min_x, max_x = margin_mm, self.board_w - margin_mm
+        min_y, max_y = margin_mm, self.board_h - margin_mm
+
+        validated_prims: List[ResolvedTextPrimitive] = []
+        for p in all_prims:
+            if not (min_x <= p.x_mm <= max_x and min_y <= p.y_mm <= max_y):
+                err = (
+                    f"VIOLATION CONTOUR SÉRIGRAPHIE : Le texte '{p.text}' "
+                    f"(associé à {p.target_ref or 'GLOBAL'}) est hors limites physiques du PCB ! "
+                    f"Coordonnées: ({p.x_mm:.2f}, {p.y_mm:.2f}) mm, limites autorisées: [{min_x:.1f}..{max_x:.1f}, {min_y:.1f}..{max_y:.1f}] mm."
+                )
+                logger.error(f"❌ {err}")
+                if strict_bounds:
+                    raise ValueError(err)
+            validated_prims.append(p)
+
+        return validated_prims
 
 
 def main():

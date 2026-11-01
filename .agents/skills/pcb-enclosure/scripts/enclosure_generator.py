@@ -17,7 +17,7 @@ import logging
 import math
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import build123d as bd
 
@@ -28,9 +28,17 @@ logger = logging.getLogger("PCBEnclosure")
 class EnclosureGenerator:
     """Générateur de boîtier mécanique 3D paramétrique basé sur OpenCASCADE / build123d."""
 
-    def __init__(self, constraints: Dict[str, Any], enclosure_cfg: Dict[str, Any]):
+    def __init__(
+        self,
+        constraints: Dict[str, Any],
+        enclosure_cfg: Dict[str, Any],
+        placement_cfg: Optional[Dict[str, Any]] = None,
+        semantics_cfg: Optional[Dict[str, Any]] = None
+    ):
         self.constraints = constraints
         self.cfg = enclosure_cfg
+        self.placement = placement_cfg.get("components", {}) if placement_cfg and "components" in placement_cfg else (placement_cfg or {})
+        self.semantics = semantics_cfg or {}
 
         # 1. Extraction des dimensions du PCB
         board = constraints.get("board", {})
@@ -267,13 +275,72 @@ class EnclosureGenerator:
         return p.part
 
     def _apply_cutouts(self, shell: bd.Solid, is_bottom: bool) -> bd.Solid:
-        """Applique les perçages et découpes d'interface selon la face et le plan de joint."""
-        cutouts = self.cfg.get("cutouts", [])
-        for c in cutouts:
+        """Applique les perçages et découpes d'interface déduits des composants ou déclarés."""
+        cutouts_to_apply = []
+        handled_comps = set()
+
+        # 1. Déduction automatique depuis les attributs 'mechanical.cutout' de semantics.json
+        if self.semantics:
+            comps = self.semantics.get("components", {})
+            for des, c_info in comps.items():
+                mech = c_info.get("mechanical", {})
+                cutout_def = mech.get("cutout")
+                if cutout_def:
+                    face = cutout_def.get("face", "top")
+                    shape = cutout_def.get("shape", "circle")
+                    c_id = f"semantic_{des.lower()}"
+                    desc = cutout_def.get("purpose", f"Découpe mécanique pour {des}")
+
+                    if shape == "circle":
+                        dia = float(cutout_def.get("diameter_mm", 3.0))
+                        dims = [dia]
+                    else:
+                        dims = cutout_def.get("dimensions_mm", [5.0, 5.0])
+
+                    pos = [0.0, 0.0, float(cutout_def.get("z_offset_mm", 0.0))]
+                    if des in self.placement:
+                        p_info = self.placement[des]
+                        pos[0] = float(p_info.get("x_mm", 0.0))
+                        pos[1] = float(p_info.get("y_mm", 0.0))
+
+                    entry = {
+                        "id": c_id,
+                        "component": des,
+                        "description": desc,
+                        "face": face,
+                        "shape": shape,
+                        "position_mm": pos,
+                        "dimensions_mm": dims
+                    }
+                    if "corner_radius_mm" in cutout_def:
+                        entry["corner_radius_mm"] = float(cutout_def["corner_radius_mm"])
+                    cutouts_to_apply.append(entry)
+                    handled_comps.add(des)
+                    logger.info(f"🧩 Découpe déduite du composant {des} ({face}) : {dims} à ({pos[0]:.2f}, {pos[1]:.2f}) mm")
+
+        # 2. Ajout des découpes explicites de enclosure.json (non déjà inférées)
+        cfg_cutouts = self.cfg.get("cutouts", [])
+        for c in cfg_cutouts:
+            comp = c.get("component")
+            if comp and comp in handled_comps:
+                continue
+            cutouts_to_apply.append(c)
+
+        # 3. Application géométrique des découpes
+        for c in cutouts_to_apply:
             cid = c.get("id", "")
             face = c.get("face", "")
             shape = c.get("shape", "rectangle")
-            pos = c.get("position_mm", [0.0, 0.0, 0.0])
+            pos = list(c.get("position_mm", [0.0, 0.0, 0.0]))
+
+            # Résolution dynamique automatique si un composant cible est spécifié
+            target_comp = c.get("component")
+            if target_comp and target_comp in self.placement and target_comp not in handled_comps:
+                c_info = self.placement[target_comp]
+                pos[0] = float(c_info.get("x_mm", pos[0]))
+                pos[1] = float(c_info.get("y_mm", pos[1]))
+                logger.info(f"   [Cutout {cid}] Position alignée dynamiquement sur {target_comp} : ({pos[0]:.2f}, {pos[1]:.2f}) mm")
+
             dims = c.get("dimensions_mm", [5.0, 5.0])
             px = float(pos[0])
             py = float(pos[1])
@@ -319,11 +386,16 @@ def main():
     parser = argparse.ArgumentParser(description="Générateur de Boîtier 3D Paramétrique OpenCASCADE pour PCB")
     parser.add_argument("--constraints", default="documents/pcb/constraints.json", help="Chemin vers constraints.json")
     parser.add_argument("--enclosure", default="documents/pcb/enclosure.json", help="Chemin vers enclosure.json")
+    parser.add_argument("--semantics", default="documents/schema/semantics.json", help="Chemin vers semantics.json")
+    parser.add_argument("--pcba-step", default="documents/production/OBD2_PCBA.step", help="Chemin vers le solide STEP de la PCBA garnie")
+    parser.add_argument("--placement", default=".agents/skills/pcb-synthesizer/.cache/candidate_placement.json", help="Chemin vers candidate_placement.json")
     parser.add_argument("--output-dir", default="documents/enclosure", help="Répertoire d'export des STEP et STL")
     args = parser.parse_args()
 
     constraints_file = Path(args.constraints).resolve()
     enclosure_file = Path(args.enclosure).resolve()
+    semantics_file = Path(args.semantics).resolve() if args.semantics else None
+    placement_file = Path(args.placement).resolve() if args.placement else None
     out_dir = Path(args.output_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -339,7 +411,17 @@ def main():
     with open(enclosure_file, "r", encoding="utf-8") as f:
         enclosure_data = json.load(f)
 
-    gen = EnclosureGenerator(constraints_data, enclosure_data)
+    semantics_data = None
+    if semantics_file and semantics_file.exists():
+        with open(semantics_file, "r", encoding="utf-8") as f:
+            semantics_data = json.load(f)
+
+    placement_data = None
+    if placement_file and placement_file.exists():
+        with open(placement_file, "r", encoding="utf-8") as f:
+            placement_data = json.load(f)
+
+    gen = EnclosureGenerator(constraints_data, enclosure_data, placement_data, semantics_data)
 
     # 1. Génération des pièces avec labels et couleurs distinctes
     bottom_shell = gen.build_bottom_shell()
@@ -366,21 +448,52 @@ def main():
     bd.export_step(top_shell, str(out_dir / "enclosure_top.step"))
     bd.export_step(cable_clamp, str(out_dir / "enclosure_clamp.step"))
 
-    # 3. Assemblage complet fermé (Bottom + PCB + Clamp + Top fermé)
-    # L'export est réalisé immédiatement pour préserver la hiérarchie parent-enfant dans l'arborescence STEP.
+    # 3. Traitement prioritaire de la PCBA réelle peuplée (si disponible)
+    pcba_step_path = Path(args.pcba_step).resolve() if args.pcba_step else None
+    pcba_imported = None
+    if pcba_step_path and pcba_step_path.exists():
+        logger.info(f"🔍 Chargement de la PCBA garnie pour vérification d'interférence 3D : {pcba_step_path.name}")
+        pcba_imported = bd.import_step(str(pcba_step_path))
+        pcba_imported.label = "PCBA_Peuplee"
+
+        # Export d'un maillage STL dédié de la PCBA seule pour le visualiseur 3D GitHub
+        pcba_stl_path = out_dir / "pcba.stl"
+        logger.info(f"💾 Export du maillage 3D STL de la PCBA seule pour GitHub : {pcba_stl_path.name}...")
+        bd.export_stl(pcba_imported, str(pcba_stl_path), tolerance=0.08, angular_tolerance=0.35)
+
+        # Audit métrologique de la boîte englobante
+        bb_pcba = pcba_imported.bounding_box()
+        logger.info(f"   -> Bounding Box PCBA : X=[{bb_pcba.min.X:.2f}, {bb_pcba.max.X:.2f}], Y=[{bb_pcba.min.Y:.2f}, {bb_pcba.max.Y:.2f}], Z=[{bb_pcba.min.Z:.2f}, {bb_pcba.max.Z:.2f}]")
+
+        # Dégagement vertical face au plafond intérieur du boîtier
+        ceiling_clearance = gen.z_top_inner - bb_pcba.max.Z
+        logger.info(f"   -> Plafond intérieur boîtier (Z={gen.z_top_inner:.2f} mm), composant le plus haut (Z={bb_pcba.max.Z:.2f} mm)")
+        logger.info(f"   -> Dégagement vertical libre : {ceiling_clearance:.2f} mm")
+        if ceiling_clearance < 0:
+            logger.warning(f"⚠️ AVERTISSEMENT : Collision détectée au plafond (+{abs(ceiling_clearance):.2f} mm) !")
+        else:
+            logger.info(f"✅ Dégagement vertical 100% conforme ({ceiling_clearance:.2f} mm > 0).")
+
+    # 4. Assemblage complet fermé (Bottom + PCB + Clamp + Top fermé)
     clamp_located = cable_clamp.locate(bd.Location((4.0, 17.78, gen.z_pcb_top + 1.5)))
     clamp_located.label = "Bride_Serre_Cable"
     clamp_located.color = bd.Color(0.85, 0.45, 0.1)
 
+    board_for_assembly = pcba_imported if pcba_imported else pcb_solid
     full_assembly = bd.Compound(
-        children=[bottom_shell, pcb_solid, clamp_located, top_shell],
+        children=[bottom_shell, board_for_assembly, clamp_located, top_shell],
         label="Assemblage_Ferme"
     )
     logger.info("💾 Export de l'assemblage complet fermé (STEP & STL)...")
     bd.export_step(full_assembly, str(out_dir / "enclosure_full_assembly.step"))
-    bd.export_stl(full_assembly, str(out_dir / "enclosure_assembly.stl"), tolerance=0.02, angular_tolerance=0.15)
+    bd.export_stl(full_assembly, str(out_dir / "enclosure_assembly.stl"), tolerance=0.03, angular_tolerance=0.20)
 
-    # 4. Assemblage en vue éclatée (Couvercle surélevé de +30 mm, bride de +12 mm)
+    if pcba_imported:
+        full_pcba_path = out_dir / "enclosure_pcba_full.step"
+        logger.info(f"💾 Export de l'assemblage complet PCBA + Boîtier : {full_pcba_path.name}...")
+        bd.export_step(full_assembly, str(full_pcba_path))
+
+    # 5. Assemblage en vue éclatée avec PCBA réelle (Couvercle surélevé de +30 mm, bride de +12 mm)
     top_exploded = top_shell.locate(bd.Location((0, 0, 30.0)))
     top_exploded.label = "Boitier_Superieur"
     top_exploded.color = bd.Color(0.35, 0.35, 0.35)
@@ -390,12 +503,12 @@ def main():
     clamp_exploded.color = bd.Color(0.85, 0.45, 0.1)
 
     exploded_assembly = bd.Compound(
-        children=[bottom_shell, pcb_solid, clamp_exploded, top_exploded],
+        children=[bottom_shell, board_for_assembly, clamp_exploded, top_exploded],
         label="Vue_Eclatee"
     )
-    logger.info("💾 Export de la vue éclatée (STEP & STL)...")
+    logger.info("💾 Export de la vue éclatée avec PCBA réelle (STEP & STL)...")
     bd.export_step(exploded_assembly, str(out_dir / "enclosure_exploded.step"))
-    bd.export_stl(exploded_assembly, str(out_dir / "enclosure_exploded.stl"), tolerance=0.02, angular_tolerance=0.15)
+    bd.export_stl(exploded_assembly, str(out_dir / "enclosure_exploded.stl"), tolerance=0.05, angular_tolerance=0.25)
 
     logger.info(f"✅ Génération terminée avec succès dans : {out_dir}")
     for item in out_dir.glob("*.*"):

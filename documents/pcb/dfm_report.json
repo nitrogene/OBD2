@@ -1,17 +1,123 @@
 {
-  "timestamp": "2026-10-31T22:17:52.908130",
+  "timestamp": "2026-11-01T08:57:40.569727",
   "verdict": "PASSED_WITH_WARNINGS",
   "summary": {
-    "total_violations": 3,
+    "total_violations": 10,
     "danger_count": 0,
-    "warning_count": 1,
+    "warning_count": 8,
     "info_count": 2
   },
   "pcb_dfm": {
     "passed": true,
     "danger_count": 0,
-    "warning_count": 0,
-    "violations": []
+    "warning_count": 7,
+    "violations": [
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B8' et 'A5' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae27",
+          "bdbead5cc7fc4f6ae28"
+        ],
+        "coordinates": {
+          "x_mm": 39.14,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A5' et 'B7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae28",
+          "bdbead5cc7fc4f6ae29"
+        ],
+        "coordinates": {
+          "x_mm": 39.641,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B7' et 'A6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae29",
+          "bdbead5cc7fc4f6ae30"
+        ],
+        "coordinates": {
+          "x_mm": 40.141,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.096 mm < 0.10 mm) entre pastilles 'A6' et 'A7' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.096,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae30",
+          "bdbead5cc7fc4f6ae31"
+        ],
+        "coordinates": {
+          "x_mm": 40.64,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A7' et 'B6' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae31",
+          "bdbead5cc7fc4f6ae32"
+        ],
+        "coordinates": {
+          "x_mm": 41.139,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'B6' et 'A8' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae32",
+          "bdbead5cc7fc4f6ae33"
+        ],
+        "coordinates": {
+          "x_mm": 41.639,
+          "y_mm": 6.284
+        }
+      },
+      {
+        "category": "PCB_DFM_SOLDERMASK_BRIDGE",
+        "severity": "WARNING",
+        "description": "Pont de vernis épargne insuffisant (0.099 mm < 0.10 mm) entre pastilles 'A8' et 'B5' (layer 1). Risque d'arrachement de vernis / gang mask.",
+        "actual_value_mm": 0.099,
+        "threshold_mm": 0.1,
+        "elements": [
+          "bdbead5cc7fc4f6ae33",
+          "bdbead5cc7fc4f6ae34"
+        ],
+        "coordinates": {
+          "x_mm": 42.14,
+          "y_mm": 6.284
+        }
+      }
+    ]
   },
   "smt_dfm": {
     "passed": true,

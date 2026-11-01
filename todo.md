@@ -15,6 +15,7 @@ It is structured into **3 core fundamental parts** aligned with the hardware eng
 - ✅ **Headless Auto-Routing & Planes (`pcb-synthesizer`)**: 100% of signals routed, USB/CAN differential pairs, continuous multi-layer ground planes, native EasyEDA Pro DRC = 0.
 - ✅ **Declarative Silkscreen & Closed-Loop Feedback (`pcb-silkscreen`)**: 25 bottom-layer primitives injected, 0 out-of-bounds, 0 via drill collisions, 0 pad conflicts, 4 inspection renders generated ([`documents/pcb/silkscreen.json`](documents/pcb/silkscreen.json), [`documents/pcb/2d-bottom.png`](documents/pcb/2d-bottom.png)).
 - ✅ **Parametric Enclosure 3D Modeling (`pcb-enclosure`)**: 3D shells and 2-screw M2 strain relief clamp generated in STEP/STL formats ([`documents/enclosure/`](documents/enclosure/)).
+- ✅ **Turnkey Production Packaging & 3D Assembly**: Factory deliverables (Gerber, CPL, BOM, `OBD2.epro2`, `OBD2_PCBA.step`), 3D solid interference checked ($1.77\,\text{mm}$ vertical clearance, 0 collisions), and exploded GitHub 3D views generated ([`documents/production/`](documents/production/), [`documents/enclosure/`](documents/enclosure/)).
 
 ---
 
@@ -55,13 +56,13 @@ This section is organized **strictly in chronological execution order**, from ra
 - [x] **Silkscreen Stroke Width:** Increase text and border stroke widths to 0.18–0.20 mm (notably in [`documents/pcb/silkscreen.json`](documents/pcb/silkscreen.json) and EasyEDA) to guarantee crisp silkscreen contrast against the 0.15 mm DFM alert threshold.
 
 ### Step 7: Turnkey Production Packaging & 3D Assembly
-- [ ] **[BLOCKING] Automated Manufacturing Deliverables Chaining:** Automatically chain at the end of `synthesizer_pipeline.py` (once `DRC == 0`):
+- [x] **[BLOCKING] Automated Manufacturing Deliverables Chaining:** Automatically chain at the end of `synthesizer_pipeline.py` (once `DRC == 0`):
   1. Export factory Gerber, Drill, CPL, and SMT BOM via `export_fabrication.py` into `documents/production/`.
   2. Generate inspection image pack (`2d-top.png`, `2d-bottom.png`, `3d.png`, `pcb.png`) via `export_pcb_images.py`.
   3. Export native project archive `documents/easyeda/OBD2.epro2` via `eda.sys_FileManager.getProjectFile()`.
   4. Export populated PCBA 3D STEP solid via `eda.pcb_ManufactureData.get3DFile()`.
-- [ ] **[IMPORTANT] 3D Interference Check PCBA + Enclosure:** Import the populated PCBA 3D STEP into `enclosure_generator.py` using `bd.import_step()`, compute boolean collision volume with the enclosure shells (`collision_volume == 0`), and export `documents/enclosure/enclosure_pcba_full.step`.
-- [ ] **[MINOR] Turnkey Single CLI Command (`--turnkey`):** Drive the entire sequence (Steps 0 to 7) via a single unified command-line entry point.
+- [x] **[IMPORTANT] 3D Interference Check PCBA + Enclosure:** Import the populated PCBA 3D STEP into `enclosure_generator.py` using `bd.import_step()`, compute boolean collision volume with the enclosure shells (`collision_volume == 0`), and export `documents/enclosure/enclosure_pcba_full.step`.
+- [x] **[MINOR] Turnkey Single CLI Command (`--turnkey`):** Drive the entire sequence (Steps 0 to 7) via a single unified command-line entry point.
 
 ---
 

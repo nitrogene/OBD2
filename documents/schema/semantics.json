@@ -615,6 +615,14 @@
       "substitutability": "locked",
       "constraints": {
         "mechanical": true
+      },
+      "mechanical": {
+        "cutout": {
+          "face": "left",
+          "shape": "circle",
+          "diameter_mm": 6.8,
+          "purpose": "obd2_axial_cable_exit"
+        }
       }
     },
     "J2": {
@@ -626,6 +634,19 @@
       "substitutability": "locked",
       "constraints": {
         "mechanical": true
+      },
+      "mechanical": {
+        "cutout": {
+          "face": "front",
+          "shape": "rounded_rectangle",
+          "dimensions_mm": [
+            10.2,
+            4.2
+          ],
+          "corner_radius_mm": 1.5,
+          "z_offset_mm": 0.0,
+          "purpose": "usbc_plug_access"
+        }
       }
     },
     "JP1": {
@@ -676,6 +697,14 @@
         "vf_typ_v": 2.0,
         "lcsc_part": "C2286",
         "footprint": "0603"
+      },
+      "mechanical": {
+        "cutout": {
+          "face": "top",
+          "shape": "circle",
+          "diameter_mm": 2.0,
+          "purpose": "status_light_pipe"
+        }
       }
     },
     "Q1": {
@@ -1060,6 +1089,14 @@
       "substitutability": "direct_1to1",
       "constraints": {
         "mechanical": true
+      },
+      "mechanical": {
+        "cutout": {
+          "face": "top",
+          "shape": "circle",
+          "diameter_mm": 3.0,
+          "purpose": "pinhole_reset_access"
+        }
       }
     },
     "TP1": {

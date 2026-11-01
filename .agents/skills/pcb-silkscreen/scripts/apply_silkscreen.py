@@ -69,6 +69,36 @@ class EasyEDASilkscreenClient:
         except urllib.error.URLError as e:
             raise ConnectionError(f"Impossible de joindre le pont EasyEDA sur http://localhost:{self.port} : {e}")
 
+    def get_live_components(self) -> Dict[str, Dict[str, Any]]:
+        """Extrait les positions et rotations exactes et à jour des composants dans le document PCB EasyEDA Pro."""
+        code = """
+        const comps = await eda.pcb_PrimitiveComponent.getAll() || [];
+        const result = {};
+        for (const c of comps) {
+            const des = c.getState_Designator ? c.getState_Designator() : '';
+            const x = c.getState_X ? c.getState_X() : 0;
+            const y = c.getState_Y ? c.getState_Y() : 0;
+            const rot = c.getState_Rotation ? c.getState_Rotation() : 0;
+            const lay = c.getState_Layer ? c.getState_Layer() : 1;
+            if (des) {
+                result[des] = {
+                    x_mm: Number((x * 0.0254).toFixed(4)),
+                    y_mm: Number((y * 0.0254).toFixed(4)),
+                    rotation: Number(rot),
+                    layer: Number(lay)
+                };
+            }
+        }
+        return result;
+        """
+        try:
+            res = self.execute_js(code)
+            if isinstance(res, dict) and res:
+                return res
+        except Exception as e:
+            logger.warning(f"⚠️ Lecture des composants live depuis EasyEDA impossible: {e}")
+        return {}
+
     def purge_previous_silkscreen(self, previous_ids: List[str], known_texts: List[str]) -> int:
         """Supprime proprement les anciens textes créés par le skill sans toucher aux désignateurs."""
         logger.info(f"🧹 Purge idempotente : vérification de {len(previous_ids)} IDs enregistrés...")
@@ -206,13 +236,33 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Résout sans injecter dans EasyEDA Pro")
     args = parser.parse_args()
 
-    # 1. Résolution géométrique
+    # 1. Résolution géométrique et synchronisation live
     with open(args.silkscreen, "r", encoding="utf-8") as f:
         silk_data = json.load(f)
     with open(args.constraints, "r", encoding="utf-8") as f:
         constraints_data = json.load(f)
     with open(args.placement, "r", encoding="utf-8") as f:
         placement_data = json.load(f)
+
+    # Initialisation du client EasyEDA
+    client = EasyEDASilkscreenClient(port=args.port)
+
+    # Synchronisation prioritaire avec le document PCB ouvert dans EasyEDA Pro
+    if not args.dry_run:
+        try:
+            live_comps = client.get_live_components()
+            if live_comps:
+                logger.info(f"🔄 Synchronisation dynamique : {len(live_comps)} composants réels extraits d'EasyEDA Pro.")
+                comps_dict = placement_data.setdefault("components", {}) if "components" in placement_data else placement_data
+                comps_dict.update(live_comps)
+                # Mise à jour du cache de placement pour cohérence globale
+                try:
+                    with open(args.placement, "w", encoding="utf-8") as pf:
+                        json.dump(placement_data, pf, indent=2)
+                except Exception:
+                    pass
+        except Exception as e:
+            logger.warning(f"⚠️ Synchronisation dynamique EasyEDA ignorée : {e}")
 
     manifest_data = None
     if args.manifest and Path(args.manifest).exists():
@@ -232,8 +282,8 @@ def main():
         geometry_cfg=geometry_data
     )
 
-    primitives = resolver.resolve_all()
-    logger.info(f"📋 {len(primitives)} primitive(s) de sérigraphie résolue(s).")
+    primitives = resolver.resolve_all(strict_bounds=True)
+    logger.info(f"📋 {len(primitives)} primitive(s) de sérigraphie résolue(s) et certifiée(s) dans le PCB.")
 
     if args.dry_run:
         logger.info("🔍 Mode simulation (Dry-Run) actif : aucune modification injectée dans EasyEDA Pro.")
@@ -255,8 +305,7 @@ def main():
     # Liste des textes connus pour le filet de sécurité
     known_texts = [p.text for p in primitives]
 
-    # 3. Connexion et Purge idempotente
-    client = EasyEDASilkscreenClient(port=args.port)
+    # 3. Purge idempotente
     client.purge_previous_silkscreen(previous_ids, known_texts)
 
     # 4. Injection des nouvelles primitives

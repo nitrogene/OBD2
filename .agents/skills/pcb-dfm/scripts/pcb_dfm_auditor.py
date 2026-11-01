@@ -74,8 +74,8 @@ class PcbDfmAuditor:
         vp_violations = self._audit_via_to_pad(pads, vias)
         violations.extend(vp_violations)
 
-        # 3. Audit sérigraphie (stroke, distance aux pastilles et trous)
-        silk_violations = self._audit_silkscreen(strings, pads, vias)
+        # 3. Audit sérigraphie (stroke, distance aux pastilles, confinement contour de carte)
+        silk_violations = self._audit_silkscreen(strings, pads, vias, bounds=bounds)
         violations.extend(silk_violations)
 
         # 4. Audit bord de carte
@@ -245,12 +245,59 @@ class PcbDfmAuditor:
         self,
         strings: List[Dict[str, Any]],
         pads: List[Dict[str, Any]],
-        vias: List[Dict[str, Any]]
+        vias: List[Dict[str, Any]],
+        bounds: Optional[Dict[str, float]] = None
     ) -> List[Dict[str, Any]]:
-        """Audite l'épaisseur des traits de sérigraphie et le dégagement face au cuivre nu et perçages."""
+        """Audite l'épaisseur des traits de sérigraphie, le confinement dans la carte, et le dégagement face au cuivre nu et perçages."""
         violations = []
 
+        min_x = bounds["minX_mm"] if bounds else None
+        max_x = bounds["maxX_mm"] if bounds else None
+        min_y = bounds["minY_mm"] if bounds else None
+        max_y = bounds["maxY_mm"] if bounds else None
+
         for s in strings:
+            x_mm = s.get("x_mm", 0.0)
+            y_mm = s.get("y_mm", 0.0)
+            text_str = s.get("text", "")
+
+            # 0. Confinement dans le contour physique du PCB (Bord de carte)
+            if bounds:
+                char_count = max(1, len(text_str))
+                h_mm = s.get("height_mm", 1.0)
+                w_mm = h_mm * 0.7 * char_count
+                half_w = max(0.4, w_mm / 2.0)
+                half_h = max(0.4, h_mm / 2.0)
+
+                # Dépassement strict du contour physique -> DANGER BLOQUANT
+                if x_mm < min_x or x_mm > max_x or y_mm < min_y or y_mm > max_y:
+                    violations.append({
+                        "category": "PCB_DFM_SILKSCREEN_OUT_OF_BOUNDS",
+                        "severity": "DANGER",
+                        "description": (
+                            f"Texte de sérigraphie '{text_str}' HORS DU CONTOUR PCB ! "
+                            f"Position ({x_mm:.2f}, {y_mm:.2f}) mm hors limites [{min_x:.1f}..{max_x:.1f}, {min_y:.1f}..{max_y:.1f}] mm."
+                        ),
+                        "actual_value_mm": min(x_mm - min_x, max_x - x_mm, y_mm - min_y, max_y - y_mm),
+                        "threshold_mm": 0.0,
+                        "elements": [s["id"]],
+                        "coordinates": {"x_mm": x_mm, "y_mm": y_mm}
+                    })
+                elif (x_mm - half_w < min_x + 0.3) or (x_mm + half_w > max_x - 0.3) or (y_mm - half_h < min_y + 0.3) or (y_mm + half_h > max_y - 0.3):
+                    # Proche de la zone de détourage / rainurage en V (< 0.3 mm) -> WARNING
+                    violations.append({
+                        "category": "PCB_DFM_SILKSCREEN_TO_EDGE",
+                        "severity": "WARNING",
+                        "description": (
+                            f"Texte de sérigraphie '{text_str}' trop proche du bord de carte (< 0.3 mm). "
+                            f"Risque d'ébavurage ou de sectionnement lors du fraisage mécanique."
+                        ),
+                        "actual_value_mm": min(x_mm - min_x, max_x - x_mm, y_mm - min_y, max_y - y_mm),
+                        "threshold_mm": 0.3,
+                        "elements": [s["id"]],
+                        "coordinates": {"x_mm": x_mm, "y_mm": y_mm}
+                    })
+
             # 1. Épaisseur de trait de sérigraphie
             if 0 < s["strokeWidth_mm"] < self.min_silk_stroke_mm:
                 violations.append({

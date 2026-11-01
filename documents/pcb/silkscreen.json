@@ -21,7 +21,8 @@
         "pins": {
           "1": "+12V",
           "2": "GND"
-        }
+        },
+        "offsets_mm": {}
       },
       {
         "component": "J1",
@@ -33,7 +34,8 @@
           "3": "CANH",
           "4": "CANL",
           "5": "GND"
-        }
+        },
+        "offsets_mm": {}
       },
       {
         "component": "H1",
@@ -43,7 +45,8 @@
           "1": "RX",
           "2": "TX",
           "3": "GND"
-        }
+        },
+        "offsets_mm": {}
       },
       {
         "component": "H2",
@@ -53,46 +56,57 @@
           "1": "RX",
           "2": "TX",
           "3": "GND"
-        }
+        },
+        "offsets_mm": {}
       }
     ],
     "component_legends": [
       {
         "component": "H1",
-        "position": "below",
-        "offset_mm": 5.2,
-        "text": "KLINE"
+        "text": "KLINE",
+        "relative_offset_mm": [
+          -0.249,
+          2.789
+        ]
       },
       {
         "component": "H2",
-        "position": "below",
-        "offset_mm": 5.2,
-        "text": "CAN"
+        "text": "CAN",
+        "relative_offset_mm": [
+          0.259,
+          2.789
+        ]
       },
       {
         "component": "H3",
-        "position": "below",
-        "offset_mm": 6.0,
-        "text": "SIMU: POWER IN\nSCANNER: MEASURE ONLY"
+        "text": "SIMU: POWER IN\nSCANNER: MEASURE ONLY",
+        "relative_offset_mm": [
+          2.86,
+          -3.561
+        ]
       },
       {
         "component": "JP1",
-        "position": "right",
-        "offset_mm": 6.8,
-        "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER"
+        "text": "CAN BUS:\nSHUNT=SIMU\nOPEN=SCANNER",
+        "relative_offset_mm": [
+          6.8,
+          0.0
+        ]
       },
       {
         "component": "JP2",
-        "position": "below",
-        "offset_mm": 6.7,
-        "text": "K-LINE:\nSHUNT=SCANNER\nOPEN=SIMU"
+        "text": "K-LINE:\nSHUNT=SCANNER\nOPEN=SIMU",
+        "relative_offset_mm": [
+          5.512,
+          -0.29
+        ]
       }
     ],
     "title_blocks": [
       {
         "anchor": "bottom_left",
         "offset_mm": [
-          67.5,
+          67.501,
           1.27
         ],
         "alignment": "center",

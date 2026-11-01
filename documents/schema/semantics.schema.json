@@ -65,7 +65,11 @@
           "value": { "type": ["string", "null"] },
           "footprint": { "type": "string" },
           "substitutability": { "type": "string" },
-          "constraints": { "type": "object" }
+          "constraints": { "type": "object" },
+          "mechanical": {
+            "type": "object",
+            "description": "Spécification d'interface mécanique pour l'intégration et découpes dans le boîtier (ECAD-MCAD)."
+          }
         },
         "required": ["block", "role"]
       }

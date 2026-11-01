@@ -135,6 +135,56 @@ class EasyEdaFabricationExporter:
             raise RuntimeError(f"Échec export BOM : {result.get('error')}")
         return result["content"]
 
+    def export_project_archive(self, prefix: str = "OBD2", receiver_port: int = 49698) -> bytes:
+        """Exporte l'archive projet complète (.epro2) via flux HTTP local sécurisé."""
+        import http.server
+        import threading
+
+        received_data = bytearray()
+        done_event = threading.Event()
+
+        class ReceiverHandler(http.server.BaseHTTPRequestHandler):
+            def do_POST(self):
+                content_len = int(self.headers.get("Content-Length", 0))
+                data = self.rfile.read(content_len)
+                received_data.extend(data)
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(b"OK")
+                done_event.set()
+
+            def do_OPTIONS(self):
+                self.send_response(200)
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type")
+                self.end_headers()
+
+            def log_message(self, format, *args):
+                pass
+
+        server = http.server.HTTPServer(("127.0.0.1", receiver_port), ReceiverHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+
+        try:
+            js_code = f"""
+            const f = await eda.sys_FileManager.getProjectFile('{prefix}', undefined, 'epro2');
+            if (!f) throw new Error('Impossible d\\'obtenir le fichier projet epro2');
+            await fetch('http://127.0.0.1:{receiver_port}/upload', {{
+                method: 'POST',
+                body: f,
+                headers: {{ 'Content-Type': 'application/octet-stream' }}
+            }});
+            return {{ size: f.size, name: f.name }};
+            """
+            self.execute_js(js_code)
+            done_event.wait(timeout=15.0)
+            return bytes(received_data)
+        finally:
+            server.shutdown()
+
 
 def run_fabrication_export(
     output_dir: str,
@@ -142,7 +192,8 @@ def run_fabrication_export(
     port: int = 49620,
     include_gerber: bool = True,
     include_cpl: bool = True,
-    include_bom: bool = True
+    include_bom: bool = True,
+    include_epro2: bool = True
 ) -> Dict[str, Any]:
     """Exécute l'exportation complète des livrables de production."""
     target_dir = Path(output_dir)
@@ -216,6 +267,25 @@ def run_fabrication_export(
             "row_count": row_count
         }
 
+    # 4. Export Archive Projet Native (.epro2)
+    if include_epro2:
+        logger.info("Génération de l'archive projet native EasyEDA Pro (.epro2)...")
+        try:
+            epro2_bytes = client.export_project_archive(prefix)
+            if epro2_bytes:
+                easyeda_dir = Path("documents/easyeda")
+                easyeda_dir.mkdir(parents=True, exist_ok=True)
+                epro2_path = easyeda_dir / f"{prefix}.epro2"
+                with open(epro2_path, "wb") as f:
+                    f.write(epro2_bytes)
+                logger.info(f"Archive projet native créée : {epro2_path} ({len(epro2_bytes) / 1024:.1f} Ko)")
+                exported_files["epro2"] = {
+                    "path": str(epro2_path),
+                    "size_bytes": len(epro2_bytes)
+                }
+        except Exception as e:
+            logger.warning(f"Avertissement lors de l'export de l'archive .epro2 : {e}")
+
     logger.info("Dossier de fabrication généré avec succès !")
     return {"success": True, "output_dir": str(target_dir.resolve()), "files": exported_files}
 
@@ -241,6 +311,7 @@ def main():
     parser.add_argument("--no-gerber", action="store_true", help="Ne pas exporter les Gerber")
     parser.add_argument("--no-cpl", action="store_true", help="Ne pas exporter le Pick & Place (CPL)")
     parser.add_argument("--no-bom", action="store_true", help="Ne pas exporter la BOM")
+    parser.add_argument("--no-epro2", action="store_true", help="Ne pas exporter l'archive projet .epro2")
 
     args = parser.parse_args()
     res = run_fabrication_export(
@@ -249,7 +320,8 @@ def main():
         port=args.port,
         include_gerber=not args.no_gerber,
         include_cpl=not args.no_cpl,
-        include_bom=not args.no_bom
+        include_bom=not args.no_bom,
+        include_epro2=not args.no_epro2
     )
     sys.exit(0 if res.get("success") else 1)
 

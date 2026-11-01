@@ -38,6 +38,9 @@ PLACER_DIR = SKILLS_DIR / "pcb-placer"
 FREEROUTING_DIR = SKILLS_DIR / "freerouting"
 STITCHER_DIR = SKILLS_DIR / "pcb-stitcher"
 SYNTHESIZER_DIR = SKILLS_DIR / "pcb-synthesizer"
+DFM_DIR = SKILLS_DIR / "pcb-dfm"
+ENCLOSURE_DIR = SKILLS_DIR / "pcb-enclosure"
+SILKSCREEN_DIR = SKILLS_DIR / "pcb-silkscreen"
 
 if str(SYNTHESIZER_DIR) not in sys.path:
     sys.path.insert(0, str(SYNTHESIZER_DIR))
@@ -83,7 +86,10 @@ class PcbSynthesizer:
         apply_easyeda: bool = True,
         placement_override: Optional[Path] = None,
         bootstrap_only: bool = False,
-        skip_bootstrap: bool = False
+        skip_bootstrap: bool = False,
+        turnkey: bool = False,
+        production_only: bool = False,
+        review_silkscreen: bool = False
     ):
         self.manifest_path = manifest_path.resolve()
         self.board_path = board_path.resolve()
@@ -95,6 +101,9 @@ class PcbSynthesizer:
         self.placement_override = placement_override.resolve() if placement_override else None
         self.bootstrap_only = bootstrap_only
         self.skip_bootstrap = skip_bootstrap
+        self.turnkey = turnkey
+        self.production_only = production_only
+        self.review_silkscreen = review_silkscreen
 
         # Cache de synthèse
         self.cache_dir = SYNTHESIZER_DIR / ".cache"
@@ -200,6 +209,10 @@ class PcbSynthesizer:
         return True
 
     def execute_closed_loop(self) -> bool:
+        if self.production_only:
+            logger.info("Mode --production-only activé : exécution immédiate du Step 7 (Packaging & 3D)...")
+            return self.run_turnkey_production_packaging()
+
         t_start = time.time()
         cycle_history: List[Dict[str, Any]] = []
         final_drc_summary: Dict[str, Any] = {"errorCount": -1, "warningCount": 0, "by_category": {}}
@@ -651,6 +664,8 @@ class PcbSynthesizer:
                     if err_cnt == 0:
                         logger.info("✅ DRC = 0 certifié avec succès !")
                         client.save_pcb()
+                        if self.turnkey:
+                            self.run_turnkey_production_packaging()
                     else:
                         logger.warning(f"⚠️ DRC présente encore {err_cnt} erreur(s) résiduelle(s) :")
                         for cat_name, cat_items in cat_map.items():
@@ -710,6 +725,69 @@ class PcbSynthesizer:
         logger.info("================================================================================\n")
         return synthesis_success
 
+    def run_turnkey_production_packaging(self) -> bool:
+        """Exécute automatiquement la chaîne complète des livrables de production (Step 7)."""
+        logger.info("\n" + "=" * 80)
+        logger.info("📦 DÉMARRAGE DU PACKAGING DE PRODUCTION CLEF EN MAIN (STEP 7)")
+        logger.info("=" * 80)
+
+        prod_dir = PROJECT_ROOT / "documents" / "production"
+        enclosure_dir = PROJECT_ROOT / "documents" / "enclosure"
+        pcb_dir = PROJECT_ROOT / "documents" / "pcb"
+
+        # 0. Revue interactive optionnelle de la sérigraphie (Point d'étape ultime)
+        if self.review_silkscreen:
+            logger.info("\n[0/3] Point de contrôle : Revue interactive de sérigraphie dans EasyEDA Pro...")
+            sync_script = SILKSCREEN_DIR / "scripts" / "sync_silkscreen.py"
+            subprocess.run([
+                "uv", "run", "python", str(sync_script),
+                "interactive",
+                "--silkscreen", str(pcb_dir / "silkscreen.json"),
+                "--constraints", str(self.board_path)
+            ], cwd=str(PROJECT_ROOT))
+
+        # 1. Export fabrication (Gerber, Drill, CPL, BOM)
+        logger.info("\n[1/3] Exportation du dossier de fabrication industrielle...")
+        fab_script = DFM_DIR / "scripts" / "export_fabrication.py"
+        rc, out, err = run_cmd([
+            "uv", "run", "python", str(fab_script),
+            "--output-dir", str(prod_dir),
+            "--prefix", "OBD2"
+        ], cwd=PROJECT_ROOT)
+        if rc != 0:
+            logger.error(f"Échec de l'export de fabrication : {err}")
+            return False
+
+        # 2. Export des rendus visuels d'inspection (2D Top, 2D Bottom, 3D PCBA, PCB natif)
+        logger.info("\n[2/3] Exportation des rendus d'inspection visuelle...")
+        img_script = DFM_DIR / "scripts" / "export_pcb_images.py"
+        rc, out, err = run_cmd([
+            "uv", "run", "python", str(img_script),
+            "--output-dir", str(pcb_dir)
+        ], cwd=PROJECT_ROOT)
+        if rc != 0:
+            logger.warning(f"Avertissement lors de l'export des rendus : {err}")
+
+        # 3. Contrôle d'interférence 3D & Assemblage Boîtier + PCBA réelle
+        logger.info("\n[3/3] Contrôle d'interférence 3D & Assemblage Boîtier + PCBA réelle...")
+        enclosure_script = ENCLOSURE_DIR / "scripts" / "enclosure_generator.py"
+        pcba_step = prod_dir / "OBD2_PCBA.step"
+        rc, out, err = run_cmd([
+            "uv", "run", "--with", "build123d", "python", str(enclosure_script),
+            "--constraints", str(self.board_path),
+            "--enclosure", str(pcb_dir / "enclosure.json"),
+            "--pcba-step", str(pcba_step),
+            "--output-dir", str(enclosure_dir)
+        ], cwd=PROJECT_ROOT)
+        if rc != 0:
+            logger.error(f"Échec de la modélisation et assemblage boîtier : {err}")
+            return False
+
+        logger.info("\n" + "=" * 80)
+        logger.info("🎉 PACKAGING DE PRODUCTION ET ASSEMBLAGE 3D ACHEVÉS AVEC SUCCÈS")
+        logger.info("=" * 80 + "\n")
+        return True
+
 
 def main():
     parser = argparse.ArgumentParser(description="Orchestrateur de Synthèse PCB en Boucle Fermée")
@@ -723,6 +801,9 @@ def main():
     parser.add_argument("--placement", type=Path, default=None, help="Placement initial pré-calculé (saute l'étape 1 du cycle 1)")
     parser.add_argument("--bootstrap-only", action="store_true", help="Exécute uniquement l'étape 0 (Raw PCB Bootstrap) et s'arrête")
     parser.add_argument("--skip-bootstrap", action="store_true", help="Saute l'étape 0 d'amorce du PCB nu")
+    parser.add_argument("--turnkey", action="store_true", help="Enchaîne automatiquement le packaging de production (Step 7) dès que DRC = 0")
+    parser.add_argument("--production-only", action="store_true", help="Exécute uniquement le packaging de production (Step 7) sans relancer la synthèse")
+    parser.add_argument("--review-silkscreen", action="store_true", help="Active la revue interactive de sérigraphie au début du Step 7")
     args = parser.parse_args()
 
     synthesizer = PcbSynthesizer(
@@ -735,7 +816,10 @@ def main():
         apply_easyeda=args.apply,
         placement_override=args.placement,
         bootstrap_only=args.bootstrap_only,
-        skip_bootstrap=args.skip_bootstrap
+        skip_bootstrap=args.skip_bootstrap,
+        turnkey=args.turnkey,
+        production_only=args.production_only,
+        review_silkscreen=args.review_silkscreen
     )
     ok = synthesizer.execute_closed_loop()
     sys.exit(0 if ok else 1)
