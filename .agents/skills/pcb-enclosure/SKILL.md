@@ -78,7 +78,7 @@ uv run --with build123d python .agents/skills/pcb-enclosure/scripts/enclosure_ge
 uv run --with build123d python .agents/skills/pcb-enclosure/tests/test_enclosure.py
 
 # Convert and optimize a STEP solid to WebGL STL (for GitHub)
-uv run --with build123d python scripts/convert_step_to_stl.py --input documents/pcb/scanner.step --output documents/pcb/scanner.stl
+uv run --with build123d python scripts/convert_step_to_stl.py --input documents/production/OBD2_PCBA.step --output documents/enclosure/pcba.stl
 ```
 
 ---

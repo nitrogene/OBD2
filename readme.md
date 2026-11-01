@@ -289,8 +289,8 @@ Component placement is solved using the multi-objective simulated annealing engi
 
 GitHub natively features a WebGL 3D viewer: clicking on the `.stl` files below opens an interactive 3D model directly in your browser with full mouse manipulation (rotate, zoom, wireframe/shaded views).
 
-#### 1. Assembled Printed Circuit Board (PCB)
-* 🧊 **[Interactive 3D PCB Model (`scanner.stl`)](./documents/pcb/scanner.stl)** *(direct WebGL 3D viewing on GitHub, 14.2 MB, generated and optimized via [`scripts/convert_step_to_stl.py`](scripts/convert_step_to_stl.py))*
+#### 1. Assembled Printed Circuit Board (PCBA)
+* 🧊 **[Interactive 3D PCBA Model (`pcba.stl`)](./documents/enclosure/pcba.stl)** *(direct WebGL 3D viewing on GitHub, 10.9 MB, populated board with all SMD components)*
 
 #### 2. Mechanical Enclosure
 Parametric two-piece clamshell enclosure with 4 M2 bosses, integrated cable cradle, and strain relief clamp:
@@ -315,7 +315,8 @@ Parametric two-piece clamshell enclosure with 4 M2 bosses, integrated cable crad
 * **Phase 2: PCB Placement & Silkscreen (Validated):** Simulated annealing auto-placement engine validated with **0 physical overlaps (0.0 mm²)**, IPC-7351 courtyards and solder mask clearances respected, silkscreen optimized by *Line-of-Sight* with no inverted text ([`documents/pcb/placement.svg`](documents/pcb/placement.svg)).
 * **Phase 3: Auto-Routing & Ground Planes (Validated):** 100% of active signals routed (219/219 connections), USB and CAN differential pairs matched, continuous multi-layer ground planes, stitching vias in place, and **EasyEDA Pro DRC = 0 errors, 0 warnings** certified.
 * **Phase 4: Functional Silkscreen & 3D Enclosure (Validated):** Informative bottom silkscreen annotated (`documents/pcb/silkscreen.json`), parametric CAD skill `pcb-enclosure` implemented with solid STEP and high-res STL meshes generated for JLCPCB 3D Printing.
-* **Immediate Next Step:** JLCPCB SMT fabrication package generation (Gerber, SMT BOM, Pick & Place CPL) and prototype ordering.
+* **Phase 5: Turnkey Fabrication Packaging & 3D Interference Audit (Validated):** Complete JLCPCB SMT production deliverables generated ([`documents/production/`](documents/production/)), native project archive exported ([`documents/easyeda/OBD2.epro2`](documents/easyeda/OBD2.epro2)), 3D solid interference check passed ($1.77\,\text{mm}$ vertical clearance, 0 collision), and standalone PCBA WebGL 3D model exported ([`documents/enclosure/pcba.stl`](documents/enclosure/pcba.stl)).
+* **Immediate Next Step:** Physical board reception & Lab Bench Bring-up Protocol ([`todo.md` Part 2](todo.md#part-2-bring-up-protocol--hardware-acceptance-testing-physical--lab-bench)).
 
 ---
 

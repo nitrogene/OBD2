@@ -7,7 +7,7 @@ optimisé pour le visualiseur 3D interactif WebGL de GitHub (< 20 MB).
 
 Usage :
   uv run --with build123d python scripts/convert_step_to_stl.py
-  uv run --with build123d python scripts/convert_step_to_stl.py --input documents/pcb/scanner.step --output documents/pcb/scanner.stl
+  uv run --with build123d python scripts/convert_step_to_stl.py --input documents/production/OBD2_PCBA.step --output documents/enclosure/pcba.stl
 """
 
 import argparse
@@ -48,8 +48,8 @@ def convert_step_to_stl(step_path: Path, stl_path: Path, tolerance: float = 0.15
 
 def main():
     parser = argparse.ArgumentParser(description="Conversion et optimisation STEP vers STL")
-    parser.add_argument("--input", default="documents/pcb/scanner.step", help="Chemin du fichier STEP source")
-    parser.add_argument("--output", default="documents/pcb/scanner.stl", help="Chemin du fichier STL de sortie")
+    parser.add_argument("--input", default="documents/production/OBD2_PCBA.step", help="Chemin du fichier STEP source")
+    parser.add_argument("--output", default="documents/enclosure/pcba.stl", help="Chemin du fichier STL de sortie")
     parser.add_argument("--tolerance", type=float, default=0.15, help="Tolérance de déflection linéaire (mm)")
     parser.add_argument("--angular-tolerance", type=float, default=0.3, help="Tolérance angulaire (rad)")
     parser.add_argument("--clean-step", action="store_true", default=True, help="Supprime le fichier STEP source après conversion pour alléger le dépôt Git")
