@@ -35,12 +35,12 @@ class TestPCBEnclosure(unittest.TestCase):
         self.assertEqual(self.gen.board_w, 81.28)
         self.assertEqual(self.gen.board_h, 35.56)
 
-        # Jeu 0.35 mm de chaque cote -> inner_w = 81.28 + 0.70 = 81.98 mm
-        self.assertAlmostEqual(self.gen.inner_w, 81.98, places=2)
+        # Chambre technique câble 25 mm + jeu 0.35 mm -> inner_w = 81.28 + 0.70 + 25.0 = 106.98 mm
+        self.assertAlmostEqual(self.gen.inner_w, 106.98, places=2)
         self.assertAlmostEqual(self.gen.inner_h, 36.26, places=2)
 
-        # Paroi 2.0 mm de chaque cote -> outer_w = 81.98 + 4.0 = 85.98 mm
-        self.assertAlmostEqual(self.gen.outer_w, 85.98, places=2)
+        # Paroi 2.0 mm de chaque cote -> outer_w = 106.98 + 4.0 = 110.98 mm
+        self.assertAlmostEqual(self.gen.outer_w, 110.98, places=2)
         self.assertAlmostEqual(self.gen.outer_h, 40.26, places=2)
 
     def test_mounting_holes_alignment(self):
@@ -94,13 +94,12 @@ class TestPCBEnclosure(unittest.TestCase):
             self.assertGreater(fpath.stat().st_size, 1000, f"Le fichier {fname} ne doit pas etre vide")
 
     def test_step_labels_integrity(self):
-        # Vérifie que les composants conservent leurs noms fonctionnels explicites dans les STEP
+        # Vérifie que les composants conservent leurs noms fonctionnels explicites en anglais dans les STEP
         out_dir = PROJECT_ROOT / "documents" / "enclosure"
         full_step = (out_dir / "enclosure_full_assembly.step").read_text(encoding="latin-1", errors="ignore")
-        self.assertIn("Boitier_Inferieur", full_step)
-        self.assertIn("Boitier_Superieur", full_step)
-        self.assertIn("Bride_Serre_Cable", full_step)
-        self.assertIn("Carte_PCB", full_step)
+        self.assertIn("Enclosure_Bottom_Shell", full_step)
+        self.assertIn("Enclosure_Top_Shell", full_step)
+        self.assertIn("Cable_Clamp", full_step)
 
 
 if __name__ == "__main__":

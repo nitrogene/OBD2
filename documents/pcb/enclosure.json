@@ -8,6 +8,7 @@
     "bottom_internal_height_mm": 3.5,
     "top_internal_height_mm": 12.0,
     "corner_radius_mm": 3.0,
+    "cable_compartment_length_mm": 25.0,
     "lip_height_mm": 1.2,
     "lip_clearance_mm": 0.15
   },

@@ -17,6 +17,7 @@
         "bottom_internal_height_mm": { "type": "number", "minimum": 2.0, "description": "Hauteur utile sous le PCB (face arrière) en mm" },
         "top_internal_height_mm": { "type": "number", "minimum": 3.0, "description": "Hauteur utile au-dessus du PCB (face avant) en mm" },
         "corner_radius_mm": { "type": "number", "minimum": 0.0, "description": "Rayon des congés des coins extérieurs en mm" },
+        "cable_compartment_length_mm": { "type": "number", "minimum": 0.0, "description": "Longueur axiale de la chambre technique pour câble et serre-câble à gauche du PCB en mm" },
         "lip_height_mm": { "type": "number", "minimum": 0.5, "description": "Hauteur de la lèvre d'emboîtement entre les deux demi-coquilles en mm" },
         "lip_clearance_mm": { "type": "number", "minimum": 0.05, "description": "Jeu d'ajustement entre la lèvre et la rainure en mm" }
       }

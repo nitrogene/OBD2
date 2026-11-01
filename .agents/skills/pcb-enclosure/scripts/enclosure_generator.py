@@ -77,14 +77,35 @@ class EnclosureGenerator:
         self.cbore_depth = float(b.get("screw_head_counterbore_depth_mm", 1.6))
 
         # Dimensions extérieures hors-tout
-        self.inner_w = self.board_w + 2 * self.pcb_clr
+        self.cable_comp_len = float(p.get("cable_compartment_length_mm", 0.0))
+
+        self.x_inner_min = -self.pcb_clr - self.cable_comp_len
+        self.x_inner_max = self.board_w + self.pcb_clr
+        self.inner_w = self.x_inner_max - self.x_inner_min
         self.inner_h = self.board_h + 2 * self.pcb_clr
+
         self.outer_w = self.inner_w + 2 * self.wall_t
         self.outer_h = self.inner_h + 2 * self.wall_t
+        self.x_out_min = self.x_inner_min - self.wall_t
+        self.x_out_max = self.x_inner_max + self.wall_t
 
         # Centre géométrique en XY
-        self.cx = self.board_w / 2.0
+        self.cx = (self.x_inner_min + self.x_inner_max) / 2.0
         self.cy = self.board_h / 2.0
+
+        # Paramètres serre-câble
+        clamp_cfg = self.cfg.get("cable_clamp", {})
+        self.clamp_enabled = bool(clamp_cfg.get("enabled", True))
+        self.cable_d = float(clamp_cfg.get("cable_diameter_mm", 6.5))
+        self.clamp_w = float(clamp_cfg.get("clamp_width_mm", 8.0))
+        self.clamp_screw_spacing = float(clamp_cfg.get("screw_spacing_mm", 14.0))
+        self.clamp_screw_type = clamp_cfg.get("screw_type", "M2")
+
+        if self.cable_comp_len > 0:
+            self.clamp_x = self.x_inner_min + 7.5
+        else:
+            self.clamp_x = -self.pcb_clr - self.clamp_w / 2.0
+        self.clamp_y = self.cy
 
         # Z-levels : Le dessus du PCB est à Z = 0
         # Dessous du PCB à Z = -self.pcb_thickness
@@ -145,6 +166,32 @@ class EnclosureGenerator:
                 bd.extrude(amount=self.insert_depth, mode=bd.Mode.SUBTRACT)
 
             bottom = bottom + col_part.part
+
+        # 3b. Bossages et berceau du serre-câble dans la chambre technique
+        if self.clamp_enabled and self.cable_comp_len > 0:
+            cradle_w = self.clamp_w + 3.0
+            cradle_l = self.clamp_screw_spacing + 2 * (self.boss_d / 2.0) + 2.0
+            cradle_h = abs(self.z_pcb_top - self.z_bot_inner)
+
+            with bd.BuildPart() as cradle_part:
+                # Bloc socle s'élevant du fond du boîtier jusqu'à Z = 0 (plan supérieur du PCB)
+                with bd.BuildSketch(bd.Plane(origin=(self.clamp_x, self.clamp_y, self.z_bot_inner), z_dir=(0, 0, 1))):
+                    bd.RectangleRounded(cradle_w, cradle_l, 2.0)
+                bd.extrude(amount=cradle_h)
+
+                # Demi-gorge cylindrique berceau pour le câble (axe à Y = clamp_y, Z = 0)
+                with bd.BuildSketch(bd.Plane(origin=(self.clamp_x, 0, 0), z_dir=(1, 0, 0))):
+                    with bd.Locations((self.clamp_y, self.z_pcb_top)):
+                        bd.Circle(self.cable_d / 2.0)
+                bd.extrude(amount=cradle_w + 2.0, both=True, mode=bd.Mode.SUBTRACT)
+
+                # 2 Puits d'inserts thermofusibles M2 pour recevoir les vis de la bride
+                with bd.BuildSketch(bd.Plane(origin=(self.clamp_x, self.clamp_y, self.z_pcb_top), z_dir=(0, 0, -1))):
+                    with bd.Locations((0, -self.clamp_screw_spacing / 2.0), (0, self.clamp_screw_spacing / 2.0)):
+                        bd.Circle(self.insert_d / 2.0)
+                bd.extrude(amount=self.insert_depth, mode=bd.Mode.SUBTRACT)
+
+            bottom = bottom + cradle_part.part
 
         # 4. Lèvre d'emboîtement (Lip) sur le pourtour supérieur
         # La lèvre se dresse sur la moitié intérieure de la paroi (épaisseur wall_t / 2)
@@ -227,7 +274,7 @@ class EnclosureGenerator:
         """Construit un solide représentant la carte PCB avec ses perçages de fixation."""
         logger.info("🔨 Construction du solide de référence PCB...")
         with bd.BuildPart() as pcb_part:
-            with bd.BuildSketch(bd.Plane(origin=(self.cx, self.cy, self.z_pcb_bottom), z_dir=(0, 0, 1))):
+            with bd.BuildSketch(bd.Plane(origin=(self.board_w / 2.0, self.board_h / 2.0, self.z_pcb_bottom), z_dir=(0, 0, 1))):
                 bd.Rectangle(self.board_w, self.board_h)
             bd.extrude(amount=self.pcb_thickness)
 
@@ -245,32 +292,33 @@ class EnclosureGenerator:
     def build_cable_clamp(self) -> bd.Solid:
         """Construit la bride rigide à 2 vis M2 pour décharger le câble OBD-II."""
         logger.info("🔨 Construction de la bride serre-câble (Cable Clamp)...")
-        clamp_cfg = self.cfg.get("cable_clamp", {})
-        cable_d = float(clamp_cfg.get("cable_diameter_mm", 6.5))
-        width = float(clamp_cfg.get("clamp_width_mm", 8.0))
-        screw_spacing = float(clamp_cfg.get("screw_spacing_mm", 14.0))
-
-        length = screw_spacing + 2 * 3.5  # Bords pour vis
-        thickness = (cable_d / 2.0) + 2.5
+        length = self.clamp_screw_spacing + 2 * (self.boss_d / 2.0) + 2.0
+        thickness = (self.cable_d / 2.0) + 2.5
 
         with bd.BuildPart() as p:
             # Corps rectangulaire avec congés
             with bd.BuildSketch():
-                bd.RectangleRounded(width, length, 2.0)
+                bd.RectangleRounded(self.clamp_w, length, 2.0)
             bd.extrude(amount=thickness)
 
             # Demi-cylindre de compression du câble (légèrement inférieur à cable_d pour serrage)
-            compression_r = (cable_d * 0.95) / 2.0
+            compression_r = (self.cable_d * 0.95) / 2.0
             with bd.BuildSketch(bd.Plane.XZ):
                 with bd.Locations((0, 0)):
                     bd.Circle(compression_r)
-            bd.extrude(amount=width + 2, mode=bd.Mode.SUBTRACT)
+            bd.extrude(amount=self.clamp_w + 2.0, both=True, mode=bd.Mode.SUBTRACT)
 
             # 2 Trous de passage pour vis M2
             with bd.BuildSketch():
-                with bd.Locations((0, -screw_spacing / 2.0), (0, screw_spacing / 2.0)):
+                with bd.Locations((0, -self.clamp_screw_spacing / 2.0), (0, self.clamp_screw_spacing / 2.0)):
                     bd.Circle(self.screw_clr_d / 2.0)
             bd.extrude(amount=thickness + 1, mode=bd.Mode.SUBTRACT)
+
+            # Lamages de tête de vis M2 sur la face supérieure
+            with bd.BuildSketch(bd.Plane(origin=(0, 0, thickness), z_dir=(0, 0, -1))):
+                with bd.Locations((0, -self.clamp_screw_spacing / 2.0), (0, self.clamp_screw_spacing / 2.0)):
+                    bd.Circle(self.cbore_d / 2.0)
+            bd.extrude(amount=self.cbore_depth, mode=bd.Mode.SUBTRACT)
 
         return p.part
 
@@ -361,10 +409,10 @@ class EnclosureGenerator:
                 shell = shell - cutter.part
 
             elif face == "left":
-                # Sortie câble OBD-II sur le bord gauche X=0
+                # Sortie câble OBD-II sur la paroi gauche extérieure
                 d = float(dims[0])
                 with bd.BuildPart() as cutter:
-                    with bd.BuildSketch(bd.Plane.YZ):
+                    with bd.BuildSketch(bd.Plane(origin=(self.x_out_min, 0, 0), z_dir=(1, 0, 0))):
                         with bd.Locations((py, pz)):
                             bd.Circle(d / 2.0)
                     bd.extrude(amount=self.wall_t * 3.0, both=True)
@@ -425,19 +473,19 @@ def main():
 
     # 1. Génération des pièces avec labels et couleurs distinctes
     bottom_shell = gen.build_bottom_shell()
-    bottom_shell.label = "Boitier_Inferieur"
+    bottom_shell.label = "Enclosure_Bottom_Shell"
     bottom_shell.color = bd.Color(0.25, 0.25, 0.25)  # Anthracite mat
 
     top_shell = gen.build_top_shell()
-    top_shell.label = "Boitier_Superieur"
+    top_shell.label = "Enclosure_Top_Shell"
     top_shell.color = bd.Color(0.35, 0.35, 0.35)  # Gris boîtier
 
     cable_clamp = gen.build_cable_clamp()
-    cable_clamp.label = "Bride_Serre_Cable"
+    cable_clamp.label = "Cable_Clamp"
     cable_clamp.color = bd.Color(0.85, 0.45, 0.1)   # Orange mécanique contrasté
 
     pcb_solid = gen.build_pcb_mockup()
-    pcb_solid.label = "Carte_PCB"
+    pcb_solid.label = "PCB_Board"
     pcb_solid.color = bd.Color(0.05, 0.45, 0.2)     # Vert vernis épargne
 
     # 2. Exports STEP solides individuels AVANT composition dans un Compound
@@ -454,7 +502,7 @@ def main():
     if pcba_step_path and pcba_step_path.exists():
         logger.info(f"🔍 Chargement de la PCBA garnie pour vérification d'interférence 3D : {pcba_step_path.name}")
         pcba_imported = bd.import_step(str(pcba_step_path))
-        pcba_imported.label = "PCBA_Peuplee"
+        pcba_imported.label = "Populated_PCBA"
 
         # Export d'un maillage STL dédié de la PCBA seule pour le visualiseur 3D GitHub
         pcba_stl_path = out_dir / "pcba.stl"
@@ -475,14 +523,14 @@ def main():
             logger.info(f"✅ Dégagement vertical 100% conforme ({ceiling_clearance:.2f} mm > 0).")
 
     # 4. Assemblage complet fermé (Bottom + PCB + Clamp + Top fermé)
-    clamp_located = cable_clamp.locate(bd.Location((4.0, 17.78, gen.z_pcb_top + 1.5)))
-    clamp_located.label = "Bride_Serre_Cable"
+    clamp_located = cable_clamp.locate(bd.Location((gen.clamp_x, gen.clamp_y, gen.z_pcb_top)))
+    clamp_located.label = "Cable_Clamp"
     clamp_located.color = bd.Color(0.85, 0.45, 0.1)
 
     board_for_assembly = pcba_imported if pcba_imported else pcb_solid
     full_assembly = bd.Compound(
         children=[bottom_shell, board_for_assembly, clamp_located, top_shell],
-        label="Assemblage_Ferme"
+        label="Enclosure_Assembly"
     )
     logger.info("💾 Export de l'assemblage complet fermé (STEP & STL)...")
     bd.export_step(full_assembly, str(out_dir / "enclosure_full_assembly.step"))
@@ -493,18 +541,18 @@ def main():
         logger.info(f"💾 Export de l'assemblage complet PCBA + Boîtier : {full_pcba_path.name}...")
         bd.export_step(full_assembly, str(full_pcba_path))
 
-    # 5. Assemblage en vue éclatée avec PCBA réelle (Couvercle surélevé de +30 mm, bride de +12 mm)
+    # 5. Assemblage en vue éclatée avec PCBA réelle (Couvercle surélevé de +30 mm, bride de +15 mm)
     top_exploded = top_shell.locate(bd.Location((0, 0, 30.0)))
-    top_exploded.label = "Boitier_Superieur"
+    top_exploded.label = "Enclosure_Top_Shell"
     top_exploded.color = bd.Color(0.35, 0.35, 0.35)
 
-    clamp_exploded = cable_clamp.locate(bd.Location((4.0, 17.78, gen.z_pcb_top + 12.0)))
-    clamp_exploded.label = "Bride_Serre_Cable"
+    clamp_exploded = cable_clamp.locate(bd.Location((gen.clamp_x, gen.clamp_y, gen.z_pcb_top + 15.0)))
+    clamp_exploded.label = "Cable_Clamp"
     clamp_exploded.color = bd.Color(0.85, 0.45, 0.1)
 
     exploded_assembly = bd.Compound(
         children=[bottom_shell, board_for_assembly, clamp_exploded, top_exploded],
-        label="Vue_Eclatee"
+        label="Exploded_Assembly"
     )
     logger.info("💾 Export de la vue éclatée avec PCBA réelle (STEP & STL)...")
     bd.export_step(exploded_assembly, str(out_dir / "enclosure_exploded.step"))
