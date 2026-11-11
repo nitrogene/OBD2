@@ -1,5 +1,10 @@
 # ESP32 OBD-II Scanner — Hardware Design
 
+[![Fabrication: JLCPCB](https://img.shields.io/badge/Fabricated%20%26%20Assembled%20by-JLCPCB-0072C6?style=for-the-badge)](https://jlcpcb.com)
+[![EDA: EasyEDA Pro](https://img.shields.io/badge/Designed%20with-EasyEDA%20Pro-1890FF?style=for-the-badge)](https://pro.easyeda.com)
+[![MCU: ESP32-S3](https://img.shields.io/badge/MCU-ESP32--S3-E7352C?style=for-the-badge)](https://www.espressif.com)
+[![OSHW](https://img.shields.io/badge/Hardware-Open%20Source-brightgreen?style=for-the-badge)](https://oshwlab.com)
+
 Hardware engineering repository (schematic design, component dimensioning, 4-layer PCB layout, and design for manufacturing) for an automotive, connected, and secure universal OBD-II diagnostic scanner based on the ESP32-S3 SoC.
 
 > [!NOTE]
@@ -381,7 +386,16 @@ The project integrates and leverages 12 specialized engineering skills under `.a
 
 ---
 
-## 8. Licenses & Automotive Safety Disclaimer
+## 8. Sponsorship & Fabrication Partner
+
+Special thanks to **[JLCPCB](https://jlcpcb.com)** for supporting open-source hardware engineering and maker communities.
+* **PCB Prototyping:** 4-layer precision impedance-controlled manufacturing ([JLC2313 stackup](documents/pcb/constraints.json)).
+* **SMT Assembly:** Automated pick & place assembly using the JLCPCB parts catalog and basic parts optimization.
+* **3D Enclosure:** High-precision 3D printing (SLA / SLS Nylon) for the custom snap-fit enclosure.
+
+---
+
+## 9. Licenses & Automotive Safety Disclaimer
 
 * **Hardware Design:** [CERN-OHL-P v2](LICENSE) (*CERN Open Hardware Licence Version 2 – Permissive*).
 * **Software, Scripts & Tools:** [Apache License 2.0](LICENSE).
