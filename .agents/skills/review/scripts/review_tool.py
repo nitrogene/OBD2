@@ -54,12 +54,12 @@ class ReviewValidator:
     """Valideur syntaxique et sémantique de fichiers de revue face aux guidelines."""
 
     RE_HEADER_FIELD = {
-        "title": re.compile(r"^#\s+Revue Technique\s*:\s*(.+)$", re.MULTILINE),
-        "reviewer": re.compile(r"^-\s+\*\*Nom du Reviewer\s*(?:/\s*Agent)?\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
+        "title": re.compile(r"^#\s+(?:Revue Technique|Technical Review)\s*:\s*(.+)$", re.MULTILINE),
+        "reviewer": re.compile(r"^-\s+\*\*(?:Nom du Reviewer\s*(?:/\s*Agent)?|Reviewer\s*(?:/\s*Agent Name)?)\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
         "date": re.compile(r"^-\s+\*\*Date\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
-        "scope": re.compile(r"^-\s+\*\*Périmètre audité\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
-        "version_audited": re.compile(r"^-\s+\*\*Version\s*(?:/\s*Référence examinée)?\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
-        "verdict": re.compile(r"^-\s+\*\*Verdict global\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
+        "scope": re.compile(r"^-\s+\*\*(?:Périmètre audité|Audited Scope)\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
+        "version_audited": re.compile(r"^-\s+\*\*(?:Version\s*(?:/\s*Référence examinée)?|Examined Reference\s*(?:/\s*Version)?)\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
+        "verdict": re.compile(r"^-\s+\*\*(?:Verdict global|Overall Verdict)\s*:\*\*\s*(.+)$", re.MULTILINE | re.IGNORECASE),
     }
 
     RE_OBSERVATION_HEADER = re.compile(
@@ -86,9 +86,9 @@ class ReviewValidator:
         version_audited = meta.get("version_audited", "")
         verdict = meta.get("verdict", "")
 
-        # 2. Vérification du Résumé Exécutif
+        # 2. Vérification du Résumé Exécutif / Executive Summary
         summary_match = re.search(
-            r"##\s+Résumé Exécutif\s*\n+([\s\S]*?)(?=\n##|\Z)", content, re.MULTILINE
+            r"##\s+(?:Résumé Exécutif|Executive Summary)\s*\n+([\s\S]*?)(?=\n##|\Z)", content, re.MULTILINE
         )
         executive_summary = ""
         if summary_match:
@@ -111,12 +111,12 @@ class ReviewValidator:
                 
                 crit = "Bloquant" if ref.startswith("B") else ("Important" if ref.startswith("I") else "Mineur")
                 
-                # Extraction des sous-champs (compatible format B/I et format allégé M)
-                comp_match = re.search(r"-\s+\*\*Composants\s*(?:/\s*Nets concernés)?\s*:\*\*\s*(.+)$", body, re.MULTILINE)
-                constat_match = re.search(r"-\s+\*\*Constat(?: technique|\s*&\s*Proposition)?\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\Z)", body)
-                justif_match = re.search(r"-\s+\*\*Justification(?: [^:]+)?\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\Z)", body)
-                sol_match = re.search(r"-\s+\*\*Solution(?: recommandée)?\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\n###|\n##|\Z)", body)
-                gain_match = re.search(r"-\s+\*\*Gain attendu\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\n###|\n##|\Z)", body)
+                # Extraction des sous-champs (compatible FR/EN et format B/I ou M)
+                comp_match = re.search(r"-\s+\*\*(?:Composants\s*(?:/\s*Nets concernés)?|Affected (?:Components / Nets|Targets / Scope)|Target / Scope)\s*:\*\*\s*(.+)$", body, re.MULTILINE)
+                constat_match = re.search(r"-\s+\*\*(?:Constat(?: technique|\s*&\s*Proposition)?|Technical Observation|Observation & Proposal)\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\Z)", body)
+                justif_match = re.search(r"-\s+\*\*(?:Justification(?: [^:]+)?)\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\Z)", body)
+                sol_match = re.search(r"-\s+\*\*(?:Solution(?: recommandée)?|Recommended Solution)\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\n###|\n##|\Z)", body)
+                gain_match = re.search(r"-\s+\*\*(?:Gain attendu|Expected Benefit)\s*:\*\*\s*([\s\S]*?)(?=-\s+\*\*|\n###|\n##|\Z)", body)
 
                 comp = comp_match.group(1).strip() if comp_match else ""
                 constat = constat_match.group(1).strip() if constat_match else ""
@@ -228,11 +228,35 @@ def extract_template_from_guidelines(guidelines_path: Path) -> Optional[str]:
     if not guidelines_path.exists():
         return None
     content = guidelines_path.read_text(encoding="utf-8")
-    # Recherche du bloc ```markdown sous ## 5. Modèle Type de Revue
-    match = re.search(r"##\s+5\.\s+Modèle Type[\s\S]*?```markdown\s*\n([\s\S]*?)\n```", content)
+    # Recherche du bloc ```markdown sous ## 5. Modèle Type ou ## 5. Review Template
+    match = re.search(r"##\s+5\.\s+(?:Modèle Type|Review Template)[\s\S]*?```markdown\s*\n([\s\S]*?)\n```", content)
     if match:
         return match.group(1).strip() + "\n"
     return None
+
+
+def cmd_init(args: argparse.Namespace) -> int:
+    """Initialize the review directory and a domain-agnostic English guidelines.md draft."""
+    review_dir = Path(args.dir)
+    guidelines_path = review_dir / "guidelines.md"
+
+    if guidelines_path.exists() and not args.force:
+        sys.stderr.write(f"Error: '{guidelines_path}' already exists. Use --force to overwrite.\n")
+        return 1
+
+    template_path = Path(__file__).resolve().parent.parent / "templates" / "guidelines_base.md"
+    if not template_path.exists():
+        sys.stderr.write(f"Error: base guidelines template not found at '{template_path}'.\n")
+        return 1
+
+    content = template_path.read_text(encoding="utf-8")
+    project_name = args.project.strip() if args.project else "[Project Name]"
+    content = content.replace("[Project Name]", project_name)
+
+    review_dir.mkdir(parents=True, exist_ok=True)
+    guidelines_path.write_text(content, encoding="utf-8")
+    print(f"Initialized review directory '{review_dir}' and created '{guidelines_path}'.")
+    return 0
 
 
 def cmd_generate(args: argparse.Namespace) -> int:
@@ -360,6 +384,12 @@ def main() -> int:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    # Command init
+    p_init = subparsers.add_parser("init", help="Initialize the review directory and create an English guidelines.md draft.")
+    p_init.add_argument("--dir", default="review", help="Target review directory (default: review).")
+    p_init.add_argument("--project", default="[Project Name]", help="Project name to inject into guidelines.md.")
+    p_init.add_argument("--force", action="store_true", help="Overwrite an existing guidelines.md file.")
+
     # Commande generate
     p_gen = subparsers.add_parser("generate", help="Générer un modèle vierge de revue extrait de guidelines.md.")
     p_gen.add_argument("-o", "--output", help="Chemin du fichier de sortie (défaut: review/reviewXXX.md).")
@@ -380,7 +410,9 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    if args.command == "generate":
+    if args.command == "init":
+        return cmd_init(args)
+    elif args.command == "generate":
         return cmd_generate(args)
     elif args.command == "validate":
         return cmd_validate(args)

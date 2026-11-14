@@ -49,7 +49,8 @@ In accordance with Rule 1 of [`agents.md`](../../../agents.md), this skill is **
 │   ├── review_tool.py                # Agnostic CLI engine: generation, validation, and triage
 │   └── schematic_auditor.py          # Automated algorithmic auditor against design rules
 └── templates/
-    └── audit_rules.json              # Audit rules repository (logic levels, EMC, thermals)
+    ├── audit_rules.json              # Audit rules repository (logic levels, EMC, thermals)
+    └── guidelines_base.md            # Domain-agnostic English base guidelines template
 ```
 
 > [!NOTE]
@@ -105,6 +106,13 @@ During any schematic or architectural review, the reviewer agent must systematic
 
 > [!IMPORTANT]
 > All scripts must be executed via `uv run` in accordance with project rules.
+
+### 0. Initialize a New Project Review Directory
+Creates the `review/` directory and generates a 100% English domain-agnostic `guidelines.md` draft from `templates/guidelines_base.md`:
+```bash
+uv run .agents/skills/review/scripts/review_tool.py init --project "My Project"
+```
+Optional flags: `--dir <path>` (default: `review`), `--force` (overwrite existing `guidelines.md`).
 
 ### A. Generate a Standardized Blank Review Skeleton
 Extracts the template directly from Section 5 of [`review/guidelines.md`](../../../review/guidelines.md) and creates the next available review file (e.g., `review/review001.md`, `review/review002.md`):

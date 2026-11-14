@@ -30,14 +30,16 @@ Every review **must begin** with this metadata block to guarantee full audit tra
 
 ---
 
-## 2. Hardware Context & Pitfalls to Avoid (Read Before Auditing)
+## 2. Project Context, Audit Axes & Pitfalls to Avoid (Hardware / Automotive)
 
 To prevent false alarms and off-topic observations, you **must integrate** the following fundamental project constraints:
 
-0. **Auditor Mindset: Tabula Rasa & Evidence-Based Scrutiny**
+### 2.0 Universal Auditor Mindset: Tabula Rasa & Evidence-Based Scrutiny
    - If you are an AI model with conversational memory on this repository or an engineer familiar with its history, you **must completely disregard past discussions**. Adopt the stance of an impartial third-party auditor discovering the board fresh.
    - Every observation must be **strictly grounded in versioned repository files** (schematic PNG renders, bill of materials [`bom.json`](../documents/schema/bom.json), official datasheets archived under [`documents/datasheets/references/`](../documents/datasheets/references/), and the technical reference [`datasheets.md`](../documents/datasheets/datasheets.md)).
    - **Mandatory Critical Thinking:** Never take text claims in documentation at face value. Systematically cross-check every guideline and statement against manufacturer datasheets.
+
+### 2.1 Project Context & Known Constraints
 
 1. **Target Vehicle Environment: 12V Passenger Cars Exclusively**
    - The scanner is engineered exclusively for 12V passenger cars (12.6V nominal battery, 14.4V alternator charging, moderate transients).
@@ -56,6 +58,15 @@ To prevent false alarms and off-topic observations, you **must integrate** the f
    - Before raising an alert, quickly check [`todo.md`](../todo.md), [`hardware.md`](../documents/hardware.md), and [`bom.json`](../documents/schema/bom.json).
    - Many historical review remarks are already implemented or arbitrated (e.g. jumper JP1 on CAN termination, clamp diode D6, compensation capacitor C13 on COMP pin, etc.).
 
+### 2.2 Hardware Audit Axes
+- **Power Distribution & Electrical Survival:** `VIN,abs` vs TVS `VCL`, MOSFET `VGS` clamping, reverse-polarity protection, and PPTC thermal derating.
+- **Regulation & Closed-Loop Stability:** Buck soft-start & compensation (`Φm > 60°`), LDO `COUT` placement, no undamped ferrite on LDO output.
+- **Bus Transceivers & Logic Levels:** Mode pins, 3.3V `VIO` compatibility (ESP32-S3 is not 5V-tolerant).
+- **MCU & Strapping Pins:** `EN` RC delay, `GPIO0` pull-up, UART0/ADC1 pinout constraints.
+- **EMC, Decoupling & Boundary Protection:** Connector TVS/ESD placement, `< 2 mm` local decoupling, Pi filters.
+- **Thermals, Packages & BOM (DFM):** Power dissipation (`PD = ΔV × I`), JLCPCB *Basic Parts* optimization.
+
+### 2.3 Known Design Decisions (Do Not Flag)
 5. **K-Line Transceiver U3: 3.3V vs 5V VCC Supply & MCU Integrity**
    - *Do not demand switching VCC to 5V:* A frequent confusion assumes that the K-Line transceiver U3 requires VCC >= 4.5V or that its RX pin is a pure open collector requiring an external pull-up.
    - *ST Datasheet Specifications (Doc ID 1765 Rev 8, Table 5 & Note 1):*
@@ -140,7 +151,7 @@ Copy and complete the template below in your `review/reviewXXX.md` file:
 
 ## Observations Summary
 
-| Ref | Severity | Components / Nets | Summary Description |
+| Ref | Severity | Target / Scope | Summary Description |
 | :--- | :--- | :--- | :--- |
 | **B1** | 🔴 Blocking | `...` | ... |
 | **I1** | 🟠 Important | `...` | ... |
@@ -153,7 +164,7 @@ Copy and complete the template below in your `review/reviewXXX.md` file:
 ### 🔴 Blocking Observations (Critical)
 
 #### B1. [Descriptive Title]
-- **Affected Components / Nets:** `...` (e.g. `U4` pin 2, net `+12V_PROT`)
+- **Affected Targets / Scope:** `...` (e.g. `U4` pin 2, net `+12V_PROT`)
 - **Technical Observation:** [Detailed problem description]
 - **Justification & Risk:** [Datasheet citation, calculation, or standard demonstrating hazard]
 - **Recommended Solution:** [Concrete action: part number, value, package, LCSC code]
@@ -163,7 +174,7 @@ Copy and complete the template below in your `review/reviewXXX.md` file:
 ### 🟠 Important Observations (Robustness & EMC)
 
 #### I1. [Recommendation Title]
-- **Affected Components / Nets:** `...`
+- **Affected Targets / Scope:** `...`
 - **Technical Observation:** [Description]
 - **Justification:** [Impact on EMC immunity, vehicular durability, signal integrity]
 - **Recommended Solution:** [Recommended component, layout change, or filter]
@@ -173,7 +184,7 @@ Copy and complete the template below in your `review/reviewXXX.md` file:
 ### 🟢 Minor Observations (Optimization & DFM)
 
 #### M1. [Optimization Title]
-- **Affected Components / Nets:** `...`
+- **Affected Targets / Scope:** `...`
 - **Observation & Proposal:** [E.g. Basic Part migration, silkscreen labeling]
 - **Expected Benefit:** [Cost reduction, visual clarity, test accessibility]
 ```
