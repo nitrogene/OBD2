@@ -248,10 +248,10 @@ class EnclosureGenerator:
             hx = float(h["x_mm"])
             hy = float(h["y_mm"])
             with bd.BuildPart() as screw_hole_part:
-                # Colonnette supérieure descendant jusqu'au PCB
+                # Colonnette supérieure descendant jusqu'au PCB et fusionnée dans le plafond
                 with bd.BuildSketch(bd.Plane(origin=(hx, hy, self.z_pcb_top), z_dir=(0, 0, 1))):
                     bd.Circle(self.boss_d / 2.0)
-                bd.extrude(amount=abs(self.z_top_inner - self.z_pcb_top))
+                bd.extrude(amount=total_top_h)
 
                 # Trou traversant pour passage de vis
                 with bd.BuildSketch(bd.Plane(origin=(hx, hy, self.z_pcb_top - 0.2), z_dir=(0, 0, 1))):
