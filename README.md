@@ -331,7 +331,7 @@ All technical and operational documentation is structured within the following d
 
 | Document | Description |
 | :--- | :--- |
-| 📖 **[readme.md](readme.md)** | **General Hardware Project Overview**: architecture, use cases, standards framework, schematic and PCB visuals, navigation guide. |
+| 📖 **[README.md](README.md)** | **General Hardware Project Overview**: architecture, use cases, standards framework, schematic and PCB visuals, navigation guide. |
 | 📋 **[todo.md](todo.md)** | **Active Roadmap & Complete Checklist**: granular engineering milestones (mechanical, schematic, floorplanning, routing, ground planes, verification, firmware, and manufacturing). |
 | 📦 **[bom.json](documents/schema/bom.json)** | **Structured PCBA Bill of Materials for all 85 components**: manufacturer part numbers (MPN), LCSC codes, footprints, and JLCPCB Basic Parts assignments. |
 | 🧠 **[semantics.json](documents/schema/semantics.json)** | **Schematic Semantic and Electrical Intent**: component roles, electrical constraints (voltage ratings, tolerances, power dissipation), functional blocks, and substitution policies. |
@@ -340,7 +340,7 @@ All technical and operational documentation is structured within the following d
 | 🧩 **[manifest.json](documents/pcb/manifest.json)** | **PCB Physical & Geometric Manifest**: IPC-7351 standardized packages, decoupling rules, micro-clusters, and placement EMC constraints. |
 | 🔬 **[hardware.md](documents/hardware.md)** | **Hardware Architecture & Detailed Anatomy**: engineering walkthrough of 11 functional blocks, theoretical sizing calculations (Buck, LDO, voltage divider, Zener), full netlist table, test point directory (`TP1` to `TP15`), and layout rules. |
 | 💻 **[software.md](documents/software.md)** | **Firmware Specifications & Handover**: bootstrap guide for the separate software repository, GPIO pinout mapping, protocol implementations (TWAI CAN, K-Line KWP2000 Daewoo), battery ADC formula, low-power sleep modes (~8–15 mA), and ECU simulator. |
-| 📜 **[agents.md](agents.md)** | **AI Agent Engineering Directives**: agnostic engines, exclusive Python execution via `uv run`, EasyEDA bridge safety, sequential workflow, post-validation, and typography. |
+| 📜 **[AGENTS.md](AGENTS.md)** | **AI Agent Engineering Directives**: agnostic engines, exclusive Python execution via `uv run`, EasyEDA bridge safety, sequential workflow, post-validation, and typography. |
 | 💡 **[learnings.md](learnings.md)** | **Technical Knowledge Base**: engineering lessons learned, EasyEDA Pro API specifics, unit handling, and pitfalls avoided. |
 | 📥 **[review/](review/guidelines.md)** | **Technical Review Staging Area**: repository staging directory for incoming peer review reports (`reviewXXX.md`), governed by [`guidelines.md`](review/guidelines.md). Reviews are triaged, arbitrated, and deleted once integrated into `todo.md`. |
 | ⚖️ **[LICENSE](LICENSE)** | **Legal Framework & Open-Source Licenses**: CERN-OHL-P v2 hardware license and Apache 2.0 software license. |

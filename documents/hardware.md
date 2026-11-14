@@ -760,7 +760,7 @@ To guarantee signal integrity, electromagnetic compatibility (EMC), and thermal 
 
 ### 7.7 Formal PCB Layout Modeling & Decoupled Tooling
 
-In accordance with the **Agnostic Engine** principle (Rule 1 of [`../agents.md`](../agents.md)), automation, placement, and audit tools under `.agents/skills/` contain zero hardcoded component references or coordinates.
+In accordance with the **Agnostic Engine** principle (Rule 1 of [`../AGENTS.md`](../AGENTS.md)), automation, placement, and audit tools under `.agents/skills/` contain zero hardcoded component references or coordinates.
 
 All physical constraints of the OBD-II Scanner are formalized across two complementary, non-redundant files:
 1. **[`pcb/constraints.json`](pcb/constraints.json):** Mechanical board outline (81.28 × 35.56 mm / 3200 × 1400 mil), 4 M2 mounting holes, fixed anchors (`J1` on West, `J2` on South, `U1` on East), multi-layer RF keepout, and FreeRouting net classes.

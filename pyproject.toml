@@ -1,0 +1,16 @@
+[project]
+name = "obd2-hardware"
+version = "0.1.0"
+description = "ESP32-S3 OBD-II Scanner hardware automation, verification, and CAD/EDA tooling"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "build123d>=0.7.0",
+    "jsonschema>=4.20.0",
+    "requests>=2.31.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
