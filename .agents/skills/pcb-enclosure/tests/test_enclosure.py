@@ -11,6 +11,8 @@ import unittest
 from pathlib import Path
 import sys
 
+import build123d as bd
+
 SKILL_DIR = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = SKILL_DIR / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
@@ -100,6 +102,67 @@ class TestPCBEnclosure(unittest.TestCase):
         self.assertIn("Enclosure_Bottom_Shell", full_step)
         self.assertIn("Enclosure_Top_Shell", full_step)
         self.assertIn("Cable_Clamp", full_step)
+
+    def test_cable_clamp_orientation_and_clearances(self):
+        """Vérifie que la gorge du serre-câble traverse selon X et n'entaille ni les vis M2 ni les extrémités Y."""
+        clamp = self.gen.build_cable_clamp()
+        clamp_len = self.gen.clamp_screw_spacing + self.gen.boss_d + 2.0
+        compression_r = (self.gen.cable_d * 0.95) / 2.0
+
+        def _intersect_volume(a: bd.Solid, b: bd.Solid) -> float:
+            inter = a.intersect(b)
+            if inter is None:
+                return 0.0
+            if hasattr(inter, "volume"):
+                return float(inter.volume)
+            return float(sum(s.volume for s in inter))
+
+        # 1. La gorge doit être ouverte sur toute la largeur X au centre (Y=0, Z=0.5)
+        probe_groove = bd.Solid.make_box(self.gen.clamp_w - 0.2, 0.4, 0.4).locate(
+            bd.Location((-(self.gen.clamp_w - 0.2) / 2.0, -0.2, 0.3))
+        )
+        self.assertAlmostEqual(
+            _intersect_volume(clamp, probe_groove), 0.0, places=3,
+            msg="La gorge du serre-câble doit traverser librement selon l'axe X"
+        )
+
+        # 2. Les extrémités Y doivent rester pleines (pas d'entaille par un mauvais plan XZ)
+        for sign in (-1.0, 1.0):
+            y_end = sign * (clamp_len / 2.0 - 0.5)
+            probe_end = bd.Solid.make_box(0.4, 0.4, 0.4).locate(
+                bd.Location((-0.2, y_end - 0.2, 0.3))
+            )
+            self.assertGreater(
+                _intersect_volume(clamp, probe_end), 0.05,
+                msg=f"L'extrémité Y={y_end:.2f} mm du serre-câble doit être pleine"
+            )
+
+        # 3. Distance entre la gorge et le lamage M2 >= 0.8 mm (JLC3DP)
+        groove_to_cbore = (self.gen.clamp_screw_spacing / 2.0) - (self.gen.cbore_d / 2.0) - compression_r
+        self.assertGreaterEqual(groove_to_cbore, 0.8)
+
+        # 4. Épaisseur de paroi aux extrémités Y et bords X >= 0.8 mm (JLC3DP)
+        end_wall_y = (clamp_len / 2.0) - (self.gen.clamp_screw_spacing / 2.0) - (self.gen.cbore_d / 2.0)
+        side_wall_x = (self.gen.clamp_w / 2.0) - (self.gen.cbore_d / 2.0)
+        self.assertGreaterEqual(end_wall_y, 0.8)
+        self.assertGreaterEqual(side_wall_x, 0.8)
+
+    def test_dfm_3d_wall_thickness_jlc3dp(self):
+        """Vérifie le respect du seuil DFM 3D JLC3DP (>= 0.8 mm) sur les parois, lèvres et bossages."""
+        min_jlc3dp_wall = 0.8
+
+        # Paroi nominale du boîtier
+        self.assertGreaterEqual(self.gen.wall_t, min_jlc3dp_wall)
+
+        # Lèvre d'emboîtement (demi-paroi moins le jeu)
+        lip_thickness = (self.gen.wall_t - 2.0 * self.gen.lip_clr) / 2.0
+        self.assertGreaterEqual(lip_thickness, min_jlc3dp_wall)
+
+        # Paroi radiale des colonnettes d'inserts M2 (coquille basse) et passage vis (coquille haute)
+        insert_boss_wall = (self.gen.boss_d - self.gen.insert_d) / 2.0
+        screw_boss_wall = (self.gen.boss_d - self.gen.screw_clr_d) / 2.0
+        self.assertGreaterEqual(insert_boss_wall, min_jlc3dp_wall)
+        self.assertGreaterEqual(screw_boss_wall, min_jlc3dp_wall)
 
 
 if __name__ == "__main__":

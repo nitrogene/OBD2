@@ -303,7 +303,7 @@ class EnclosureGenerator:
 
             # Demi-cylindre de compression du câble (légèrement inférieur à cable_d pour serrage)
             compression_r = (self.cable_d * 0.95) / 2.0
-            with bd.BuildSketch(bd.Plane.XZ):
+            with bd.BuildSketch(bd.Plane.YZ):
                 with bd.Locations((0, 0)):
                     bd.Circle(compression_r)
             bd.extrude(amount=self.clamp_w + 2.0, both=True, mode=bd.Mode.SUBTRACT)
